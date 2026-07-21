@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>38·0 NAPOLI · Cento anni d'azzurro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Saira:wght@400;500;600;700;800&family=Saira+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23003c82'/><text x='16' y='23' font-family='Arial Black,Arial,sans-serif' font-size='15' font-weight='900' text-anchor='middle' fill='%23ffffff'>38</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  
+  <header class="topbar scorebug is-sticky">
+    <button id="btn-home" class="btn-home" hidden>← Menu</button>
+    <div class="scorebug__brand">
+      <div class="brand">NAPOLI <span class="brand-num">38·0</span></div>
+      <div class="brand-sub">1926 → 2026</div>
+    </div>
+    <div class="scorebug__row2">
+      <div class="scorebug__meta">
+        <span class="scorebug__live"><span class="scorebug__live-dot" aria-hidden="true"></span>LIVE</span>
+        <span class="scorebug__matchday" id="scorebug-matchday">GIORNATA 0/38</span>
+      </div>
+      <div id="hud"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="screen-home" class="screen active startmenu" data-panel="root">
+      <div class="sm-sky" aria-hidden="true"></div><div class="sm-beams" aria-hidden="true"></div><div class="sm-tiers" aria-hidden="true"></div><div class="sm-pitch" aria-hidden="true"></div><div class="sm-grain" aria-hidden="true"></div><div class="sm-vignette" aria-hidden="true"></div>
+      
+      <div class="sm-top"><span>Un progetto <strong>Partenopeo</strong></span><span class="sm-top__ver">v1.0 · 1926 → 2026</span></div>
+      
+      <div class="startmenu__left">
+        <div class="sm-kicker">Il manageriale azzurro</div>
+        <h1 class="sm-lock"><span class="sm-roma">NAPOLI</span><span class="sm-num">38<b>·</b>0</span></h1>
+        <p class="sm-tag">Costruisci 'o Napule tuoj. <strong>E prega San Gennaro.</strong> Cento anni di rose in un solo undici.</p>
+        <div class="sm-credit-wrap"><p class="sm-credit-dm">Scegli i campioni, schiva i bidoni e portaci sul tetto d'Italia.</p></div>
+      </div>
+
+      <div class="startmenu__right">
+        <nav class="smenu" data-panel="root" style="display: flex;">
+          <button type="button" class="srow srow--play" data-menu="play"><span class="srow__idx">01</span><span class="srow__body"><span class="srow__lab">Jamm' a jucà</span><span class="srow__desc">Tutte le modalità: campionato, sfide e Modalità Impossibile</span></span><span class="sm-enter">▶ clicca qui per giocare</span></button>
+          <button type="button" class="srow" data-menu="rules"><span class="srow__idx">02</span><span class="srow__body"><span class="srow__lab">Come si gioca</span><span class="srow__desc">Regole e taratura del motore</span></span><span class="srow__arr" aria-hidden="true">▶</span></button>
+          <button type="button" class="srow" data-menu="leaderboard"><span class="srow__idx">03</span><span class="srow__body"><span class="srow__lab">Classifica globale</span><span class="srow__desc">I migliori punteggi di sempre</span></span><span class="srow__arr" aria-hidden="true">▶</span></button>
+        </nav>
+
+        <div class="subpanel" data-panel="play" hidden style="display: none;">
+          <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Scegli la modalità</p>
+          <div class="sm-modes">
+            <button class="mode-row is-featured" data-mode="rogue"><span class="mode-row__idx">01</span><span class="mode-row__body"><span class="mode-row__badge">★ Modalità Cazzimma</span><span class="mode-row__lab">San Gennaro Aiutaci</span><span class="mode-row__desc">Allenatore a sorte, bonus iniziali e imprevisti (tipo ammutinamenti e scuse in conferenza). Ogni run è diversa.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
+            <button class="mode-row" data-mode="carriera"><span class="mode-row__idx">02</span><span class="mode-row__body"><span class="mode-row__badge">★ Modalità speciale</span><span class="mode-row__lab">Carriera</span><span class="mode-row__desc">Allenatore a sorte, 10 stagioni con la stessa rosa. Tifa la maglia, cambia i giocatori.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
+            <button class="mode-row" data-mode="impossibile"><span class="mode-row__idx">03</span><span class="mode-row__body"><span class="mode-row__lab">Classica</span><span class="mode-row__desc">Tutto il database, 3 reroll. Punta allo scudetto perfetto.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
+            <button class="mode-row" data-mode="serieb"><span class="mode-row__idx">04</span><span class="mode-row__body"><span class="mode-row__lab">Amm fa schif'</span><span class="mode-row__desc">Obiettivo ribaltato: chiudi <strong>20° in classifica</strong>.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
+            <button class="mode-row" data-mode="sesto"><span class="mode-row__idx">05</span><span class="mode-row__body"><span class="mode-row__lab">Zona Mazzarri</span><span class="mode-row__desc">Obiettivo: finire <strong>secondi</strong>, colpa della pioggia.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
+            <button class="mode-row" data-mode="custom"><span class="mode-row__idx">06</span><span class="mode-row__body"><span class="mode-row__lab">Personalizzata</span><span class="mode-row__desc">Imposta tutto tu come ti pare.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
+          </div>
+        </div>
+
+        <div class="subpanel" data-panel="rules" hidden style="display: none;">
+          <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Come si gioca</p>
+          <div class="sm-rules"><p>Peschi le carte <strong>per ruolo</strong>, scegli e schieri l'undici. Poi il motore simula <strong>38 giornate</strong> e il campo emette il verdetto: scudetto, Europa o mazzate.</p><ul><li><strong>Classica</strong>: tutto il database azzurro, 3 reroll.</li><li><strong>Sfide</strong>: obiettivi ribaltati, chiudi ultimo o finisci secondi.</li><li><strong>Sosta invernale</strong>: dopo 19 giornate apri il mercato di riparazione.</li></ul></div>
+        </div>
+
+        <div class="subpanel" data-panel="leaderboard" hidden style="display: none;">
+          <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Classifica globale</p>
+          <div id="lb-home" class="lb-list"><p class="lb-empty">Carico la classifica…</p></div>
+        </div>
+
+        <label class="hidden-toggle sm-hidden"><input type="checkbox" id="flag-hidden"><span class="ht-box"></span><span class="ht-text"><strong>Rating nascosto</strong>: per chi tiene la cazzimma.</span></label>
+      </div>
+    </section>
+
+    <section id="screen-custom" class="screen">
+      <div class="lower-third"><h2 class="section-title">Personalizzata</h2></div>
+      <div class="custom-form">
+        <div class="cfg-row"><label class="cfg-label" for="cfg-reroll">Reroll</label><div class="cfg-control"><input type="range" id="cfg-reroll" min="0" max="15" value="3"><output id="cfg-reroll-out">3</output></div></div>
+        <div class="cfg-row"><label class="cfg-label" for="cfg-options">Carte per ruolo</label><div class="cfg-control"><input type="range" id="cfg-options" min="3" max="5" value="3"><output id="cfg-options-out">3</output></div></div>
+        <div class="cfg-row"><label class="cfg-label" for="cfg-min">Min</label><div class="cfg-control"><input type="range" id="cfg-min" min="0" max="99" value="70"><output id="cfg-min-out">70</output></div></div>
+        <div class="cfg-row"><label class="cfg-label" for="cfg-max">Max</label><div class="cfg-control"><input type="range" id="cfg-max" min="0" max="99" value="99"><output id="cfg-max-out">99</output></div></div>
+        <p id="cfg-warning" class="cfg-warning"></p>
+        <button id="btn-custom-go" class="btn primary">AL MODULO</button>
+      </div>
+    </section>
+
+    <section id="screen-coach" class="screen"><div class="lower-third"><h2 class="section-title">Il tuo allenatore</h2></div><p class="section-sub" id="coach-screen-sub">Il mister e il modulo sono randomici.</p><div id="coach-body"></div></section>
+    <section id="screen-bonus" class="screen"><div class="lower-third"><h2 class="section-title">Scegli il tuo bonus</h2></div><p class="section-sub">Tre carte, ne tieni una.</p><div id="bonus-cards" class="bonus-grid"></div></section>
+    <section id="screen-modulo" class="screen"><div class="lower-third"><h2 class="section-title">Scegli il modulo</h2></div><p class="section-sub">Spoiler: prenderai 'o 4-3-3.</p><div id="formation-cards" class="formation-grid"></div></section>
+    <section id="screen-rogue-summary" class="screen"><div class="lower-third"><h2 class="section-title">La stagione prende forma</h2></div><p class="section-sub">Bonus e imprevisti hanno già fatto il loro lavoro.</p><div id="rogue-summary-body"></div><div class="result-actions"><button id="btn-rogue-go" class="btn primary">VIA ALLA STAGIONE</button></div></section>
+    
+    <section id="screen-draft" class="screen">
+      <div class="draft-layout">
+        <aside class="draft-sidebar">
+          <div id="team-info" class="team-info-panel"></div>
+          <div class="event-log-panel"><h3 class="elp-title">Cronaca della run</h3><div id="event-log" class="event-log"></div></div>
+        </aside>
+        <div id="pitch" class="pitch"><div class="pitch-lines"></div><div id="pitch-coach" class="pitch-coach" hidden></div></div>
+        <div class="options-panel">
+          <p id="options-hint" class="options-hint"></p>
+          <div id="options" class="options-cards"></div>
+          <div class="draft-actions">
+            <button id="btn-reroll" class="btn ghost" disabled>Reroll</button>
+            <button id="btn-start" class="btn primary" disabled>JAMM</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-break" class="screen"><div class="lower-third"><h2 class="section-title">Sosta di metà stagione</h2></div><div id="break-body"></div></section>
+    <section id="screen-replay" class="screen"><div class="replay-top"><div class="lower-third"><h2 class="section-title" id="replay-heading">La stagione</h2></div><button id="btn-skip-replay" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div class="replay-controls"><label class="replay-control"><span>Modalità</span><select id="replay-mode"><option value="auto">Auto</option><option value="manual">Uno per volta</option></select></label><label class="replay-control"><span>Velocità</span><select id="replay-speed"><option value="120">Veloce</option><option value="260" selected>Normale</option><option value="420">Lenta</option></select></label><button id="btn-step-replay" class="btn ghost" type="button" disabled>Avanti</button></div><div id="replay-list" class="replay-list" aria-live="polite"></div></section>
+    <section id="screen-champions" class="screen"><div class="replay-top"><div class="lower-third"><h2 class="section-title" id="cl-heading">Champions League</h2></div><button id="btn-skip-cl" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div id="cl-stage" class="cl-stage" aria-live="polite"></div></section>
+    
+    <section id="screen-result" class="screen">
+      <div class="lower-third"><h2 class="section-title">Verdetto del campo</h2></div>
+      <div class="result-actions">
+        <button id="btn-share-img" class="btn primary" hidden>📷 Condividi</button>
+        <button id="btn-share-txt" class="btn ghost">📋 Copia testo</button>
+        <button id="btn-again" class="btn ghost">↻ Rigioca</button>
+        <button id="btn-career-next" class="btn primary" hidden>Prossima stagione →</button>
+        <button id="btn-career-final" class="btn primary" hidden>Vedi il riepilogo carriera 🏆</button>
+      </div>
+      <div id="result-body"></div>
+      <div class="result-savebar" id="result-savebar"></div>
+    </section>
+
+    <section id="screen-career-swap" class="screen"><div class="lower-third"><h2 class="section-title">Cambi rosa</h2></div><div id="career-swap-area"></div></section>
+    <section id="screen-career-final" class="screen"><div class="lower-third"><h2 class="section-title">Fine carriera</h2></div><div id="career-final-body"></div><div id="career-formation-compare"></div><div class="career-savebar" id="career-savebar"></div><div class="result-actions"><button id="btn-career-home" class="btn primary">← Menu principale</button></div></section>
+  </main>
+
+  <div id="mode-modal" class="info-modal" hidden>
+    <div class="info-modal__backdrop" data-close></div>
+    <div class="info-modal__card" role="dialog">
+      <button type="button" class="info-modal__x" data-close>✕</button>
+      <span class="info-modal__tag" id="mode-modal-tag"></span>
+      <h3 class="info-modal__title" id="mode-modal-title"></h3>
+      <div class="info-modal__body" id="mode-modal-body"></div>
+      <button type="button" class="btn primary info-modal__play" id="mode-modal-play">JAMM</button>
+    </div>
+  </div>
+  
+  <div id="toast" class="toast"></div>
+
+  <script src="js/app.js?v=v2"></script>
+</body>
+</html>
