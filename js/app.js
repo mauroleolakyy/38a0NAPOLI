@@ -1,6 +1,22 @@
 /* ===== game.js ===== */
 "use strict";
+/* ============================================================
+   GESTORE SUONI (SOUND SYSTEM)
+   ============================================================ */
+const sfx = {
+  click: new Audio('sounds/click.mp3'),
+  carta: new Audio('sounds/carta.mp3'),
+  fischio: new Audio('sounds/fischio.mp3'),
+  vittoria: new Audio('sounds/stadio.mp3')
+};
 
+// Funzione per suonare un effetto
+function playSound(nome) {
+  if (sfx[nome]) {
+    sfx[nome].currentTime = 0; // Lo fa ripartire da zero se ci clicchi velocemente
+    sfx[nome].play().catch(() => {}); // Il catch evita errori se il browser blocca l'audio
+  }
+}
 const DIFFICULTIES = {
   impossibile: { label: "Classica", min: 1,  max: 99, reroll: 3, options: 3, desc: "Tutto il database, 3 reroll. Punta allo scudetto perfetto." },
   serieb:      { label: "Amm fa schif'", min: 1, max: 99, reroll: 3, options: 3, goal: "retro", desc: "Costruisci lo schifo e chiudi 20°." },
@@ -200,6 +216,7 @@ function init() {
     // 1. Click su "Jamm' a jucà" e menu principali
     const menuBtn = e.target.closest("[data-menu]");
     if (menuBtn) {
+      playSound('click');
       e.preventDefault();
       const name = menuBtn.getAttribute("data-menu");
       const home = document.getElementById("screen-home");
@@ -219,6 +236,7 @@ function init() {
     // 2. Click sul tasto "Indietro" per tornare alla home
     const backBtn = e.target.closest("[data-back]");
     if (backBtn) {
+      playSound('click');
       e.preventDefault();
       const home = document.getElementById("screen-home");
       const nav = home ? home.querySelector(".smenu") : null;
@@ -236,6 +254,7 @@ function init() {
     // 3. Click su "Classica", "Rogue Like", ecc. -> AVVIA SUBITO IL GIOCO (Salta il popup)
     const modeBtn = e.target.closest("[data-mode]");
     if (modeBtn) {
+      playSound('click');
       e.preventDefault();
       const key = modeBtn.getAttribute("data-mode");
       const flag = document.getElementById("flag-hidden");
@@ -251,7 +270,11 @@ function init() {
 
   // 4. Collegamento bottoni di gioco
   if (document.getElementById("btn-reroll")) document.getElementById("btn-reroll").onclick = doReroll;
-  if (document.getElementById("btn-start")) document.getElementById("btn-start").onclick = () => { if (Object.keys(state.team).length < 11) return; if (state.rogue) startRogueResolution(); else startSeasonWithBreak(); };
+  if (document.getElementById("btn-start")) document.getElementById("btn-start").onclick = () => {
+     playSound('click'); 
+     if (Object.keys(state.team).length < 11) return;
+      playSound('fischio'); 
+      if (state.rogue) startRogueResolution(); else startSeasonWithBreak(); };
   if (document.getElementById("btn-again")) document.getElementById("btn-again").onclick = () => location.reload();
   if (document.getElementById("btn-career-next")) document.getElementById("btn-career-next").onclick = startCareerSwap;
   if (document.getElementById("btn-career-final")) document.getElementById("btn-career-final").onclick = showCareerFinal;
@@ -489,6 +512,7 @@ function renderOptionsPanel() {
 }
 
 function pick(idx) {
+  playSound('carta');
   if (state._picking) return; const p = state.options[idx]; const slot = state.activeSlot; if (!p || !slot) return; state._picking = true;
   state.team[slot.id] = p; state.usedNames.add(p.nome); state.activeSlot = null; state.options = [];
   applyCoachPickBonus(slot, p);
@@ -719,8 +743,17 @@ function runSeason() {
   const quadrants = [];
   quadrants.push(`<div class="scoreboard ${place.cls}"><div class="sb-rating"><span class="sb-label">Forza squadra</span><span class="sb-big">${R.toFixed(1)}</span></div><div class="sb-points"><span class="sb-label">Punti in campionato</span><span class="sb-big" id="pts-counter">0</span><span class="sb-record">${vpsLabel(season.w, season.d, season.l)}</span></div><div class="sb-place"><span class="sb-label">Piazzamento</span><span class="sb-pos">${place.pos}</span></div></div>`);
   quadrants.push(`<div class="verdict ${place.cls}"><h3>${place.title}</h3><p>${place.flavor}</p><div class="awards verdict-awards"><div class="award-card"><span class="award-label">Capocannoniere</span><span class="award-name">${topScorer.nome}</span><span class="award-detail">${topScorer.goals} gol</span></div><div class="award-card"><span class="award-label">MVP</span><span class="award-name">${prizes.mvp.nome}</span></div></div></div>`);
-  quadrants.push(`<div class="lineup-recap"><h4 class="lineup-recap-summary" style="margin-bottom:12px; cursor:default;">L'undici schierato</h4>${coachLine}<ul>${slots().map(s => { const p = state.team[s.id]; const eff = effRating(s.id); return `<li><span class="lr-role">${s.label}</span><span class="lr-player">${p.nome}</span><strong class="lr-eff">${eff}</strong></li>`; }).join("")}</ul></div>`);
-  const box = $("#result-body"); box.innerHTML = (banner ? `<div class="quadrant" data-q="0">${banner}</div>` : "") + quadrants.map((q, i) => `<div class="quadrant" data-q="${i + 1}">${q}</div>`).join("");
+  quadrants.push(`<details class="lineup-recap recap-toggle"><summary class="lineup-recap-summary">L'undici schierato</summary>${coachLine}<ul>${slots().map(s => { 
+    const p = state.team[s.id]; 
+    const eff = effRating(s.id); 
+    
+    // Creazione dei badge
+    let badges = "";
+    if (topScorer && p.nome === topScorer.nome) badges += ` <span class="player-badge top-scorer">⚽ Goleador</span>`;
+    if (prizes.mvp && p.nome === prizes.mvp.nome) badges += ` <span class="player-badge mvp">👑 MVP</span>`;
+    
+    return `<li><span class="lr-role">${s.label}</span><span class="lr-player">${p.nome}${badges}</span><strong class="lr-eff">${eff}</strong></li>`; 
+  }).join("")}</ul></details>`);const box = $("#result-body"); box.innerHTML = (banner ? `<div class="quadrant" data-q="0">${banner}</div>` : "") + quadrants.map((q, i) => `<div class="quadrant" data-q="${i + 1}">${q}</div>`).join("");
   
   const showFinalResult = () => { showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts); };
   const afterSeason = champ ? () => playChampions(champ, place, showFinalResult) : showFinalResult;
@@ -799,8 +832,21 @@ function championRouteText(champ) {
 function shareResultText() { const r = state.lastResult; return r.perfect ? "Ho fatto il 38·0 perfetto con il Napoli! Gioca a 38-0 NAPOLI!" : `Ho fatto ${r.pts} punti con il mio Napoli all-time. Gioca a 38-0 NAPOLI! Forza Napoli Sempre 💙`; }
 function copyShareText() { const txt = shareResultText(); navigator.clipboard.writeText(txt).then(() => toast("Testo copiato! 📋")); }
 function shareResultImage() { toast("Condivisione non supportata in questa demo."); }
-function revealQuadrants(box, finalPts) { const qs = Array.from(box.querySelectorAll(".quadrant")); qs.forEach((q, i) => { setTimeout(() => { q.classList.add("show"); const pts = q.querySelector("#pts-counter"); if (pts) countUp(pts, finalPts, 1500, false); }, i * 150); }); }
-function countUp(el, target, dur, fmt) { dur = dur || 1400; const t0 = performance.now(); (function tick(now) { const f = Math.min(1, (now - t0) / dur); const v = Math.round(target * (1 - Math.pow(1 - f, 3))); el.textContent = fmt ? v.toLocaleString("it-IT") : v; if (f < 1) requestAnimationFrame(tick); })(performance.now()); }
+function revealQuadrants(box, finalPts) { 
+  // Fai partire il suono SOLO se i punti finali sono strettamente maggiori di 90
+  if (finalPts > 90) {
+    playSound('stadio');
+  }
+
+  const qs = Array.from(box.querySelectorAll(".quadrant")); 
+  qs.forEach((q, i) => { 
+    setTimeout(() => { 
+      q.classList.add("show"); 
+      const pts = q.querySelector("#pts-counter"); 
+      if (pts) countUp(pts, finalPts, 1500, false); 
+    }, i * 150); 
+  }); 
+}function countUp(el, target, dur, fmt) { dur = dur || 1400; const t0 = performance.now(); (function tick(now) { const f = Math.min(1, (now - t0) / dur); const v = Math.round(target * (1 - Math.pow(1 - f, 3))); el.textContent = fmt ? v.toLocaleString("it-IT") : v; if (f < 1) requestAnimationFrame(tick); })(performance.now()); }
 
 setTimeout(init, 100);
 /* ===== db.js ===== */
