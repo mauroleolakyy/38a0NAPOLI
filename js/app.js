@@ -22,6 +22,32 @@ const DIFFICULTIES = {
   serieb:      { label: "Amm fa schif'", min: 1, max: 99, reroll: 3, options: 3, goal: "retro", desc: "Costruisci lo schifo e chiudi 20°." },
   sesto:       { label: "Zona Mazzarri", min: 1, max: 99, reroll: 3, options: 3, goal: "sesto", desc: "Arriva secondi, colpa della pioggia." }
 };
+/* ============================================================
+   SISTEMA INTESE STORICHE (CHEMISTRY)
+   ============================================================ */
+const SYNERGIES = [
+  { id: "tre_tenori", nome: "I Tre Tenori", giocatori: ["Marek Hamsik", "Ezequiel Lavezzi", "Edinson Cavani"], bonus: 4, desc: "Hamsik, Lavezzi, Cavani: +4 Forza" },
+  { id: "magica", nome: "Ma-Gi-Ca", giocatori: ["Diego Armando Maradona", "Bruno Giordano", "Careca"], bonus: 5, desc: "Maradona, Giordano, Careca: +5 Forza" },
+  { id: "gemelli_gol", nome: "Gemelli del Gol", giocatori: ["Victor Osimhen", "Khvicha Kvaratskhelia"], bonus: 3, desc: "Osimhen, Kvaratskhelia: +3 Forza" },
+  { id: "muro_azzurro", nome: "Muro Azzurro", giocatori: ["Kalidou Koulibaly", "Raul Albiol"], bonus: 2, desc: "Koulibaly, Albiol: +2 Forza" },
+  { id: "motore_scudetto", nome: "Motore Scudetto", giocatori: ["Stanislav Lobotka", "Zambo Anguissa", "Piotr Zielinski"], bonus: 3, desc: "Lobotka, Anguissa, Zielinski: +3 Forza" }
+];
+
+// Funzione che controlla quali intese sono attive in campo in questo momento
+function getActiveSynergies() {
+  if (!state.team) return { active: [], totalBonus: 0 };
+  
+  // Prende i nomi di tutti i giocatori attualmente schierati
+  const schierati = Object.values(state.team).map(p => p.nome);
+  
+  // Filtra le intese in cui TUTTI i giocatori richiesti sono presenti
+  const active = SYNERGIES.filter(syn => syn.giocatori.every(g => schierati.includes(g)));
+  
+  // Calcola il bonus totale generato dalle intese attive
+  const totalBonus = active.reduce((sum, syn) => sum + syn.bonus, 0);
+  
+  return { active, totalBonus };
+}
 
 const CAREER_BANDS = [
   { min: 75, max: 81 }, { min: 75, max: 81 },
@@ -268,7 +294,7 @@ function init() {
     }
   });
 
-  // 4. Collegamento bottoni di gioco
+ // 4. Collegamento bottoni di gioco
   if (document.getElementById("btn-reroll")) document.getElementById("btn-reroll").onclick = doReroll;
   if (document.getElementById("btn-start")) document.getElementById("btn-start").onclick = () => {
      playSound('click'); 
@@ -280,6 +306,66 @@ function init() {
   if (document.getElementById("btn-career-final")) document.getElementById("btn-career-final").onclick = showCareerFinal;
   if (document.getElementById("btn-career-home")) document.getElementById("btn-career-home").onclick = goHome;
   if (document.getElementById("btn-home")) document.getElementById("btn-home").onclick = goHome;
+
+  // --- AGGIUNTA: Gestione pulsante e slider modalità personalizzata ---
+ // Gestione pulsante e slider modalità personalizzata con controllo incrociato Min/Max
+  const btnCustomGo = document.getElementById("btn-custom-go");
+  if (btnCustomGo) {
+    btnCustomGo.onclick = () => {
+      playSound('click');
+      const rerolls = parseInt(document.getElementById("cfg-reroll").value, 10);
+      const options = parseInt(document.getElementById("cfg-options").value, 10);
+      let min = parseInt(document.getElementById("cfg-min").value, 10);
+      let max = parseInt(document.getElementById("cfg-max").value, 10);
+
+      // Controllo di sicurezza: se min supera max, li invertiamo o blocchiamo
+      if (min > max) min = max;
+
+      state.diff = { 
+        key: "custom", 
+        label: "Personalizzata", 
+        min: min, 
+        max: max, 
+        reroll: rerolls, 
+        options: options 
+      };
+      
+      state.rerolls = rerolls;
+      state.optionsCount = options;
+      state.team = {}; 
+      state.usedNames = new Set(); 
+      state.activeSlot = null; 
+      state.options = []; 
+      
+      resetRogueState(); 
+      updateHud(); 
+      renderFormationCards(); 
+      showScreen("#screen-modulo");
+    };
+  }
+
+  // Sincronizzazione in tempo reale con blocco automatico Min <= Max
+  const minInput = document.getElementById("cfg-min");
+  const maxInput = document.getElementById("cfg-max");
+  const minOut = document.getElementById("cfg-min-out");
+  const maxOut = document.getElementById("cfg-max-out");
+
+  ["reroll", "options", "min", "max"].forEach(id => {
+    const input = document.getElementById("cfg-" + id);
+    const output = document.getElementById("cfg-" + id + "-out");
+    if (input && output) {
+      input.oninput = () => {
+        if (id === "min" && maxInput && parseInt(input.value) > parseInt(maxInput.value)) {
+          input.value = maxInput.value; // Impedisce a Min di superare Max
+        }
+        if (id === "max" && minInput && parseInt(input.value) < parseInt(minInput.value)) {
+          input.value = minInput.value; // Impedisce a Max di scendere sotto Min
+        }
+        output.value = input.value;
+      };
+    }
+  });
+  // ------------------------------------------------------------------
 
   document.body.dataset.screen = "screen-home";
   document.body.dataset.live = "off";
@@ -410,7 +496,22 @@ function renderTeamInfo() {
     const names = state.team ? Object.values(state.team).map(p => p.nome) : []; const count = BANDA.filter(h => names.includes(h)).length; const present = BANDA.filter(h => names.includes(h));
     bandaBlock = `<div class="ti-banda ${count === 4 ? "banda-full" : ""}"><span class="ti-label">Fedelissimi Mazzarri</span><span class="ti-banda-count">${count}<span class="ti-banda-max">/4</span></span>${present.length ? `<span class="ti-banda-names">${present.join(" · ")}</span>` : ""}</div>`;
   }
-  box.innerHTML = `<div class="ti-head"><span class="ti-mode diff-${state.diff.key}">${state.diff.label}</span><span class="ti-goal">${goalTxt}</span></div><div class="ti-grid"><div class="ti-row"><span class="ti-label">Modulo</span><span class="ti-value mono">${modulo}</span></div>${coachBlock}${bonusBlock}<div class="ti-row"><span class="ti-label">Reroll</span><span class="ti-value">${state.rerolls}</span></div></div>${bandaBlock}`;
+  
+  // --- BLOCCO INTESE (CHEMISTRY) ---
+  const synergyData = getActiveSynergies();
+  let synergyHTML = "";
+  if (synergyData.active.length > 0) {
+    synergyHTML = `<div class="ti-row" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+      <div class="ti-head" style="border:none; padding:0;">
+        <span class="ti-label" style="color: #ffd24a;">✨ INTESE ATTIVE</span>
+      </div>
+      <div class="ti-body" style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
+        ${synergyData.active.map(syn => `<div class="synergy-badge" title="${syn.desc}">🔥 ${syn.nome} (+${syn.bonus})</div>`).join("")}
+      </div>
+    </div>`;
+  }
+
+  box.innerHTML = `<div class="ti-head"><span class="ti-mode diff-${state.diff.key}">${state.diff.label}</span><span class="ti-goal">${goalTxt}</span></div><div class="ti-grid"><div class="ti-row"><span class="ti-label">Modulo</span><span class="ti-value mono">${modulo}</span></div>${coachBlock}${bonusBlock}<div class="ti-row"><span class="ti-label">Reroll</span><span class="ti-value">${state.rerolls}</span></div></div>${bandaBlock}${synergyHTML}`;
 }
 
 function renderEventLog() {
@@ -440,9 +541,22 @@ function buildPitch() {
 function buildCareerSlotBand() { const bands = shuffle(CAREER_BANDS.slice()); state.slotBand = {}; slots().forEach((s, i) => { state.slotBand[s.id] = bands[i]; }); }
 
 function eligiblePool(slot, excludeNames = []) {
+  // Legge i limiti min e max dalla modalità attiva (standard o personalizzata)
+  const minLimit = state.diff && state.diff.min != null ? state.diff.min : 1;
+  const maxLimit = state.diff && state.diff.max != null ? state.diff.max : 99;
+
   const band = state.slotBand && state.slotBand[slot.id];
-  const min = band ? band.min : state.diff.min; const max = band ? band.max : (state.diff.max ?? 99);
-  return DB.filter(p => p.rating >= min && p.rating <= max && p.ruoli.some(r => slot.accepts.includes(r)) && !state.usedNames.has(p.nome) && !excludeNames.includes(p.nome + p.stagione));
+  const min = band ? band.min : minLimit; 
+  const max = band ? band.max : maxLimit;
+
+  // Filtra il DB prendendo SOLO i giocatori che rientrano strettamente nel range min - max
+  return DB.filter(p => 
+    p.rating >= min && 
+    p.rating <= max && 
+    p.ruoli.some(r => slot.accepts.includes(r)) && 
+    !state.usedNames.has(p.nome) && 
+    !excludeNames.includes(p.nome + p.stagione)
+  );
 }
 
 function onSlotClick(slot) {
@@ -602,8 +716,16 @@ function showRogueSummary() {
 
 function doReroll() { if (!state.activeSlot || state.rerolls <= 0) return; state.rerolls--; updateHud(); drawOptions(state.activeSlot, true); }
 
-function teamRating() { const ratingOf = (state.rogue || state.career) ? id => effRating(id) : id => state.team[id].rating; const R = slots().reduce((s, sl) => s + ratingOf(sl.id), 0) / 11; return (state.diff && state.diff.goal === "retro") ? R * 0.97 : R; }
+function teamRating() { 
+  const ratingOf = (state.rogue || state.career) ? id => effRating(id) : id => state.team[id].rating; 
+  let R = slots().reduce((s, sl) => s + ratingOf(sl.id), 0) / 11; 
+  
+  // --- AGGIUNTA BONUS INTESA ---
+  const synergyData = getActiveSynergies();
+  R += synergyData.totalBonus;
 
+  return (state.diff && state.diff.goal === "retro") ? R * 0.97 : R; 
+}
 function startSeasonFirstHalf() {
   const R = teamRating(); const first = ENGINE.simulateSeason(R, 19); state.firstHalf = first; state.marketDone = false; state.secondHalfMatches = null;
   state.fixtureOpps = LEAGUE.romaOpponents(); state.firstHalfMatches = LEAGUE.buildRomaHalf({ wdl: first, team: state.team, mds: range(1, 19), opps: state.fixtureOpps });
@@ -677,9 +799,25 @@ function drawPlayersWithRarity(pool, count, excludeNamesAndSeasons = []) {
 }
 
 function buildOptionPool(slot, exclude = []) {
+  // Prende rigorosamente solo i giocatori filtrati dal range min/max
   const base = eligiblePool(slot, exclude);
-  const broad = DB.filter(p => p.ruoli.some(r => slot.accepts.includes(r)) && !exclude.includes(p.nome + p.stagione));
-  return drawPlayersWithRarity(base.concat(broad), state.optionsCount, exclude);
+  
+  // Applichiamo il filtro del range anche sul bacino di riserva, evitando di pescare fuori dai limiti
+  const minLimit = state.diff && state.diff.min != null ? state.diff.min : 1;
+  const maxLimit = state.diff && state.diff.max != null ? state.diff.max : 99;
+
+  const broad = DB.filter(p => 
+    p.rating >= minLimit && 
+    p.rating <= maxLimit && 
+    p.ruoli.some(r => slot.accepts.includes(r)) && 
+    !exclude.includes(p.nome + p.stagione) &&
+    !state.usedNames.has(p.nome)
+  );
+
+  // Unisce i pool rispettando sempre i paletti e pesca le carte
+  const combinedPool = base.concat(broad.filter(p => !base.some(b => b.nome === p.nome && b.stagione === p.stagione)));
+  
+  return drawPlayersWithRarity(combinedPool, state.optionsCount, exclude);
 }
 
 function drawRipickOptions(slot) { 
