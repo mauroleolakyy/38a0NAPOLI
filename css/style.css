@@ -2016,3 +2016,54 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
     display: inline-block;
   }
 }
+/* ============================================================
+   CENTRATURA CONTENITORI, PULSANTI E PANNELLI SOTTO IL CAMPO
+   ============================================================ */
+@media (max-width: 860px) {
+  
+  /* 1. Centra l'intero blocco sotto il campo (carte + bottoni) */
+  .options-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important; /* Forza i figli al centro orizzontale */
+    width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  /* 2. Centra il blocco che contiene i bottoni "REROLL" e "VIA ALLA STAGIONE" */
+  .draft-actions {
+    display: flex !important;
+    justify-content: center !important; /* Centra i bottoni */
+    align-items: center !important;
+    width: 100% !important;
+    gap: 12px !important;
+    margin: 20px auto !important;
+  }
+
+  /* 3. Assicura che le carte non siano spostate a sinistra */
+  .options-cards {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 400px !important; /* Limita la larghezza massima */
+    margin: 0 auto !important;
+  }
+
+  /* 4. Centra anche i blocchi della Carriera e della Cronaca */
+  .draft-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  /* 5. Applica dimensioni uniformi e le centra */
+  .team-info-panel, 
+  .event-log-panel {
+    width: 100% !important;
+    max-width: 400px !important;
+    margin: 0 auto 16px auto !important;
+  }
+}
