@@ -2067,3 +2067,32 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
     margin: 0 auto 16px auto !important;
   }
 }
+/* ============================================================
+   BADGE MVP E GOLEADOR (Schermata Riepilogo)
+   ============================================================ */
+.player-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-family: var(--font-cond);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.player-badge.mvp {
+  background: linear-gradient(135deg, rgba(255, 210, 74, 0.15), rgba(255, 158, 44, 0.15));
+  border: 1px solid rgba(255, 210, 74, 0.5);
+  color: #ffd24a;
+}
+
+.player-badge.top-scorer {
+  background: linear-gradient(135deg, rgba(0, 161, 255, 0.15), rgba(0, 91, 187, 0.15));
+  border: 1px solid rgba(0, 161, 255, 0.5);
+  color: var(--giallo-chiaro);
+}
