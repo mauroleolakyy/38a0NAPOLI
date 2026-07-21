@@ -743,7 +743,7 @@ function runSeason() {
   const quadrants = [];
   quadrants.push(`<div class="scoreboard ${place.cls}"><div class="sb-rating"><span class="sb-label">Forza squadra</span><span class="sb-big">${R.toFixed(1)}</span></div><div class="sb-points"><span class="sb-label">Punti in campionato</span><span class="sb-big" id="pts-counter">0</span><span class="sb-record">${vpsLabel(season.w, season.d, season.l)}</span></div><div class="sb-place"><span class="sb-label">Piazzamento</span><span class="sb-pos">${place.pos}</span></div></div>`);
   quadrants.push(`<div class="verdict ${place.cls}"><h3>${place.title}</h3><p>${place.flavor}</p><div class="awards verdict-awards"><div class="award-card"><span class="award-label">Capocannoniere</span><span class="award-name">${topScorer.nome}</span><span class="award-detail">${topScorer.goals} gol</span></div><div class="award-card"><span class="award-label">MVP</span><span class="award-name">${prizes.mvp.nome}</span></div></div></div>`);
-  quadrants.push(`<details class="lineup-recap recap-toggle"><summary class="lineup-recap-summary">L'undici schierato</summary>${coachLine}<ul>${slots().map(s => { 
+  quadrants.push(`<details class="lineup-recap recap-toggle" open><summary class="lineup-recap-summary">L'undici schierato</summary>${coachLine}<ul>${slots().map(s => { 
     const p = state.team[s.id]; 
     const eff = effRating(s.id); 
     
