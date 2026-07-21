@@ -2096,3 +2096,26 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   border: 1px solid rgba(0, 161, 255, 0.5);
   color: var(--giallo-chiaro);
 }
+/* ============================================================
+   BADGE INTESE STORICHE (CHEMISTRY)
+   ============================================================ */
+.synergy-badge {
+  background: linear-gradient(135deg, rgba(255, 100, 100, 0.2), rgba(255, 50, 50, 0.2));
+  border: 1px solid rgba(255, 100, 100, 0.6);
+  color: #ffcccc;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-family: var(--font-cond);
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  display: inline-block;
+  box-shadow: 0 0 10px rgba(255, 50, 50, 0.3);
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 5px rgba(255, 50, 50, 0.2); }
+  50% { box-shadow: 0 0 15px rgba(255, 50, 50, 0.6); }
+  100% { box-shadow: 0 0 5px rgba(255, 50, 50, 0.2); }
+}
