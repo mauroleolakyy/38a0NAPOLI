@@ -501,17 +501,17 @@ function init() {
 if (name === "bacheca") renderBacheca(); // Aggiorna la bacheca quando la apri
 if (name === "leaderboard") renderLeaderboard(); // Aggiorna la classifica globale quando la apri
 if (name === "hof") {
-        const hofContent = document.getElementById("hof-content");
-        const dbCounter = document.getElementById("db-counter");
+    const hofContent = document.getElementById("hof-content");
+    const dbCounter = document.getElementById("db-counter");
+    
+    if (hofContent) {
+        const coll = getCollection();
+        const allCards = DB.slice().sort((a, b) => b.rating - a.rating);
         
-        if (hofContent) {
-            const coll = getCollection();
-            const allCards = DB.slice().sort((a, b) => b.rating - a.rating);
-            
-            // Inizializza la pagina del database se non esiste
-            if (state.dbPage == null) state.dbPage = 0;
-            const pageSize = 20; // 20 carte per pagina (5 righe da 4)
-            const totalPages = Math.ceil(allCards.length / pageSize);
+        // Inizializza la pagina del database se non esiste
+        if (state.dbPage == null) state.dbPage = 0;
+        const pageSize = 9; // 9 carte per pagina (Griglia 3x3 perfetta!)
+        const totalPages = Math.ceil(allCards.length / pageSize);
             
             if (state.dbPage >= totalPages) state.dbPage = 0;
             
