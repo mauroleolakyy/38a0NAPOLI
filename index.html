@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="it">
 <head>
+  <meta name="google-site-verification" content="oZDWzffks5zMmzjF4UBLSPiPw31Zu0HsIb7L6K3AIfQ" />
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7K4G12MQ4Z"></script>
 <script>
@@ -44,6 +45,21 @@
       <div class="sm-top"><span>Per il centenario <strong>del napoli</strong></span><span class="sm-top__ver">1926 → 2026</span></div>
       
       <div class="startmenu__left">
+        <!-- WIDGET LOGIN MINIMALE -->
+        <div id="auth-widget" class="auth-widget">
+          <!-- Visibile quando l'utente NON è loggato (Ospite) -->
+          <div id="auth-logged-out" class="auth-box">
+            <input type="text" id="auth-username" placeholder="Nome utente" class="auth-input">
+            <input type="password" id="auth-password" placeholder="Password" class="auth-input">
+            <button type="button" id="btn-login-register" class="btn ghost auth-btn" title="Se non hai un account, verrà creato in automatico!">Accedi / Registrati</button>
+          </div>
+          <!-- Visibile quando l'utente È loggato -->
+          <div id="auth-logged-in" class="auth-box" style="display: none;">
+            <span class="auth-greeting">Uè, <strong id="logged-username" style="color: #fff;"></strong>!</span>
+            <button type="button" id="btn-logout" class="btn ghost auth-btn">Esci</button>
+          </div>
+        </div>
+        <!-- FINE WIDGET LOGIN -->
         <div class="sm-kicker">Il manageriale azzurro</div>
         <h1 class="sm-lock"><span class="sm-napoli">NAPOLI</span><span class="sm-num">38<b>-</b>0<b>-</b>0</span></h1>
         <p class="sm-tag">Vir tu a modalità. <br><strong>Fa na bella squadr. <br></strong>E vir e vencr coccos. <br><strong>Cento anni di rose per il centenario della nostra squadra.</strong></p>
@@ -51,6 +67,7 @@
       </div>
 
       <div class="startmenu__right">
+        
     <nav class="smenu" data-panel="root" style="display: flex;">
   <!-- 1° Posto -->
   <button type="button" class="srow srow--play" data-menu="play">
@@ -61,10 +78,28 @@
     </span>
     <span class="sm-enter">▶ clicca qui per giocare</span>
   </button>
-  
+  <!-- NUOVO: Squadra dei Sogni -->
+  <button type="button" class="srow" data-menu="dreamteam">
+    <span class="srow__idx">02</span>
+    <span class="srow__body">
+      <span class="srow__lab" style="color: #ffd24a; text-shadow: 0 0 10px rgba(255,210,74,0.3);">Squadra dei Sogni</span>
+      <span class="srow__desc">Gioca un campionato usando solo le carte della tua Collezione</span>
+    </span>
+    <span class="srow__arr" aria-hidden="true">▶</span>
+  </button>
+
+  <!-- NUOVO: Negozio Pacchetti -->
+  <button type="button" class="srow" data-menu="shop">
+    <span class="srow__idx">03</span>
+    <span class="srow__body">
+      <span class="srow__lab">Negozio & Carte</span>
+      <span class="srow__desc">Apri i pacchetti e gestisci la tua collezione</span>
+    </span>
+    <span class="srow__arr" aria-hidden="true">▶</span>
+  </button>
   <!-- 2° Posto -->
   <button type="button" class="srow" data-menu="rules">
-    <span class="srow__idx">02</span>
+    <span class="srow__idx">04</span>
     <span class="srow__body">
       <span class="srow__lab">Comm s' joc</span>
       <span class="srow__desc">Regole e spiegazione</span>
@@ -72,19 +107,19 @@
     <span class="srow__arr" aria-hidden="true">▶</span>
   </button>
 
-  <!-- 3° Posto: La Tua Leggenda -->
+  <!-- Nel menu laterale (smenu) -->
   <button type="button" class="srow" data-menu="hof">
-    <span class="srow__idx">03</span>
+    <span class="srow__idx">05</span>
     <span class="srow__body">
-      <span class="srow__lab">La Tua Leggenda</span>
-      <span class="srow__desc">La Hall of Fame delle tue run perfette</span>
+      <span class="srow__lab">Database Carte</span>
+      <span class="srow__desc">Tutte le carte del gioco, ordinate per Overall e stato di possesso</span>
     </span>
     <span class="srow__arr" aria-hidden="true">▶</span>
   </button>
 
   <!-- 4° Posto: Bacheca Trofei -->
   <button type="button" class="srow" data-menu="bacheca">
-    <span class="srow__idx">04</span>
+    <span class="srow__idx">06</span>
     <span class="srow__body">
       <span class="srow__lab">Bacheca Trofei</span>
       <span class="srow__desc">I tuoi traguardi storici sbloccati</span>
@@ -92,16 +127,74 @@
     <span class="srow__arr" aria-hidden="true">▶</span>
   </button>
 
-  <!-- 5° Posto: Contatti -->
+  <!-- 5° Posto: Classifica Globale -->
   <button type="button" class="srow" data-menu="leaderboard">
-    <span class="srow__idx">05</span>
+    <span class="srow__idx">07</span>
     <span class="srow__body">
-      <span class="srow__lab">Contatti</span>
-      <span class="srow__desc">Se hai suggerimenti o idee non esitare a contattarci!</span>
+      <span class="srow__lab">Classifica Globale</span>
+      <span class="srow__desc">Punti totali di campionato ed Europa per ogni modalità</span>
     </span>
     <span class="srow__arr" aria-hidden="true">▶</span>
   </button>
 </nav>
+<!-- PANNELLO NEGOZIO -->
+<div class="subpanel" data-panel="shop" hidden style="display: none;">
+  <button type="button" class="sm-back" data-back>← Menu principale</button>
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 20px 0;">
+    <p class="subpanel__title" style="margin:0;">Negozio Pacchetti</p>
+    <div class="wallet-display">💰 <span id="wallet-credits">0</span> Crediti</div>
+  </div>
+  
+  <div class="shop-grid">
+    <!-- Pacchetto Scugnizzo -->
+    <button class="pack-card" data-pack="scugnizzo">
+      <h3 style="color: var(--rar-comune);">SCUGNIZZO</h3>
+      <p>3 Carte Giocatore<br>Alta probabilità di carte base.</p>
+      <div class="pack-price">100 Crediti</div>
+    </button>
+    
+    <!-- Pacchetto Azzurro -->
+    <button class="pack-card azzurro-pack" data-pack="azzurro">
+      <h3 style="color: var(--celeste);">AZZURRO</h3>
+      <p>3 Carte Giocatore<br>Almeno un giocatore OVR 80+ garantito.</p>
+      <div class="pack-price primary">300 Crediti</div>
+    </button>
+
+    <!-- Pacchetto D10S -->
+    <button class="pack-card d10s-pack" data-pack="d10s">
+      <h3 style="color: var(--rar-elite);">D10S</h3>
+      <p>3 Carte Giocatore<br>Altissima probabilità OVR 90+ e Leggende.</p>
+      <div class="pack-price elite">800 Crediti</div>
+    </button>
+  </div>
+
+  <button type="button" class="btn ghost" style="width: 100%; margin-top: 20px;" onclick="toast('La tua collezione arriverà nella Fase 2!')">Guarda la tua Collezione 📚</button>
+</div>
+
+<!-- PANNELLO SQUADRA DEI SOGNI -->
+<div class="subpanel" data-panel="dreamteam" hidden style="display: none;">
+  <button type="button" class="sm-back" data-back>← Menu principale</button>
+  <p class="subpanel__title">Squadra dei Sogni</p>
+  <div class="sm-rules" style="text-align: center; padding: 20px;">
+    <h3 style="color: #ffd24a; margin-bottom: 10px;">Costruisci la tua leggenda</h3>
+    <p>In questa modalità giocherai usando <strong>esclusivamente</strong> i giocatori che hai trovato nei pacchetti.</p>
+    <button id="btn-start-dreamteam" class="btn primary" style="width: 100%; margin-top: 20px;">Scegli il modulo e Gioca!</button>
+  </div>
+</div>
+<!-- PANNELLO COLLEZIONE (Sotto il pannello dreamteam) -->
+<div class="subpanel" data-panel="collection" hidden style="display: none;">
+  <button type="button" class="sm-back" data-back>← Menu principale</button>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 20px 0;">
+    <p class="subpanel__title" style="margin:0;">La Tua Collezione</p>
+    <div class="wallet-display">💰 <span id="collection-wallet">0</span></div>
+  </div>
+  <p class="options-hint" style="text-align: center; margin-bottom: 15px;">Carte possedute: <strong id="collection-count" style="color:var(--celeste);">0</strong></p>
+  <div id="collection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;">
+    <!-- Le carte verranno iniettate qui dal JS -->
+  </div>
+</div>
+
         <!-- AGGIUNGI QUESTO PANNELLO SUBITO SOTTO LA NAV -->
         <div class="subpanel" data-panel="bacheca" hidden style="display: none;">
           <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Bacheca Trofei (Salvataggio in locale)</p>
@@ -124,44 +217,47 @@
   <span class="mode-row__arr" aria-hidden="true">▶</span>
 </button>
             <button class="mode-row" data-mode="sesto"><span class="mode-row__idx">06</span><span class="mode-row__body"><span class="mode-row__lab">Zona Mazzarri</span><span class="mode-row__desc">Obiettivo: finire <strong>secondi</strong>, colpa della pioggia o del compleanno di Cavani.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
-            <button class="mode-row" data-mode="custom"><span class="mode-row__idx">07</span><span class="mode-row__body"><span class="mode-row__lab">Vir tu</span><span class="mode-row__desc">Faj a capa toj.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
-          </div>
+            </div>
         </div>
 
         <div class="subpanel" data-panel="rules" hidden style="display: none;">
-          <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Come si gioca</p>
-          <div class="sm-rules"><p>Peschi le carte <strong>per ruolo</strong>, scegli e schieri l'undici. Poi il motore simula <strong>38 giornate</strong> e il campo emette il verdetto: scudetto, Europa o mazzate.</p><ul><li><strong>Classica</strong>: tutto il database azzurro, 3 reroll.</li><li><strong>Sfide</strong>: obiettivi ribaltati, chiudi ultimo o finisci secondi.</li><li><strong>Sosta invernale</strong>: dopo 19 giornate apri il mercato di riparazione.</li></ul></div>
+          <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Comm s' joc</p>
+          <div class="sm-rules">
+            <p>Mettiti comodo, qui si fa sul serio. Peschi le carte <strong>per ruolo</strong>, schieri l'undici ideale, scegli il capitano e imposti la mentalità tattica. Poi il motore simula <strong>38 giornate</strong> tra gol, rigori interattivi, imprevisti del Presidente e sfide epiche!</p>
+            <ul>
+              <li><strong>Le Modalità</strong>: Scegli tra la Classica, la spietata Modalità Cazzimma (con eventi e ruota di De Laurentiis), la Carriera di 10 stagioni, il Salary Cap o la folle 'Amm fa schif' (dove l'obiettivo è chiudere ultimi).</li>
+              <li><strong>Squadra dei Sogni & Negozio</strong>: Apri i pacchetti nel Negozio usando i crediti guadagnati a fine stagione e scendi in campo usando esclusivamente le carte della tua Collezione personale.</li>
+              <li><strong>Capitano e Intese</strong>: A squadra completa, tocca un titolare per assegnargli la fascia (+3 OVR). Cerca le intese storiche in campo (come i <em>Tre Tenori</em> o <em>Ma-Gi-Ca</em>) per attivare bonus devastanti!</li>
+              <li><strong>Tattica e Sosta Invernale</strong>: Imposta la mentalità (Difensiva, Equilibrata o Zemanlandia). Alla 19ª giornata (giro di boa), potrai analizzare la classifica e sfruttare il mercato di riparazione per cambiare le carte in tavola.</li>
+              <li><strong>Rigori Interattivi</strong>: Durante le partite potresti trovarti faccia a faccia con il dischetto: scegli dove tirare o dove buttarti per parare il rigore decisivo!</li>
+            </ul>
+          </div>
         </div>
 
         <div class="subpanel" data-panel="leaderboard" hidden style="display: none;">
-          <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Contatti</p>
-          <div id="lb-home" class="lb-list"><p class="lb-empty">Se hai suggerimenti o idee non esitare a contattarci!</p></div>
+          <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Classifica Globale</p>
+          <p class="options-hint" style="text-align:center; margin-bottom: 15px;">Somma dei punti fatti in campionato e nelle competizioni europee, modalità per modalità. Solo i giocatori che hanno effettuato il login vengono mostrati, con il proprio nickname.</p>
+          <div id="lb-home"><p class="lb-empty">Caricamento classifica…</p></div>
         </div>
 
         <div class="subpanel" data-panel="hof" hidden style="display: none;">
-  <button type="button" class="sm-back" data-back>← Menu principale</button>
-  <p class="subpanel__title">La Tua Leggenda</p>
-  <div id="hof-content" style="color: var(--testo-dim); font-size: 0.9rem; line-height: 1.5;">
-    Nessuna run perfetta (38-0) registrata finora. Vinci tutto per entrare nella leggenda!
+    <button type="button" class="sm-back" data-back>← Menu principale</button>
+    <p class="subpanel__title">Database Carte</p>
+    
+    <div style="text-align: center; margin-bottom: 18px; font-family: var(--font-cond); font-size: 1rem; color: var(--celeste-chiaro); text-transform: uppercase; letter-spacing: 0.08em;">
+      Carte possedute: <strong id="db-counter" style="color: #00ff88; font-size: 1.1rem;">0 / 0</strong>
+    </div>
+
+    <div id="hof-content">
+      <!-- La griglia delle carte verrà generata qui dinamicamente -->
+    </div>
   </div>
-</div>
 
         <label class="hidden-toggle sm-hidden"><input type="checkbox" id="flag-hidden"><span class="ht-box"></span><span class="ht-text"><strong>Rating nascosto</strong>: per chi tiene la cazzimma.</span></label>
       </div>
     </section>
 
-    <section id="screen-custom" class="screen">
-      <div class="lower-third"><h2 class="section-title">Personalizzata</h2></div>
-      <div class="custom-form">
-        <div class="cfg-row"><label class="cfg-label" for="cfg-reroll">Reroll</label><div class="cfg-control"><input type="range" id="cfg-reroll" min="0" max="15" value="3"><output id="cfg-reroll-out">3</output></div></div>
-        <div class="cfg-row"><label class="cfg-label" for="cfg-options">Carte per ruolo</label><div class="cfg-control"><input type="range" id="cfg-options" min="3" max="5" value="3"><output id="cfg-options-out">3</output></div></div>
-        <div class="cfg-row"><label class="cfg-label" for="cfg-min">Min</label><div class="cfg-control"><input type="range" id="cfg-min" min="0" max="84" value="70"><output id="cfg-min-out">70</output></div></div>
-        <div class="cfg-row"><label class="cfg-label" for="cfg-max">Max</label><div class="cfg-control"><input type="range" id="cfg-max" min="0" max="99" value="99"><output id="cfg-max-out">99</output></div></div>
-        <p id="cfg-warning" class="cfg-warning"></p>
-        <button id="btn-custom-go" class="btn primary">AL MODULO</button>
-      </div>
-    </section>
-
+    
     <section id="screen-coach" class="screen"><div class="lower-third"><h2 class="section-title">Il tuo allenatore</h2></div><p class="section-sub" id="coach-screen-sub">Il mister e il modulo sono randomici.</p><div id="coach-body"></div></section>
     <section id="screen-bonus" class="screen"><div class="lower-third"><h2 class="section-title">Scegli il tuo bonus</h2></div><p class="section-sub">Tre carte, ne tieni una.</p><div id="bonus-cards" class="bonus-grid"></div></section>
     <section id="screen-modulo" class="screen"><div class="lower-third"><h2 class="section-title">Scegli il modulo</h2></div><p class="section-sub">Spoiler: prenderai 'o 4-3-3.</p><div id="formation-cards" class="formation-grid"></div></section>
@@ -218,6 +314,7 @@
   </div>
   
   <div id="toast" class="toast"></div>
+  
 <!-- ============================================================
      MODALE RUOTA DI DE LAURENTIIS (EVENTI ATTIVI)
      ============================================================ -->
@@ -242,6 +339,37 @@
     </div>
   </div>
 </div>
+<!-- ============================================================
+     1. LIBRERIE FIREBASE (Cloud & Login - Versione Compat)
+     ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- ============================================================
+     2. COLLEGAMENTO AL TUO PROGETTO NAPOLI-44F7F
+     ============================================================ -->
+<script>
+  // Le tue chiavi esatte prese da Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyABJITsnHPtecIP0s1RaHkgl4175F7S_JA",
+    authDomain: "napoli-44f7f.firebaseapp.com",
+    projectId: "napoli-44f7f",
+    storageBucket: "napoli-44f7f.firebasestorage.app",
+    messagingSenderId: "113070732317",
+    appId: "1:113070732317:web:21e5c592ea131a16e882f4",
+    measurementId: "G-L8TBCGTS2R"
+  };
+
+  // Inizializza Firebase nel tuo gioco
+  firebase.initializeApp(firebaseConfig);
+  
+  // Rendi le funzioni di Login e Database pronte all'uso per app.js
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
+
+<!-- Il tuo codice di gioco esistente -->
   <script src="js/app.js?v=v2"></script>
   <script>
   // Blocca il tasto destro del mouse
@@ -278,6 +406,56 @@
       <button class="btn ghost pen-dir" data-dir="bot-center">⬇ Basso Centro</button>
       <button class="btn ghost pen-dir" data-dir="bot-right">↘ Basso Destra</button>
       
+    </div>
+  </div>
+</div>
+<!-- OVERLAY SPACCHETTAMENTO WALKOUT -->
+<div id="pack-overlay" class="pick-modal" style="flex-direction: column; z-index: 500; background: rgba(0, 5, 15, 0.95);">
+  <h2 id="pack-title" style="color: var(--celeste-chiaro); font-family: var(--font-display); font-size: 2.5rem; margin-bottom: 30px; text-transform: uppercase; text-shadow: 0 0 20px var(--celeste);">APRI IL PACCHETTO</h2>
+  <p id="pack-hint" style="color: var(--testo-dim); margin-bottom: 40px; font-family: var(--font-cond); letter-spacing: 0.1em; text-transform: uppercase;">Tocca le carte per scoprirle</p>
+  
+  <div id="pack-cards" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; perspective: 1000px; width: 100%; max-width: 900px;">
+    <!-- Le 3 carte da girare appariranno qui -->
+  </div>
+
+  <div id="pack-summary" style="margin-top: 30px; text-align: center; display: none;">
+    <p id="pack-dupes-text" style="color: #00ff88; font-family: var(--font-cond); font-weight: bold; font-size: 1.1rem; margin-bottom: 15px;"></p>
+    <button id="btn-close-pack" class="btn primary">Metti in Collezione</button>
+  </div>
+</div>
+<!-- ============================================================
+     MODALE CONFERMA REGISTRAZIONE CUSTOM
+     ============================================================ -->
+<div id="confirm-register-modal" class="pick-modal">
+  <div class="pm-card" style="max-width: 420px; width: 95%; background: linear-gradient(145deg, #001229, #002244); border: 2px solid #00a1ff;">
+    <div class="pm-header">
+      <span class="pm-icon">👤</span>
+      <span class="pm-tag" style="color: var(--celeste-chiaro);">ACCOUNT NON TROVATO</span>
+    </div>
+    <h3 style="color: white; margin: 10px 0; font-size: 1.6rem;">Nuovo Utente?</h3>
+    <p id="confirm-register-text" style="color: #b3e0ff; margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5;"></p>
+    
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button id="btn-register-cancel" class="btn ghost" style="flex: 1; border-color: #ff5c5c; color: #ff5c5c;">Annulla</button>
+      <button id="btn-register-confirm" class="btn primary" style="flex: 1;">Crea Account</button>
+    </div>
+  </div>
+</div>
+<!-- ============================================================
+     MODALE PASSWORD ERRATA CUSTOM
+     ============================================================ -->
+<div id="wrong-password-modal" class="pick-modal">
+  <div class="pm-card" style="max-width: 420px; width: 95%; background: linear-gradient(145deg, #290000, #440000); border: 2px solid #ff5c5c;">
+    <div class="pm-header">
+      <span class="pm-icon">❌</span>
+      <span class="pm-tag" style="color: #ff5c5c;">ERRORE DI ACCESSO</span>
+    </div>
+    <h3 style="color: white; margin: 10px 0; font-size: 1.6rem;">Password Errata</h3>
+    <p style="color: #ffb3b3; margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5;">
+      La password inserita per l'account "<strong><span id="wrong-username-text"></span></strong>" non è corretta. Riprova.
+    </p>
+    <div style="display: flex; justify-content: center;">
+      <button id="btn-wrong-pw-ok" class="btn primary" style="flex: 1; background: #ff5c5c; border-color: #ff5c5c;">Ho capito</button>
     </div>
   </div>
 </div>
