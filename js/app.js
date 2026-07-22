@@ -20,8 +20,20 @@ function playSound(nome) {
 const DIFFICULTIES = {
   impossibile: { label: "Classica", min: 1,  max: 99, reroll: 3, options: 3, desc: "Tutto il database, 3 reroll. Punta allo scudetto perfetto." },
   serieb:      { label: "Amm fa schif'", min: 1, max: 99, reroll: 3, options: 3, goal: "retro", desc: "Costruisci lo schifo e chiudi 20°." },
-  sesto:       { label: "Zona Mazzarri", min: 1, max: 99, reroll: 3, options: 3, goal: "sesto", desc: "Arriva secondi, colpa della pioggia." }
+  sesto:       { label: "Zona Mazzarri", min: 1, max: 99, reroll: 3, options: 3, goal: "sesto", desc: "Arriva secondi, colpa della pioggia." },
+  salary:      { label: "Salary Cap", min: 1, max: 99, reroll: Infinity, options: 3, desc: "Hai 200 Milioni per l'undici titolare." }
 };
+/* ============================================================
+   SISTEMA COSTI - SALARY CAP
+   ============================================================ */
+function getPlayerCost(rating) {
+  if (rating >= 95) return 80;  // I "Maradona" costano quasi metà budget
+  if (rating >= 90) return 50;  // Campioni
+  if (rating >= 85) return 25;  // Ottimi titolari
+  if (rating >= 80) return 10;  // Giocatori medi
+  if (rating >= 75) return 5;   // Rincalzi
+  return 1;                     // Scarti (Serie B/C)
+}
 /* ============================================================
    SISTEMA INTESE STORICHE (CHEMISTRY)
    ============================================================ */
@@ -105,7 +117,188 @@ function updateMatchday(id) {
   const md = $("#scorebug-matchday"); if (!md) return; const giornata = SCREEN_MATCHDAY[id];
   if (state.diff && giornata) { md.textContent = `GIORNATA ${giornata}/38`; md.hidden = false; } else { md.hidden = true; }
 }
+/* ============================================================
+   LA RUOTA DI DE LAURENTIIS (EVENTI A SCELTA MULTIPLA)
+   ============================================================ */
+const PRESIDENT_EVENTS = [
+  {
+    title: "Polemica Arbitrale", icon: "📱",
+    desc: "Il Presidente ha fatto un tweet al veleno contro 'il palazzo' dopo un rigore netto negato.",
+    btnA: "Sostieni il Presidente", effA: "I tifosi si esaltano (+2 rating globale), ma l'allenatore viene squalificato (perdi i suoi bonus).",
+    actionA: () => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 2; state.coach = null; },
+    btnB: "Abbassa i toni in TV", effB: "Nessun malus in campo, ma la società si infuria e ti toglie 1 Reroll.",
+    actionB: () => { state.rerolls = Math.max(0, state.rerolls - 1); if(typeof updateHud === 'function') updateHud(); }
+  },
+  {
+    title: "Offerta Folle dall'Arabia", icon: "💰",
+    desc: "Un fondo saudita vuole comprare il tuo giocatore più in forma proprio ora a Gennaio.",
+    btnA: "Accetta i milioni", effA: "Guadagni 4 Reroll immediati, ma il top player si distrae sapendo di partire (-5 al suo rating).",
+    actionA: () => { 
+      state.rerolls += 4; if(typeof updateHud === 'function') updateHud();
+      let best = null, bv = -1; 
+      Object.keys(state.team).forEach(id => { let v = effRating(id); if(v > bv){ bv=v; best=id; } });
+      if(best) addMod(best, -5); 
+    },
+    btnB: "Rifiuta e blinda", effB: "Ambiente compatto (+1 rating globale) ma perdi 2 Reroll per i mancati incassi.",
+    actionB: () => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1; state.rerolls = Math.max(0, state.rerolls - 2); if(typeof updateHud === 'function') updateHud(); }
+  },
+  {
+    title: "Ritiro Punitivo", icon: "😠",
+    desc: "Dopo un pareggio scialbo, il Presidente ordina il ritiro punitivo a Castel Volturno.",
+    btnA: "Accetta in silenzio", effA: "La difesa si blinda (+3 a un difensore casuale), ma l'attacco si ammoscia (-2 a un attaccante).",
+    actionA: () => {
+        const defs = Object.keys(state.team).filter(id => state.team[id].ruoli.some(r => ["DC","TD","TS"].includes(r)));
+        const atts = Object.keys(state.team).filter(id => state.team[id].ruoli.some(r => ["ATT","AS","AD"].includes(r)));
+        if(defs.length) addMod(defs[Math.floor(Math.random()*defs.length)], 3);
+        if(atts.length) addMod(atts[Math.floor(Math.random()*atts.length)], -2);
+    },
+    btnB: "Difendi la squadra", effB: "I giocatori apprezzano (+1 rating globale), ma sfidi la società.",
+    actionB: () => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1; }
+  }
+];
 
+function triggerPresidentWheel(onComplete) {
+  const ev = PRESIDENT_EVENTS[Math.floor(Math.random() * PRESIDENT_EVENTS.length)];
+  const modal = document.getElementById("adl-modal");
+  
+  document.getElementById("adl-icon").textContent = ev.icon;
+  document.getElementById("adl-title").textContent = ev.title;
+  document.getElementById("adl-desc").textContent = ev.desc;
+  
+  document.getElementById("adl-btn-a").querySelector("strong").textContent = ev.btnA;
+  document.getElementById("adl-eff-a").textContent = ev.effA;
+  document.getElementById("adl-btn-b").querySelector("strong").textContent = ev.btnB;
+  document.getElementById("adl-eff-b").textContent = ev.effB;
+
+  modal.classList.add("show");
+
+  const closeAndContinue = () => {
+    modal.classList.remove("show");
+    playSound('click'); 
+    setTimeout(onComplete, 300); // Aspetta che il modale svanisca e poi prosegui
+  };
+
+  document.getElementById("adl-btn-a").onclick = () => { ev.actionA(); closeAndContinue(); };
+  document.getElementById("adl-btn-b").onclick = () => { ev.actionB(); closeAndContinue(); };
+}
+/* ============================================================
+   POTERI SPECIALI ALLENATORI (LE "ULTIMATE")
+   ============================================================ */
+const COACH_ULTIMATES = {
+  mazzarri: {
+    nome: "Togliti la giacca!",
+    desc: "La squadra si infiamma: +2 rating a tutti i giocatori in campo.",
+    action: () => { Object.keys(state.team).forEach(id => addMod(id, 2)); }
+  },
+  spalletti: {
+    nome: "Uomini forti, destini forti",
+    desc: "Mentalità d'acciaio: annulla istantaneamente tutti i malus (eventi negativi) dei giocatori.",
+    action: () => { Object.keys(state.ratingMods).forEach(id => { if (state.ratingMods[id] < 0) state.ratingMods[id] = 0; }); }
+  },
+  gattuso: {
+    nome: "Veleno!",
+    desc: "Difesa a testuggine (+4 a DC/TD/TS/MED), ma perdi un attaccante a caso (rosso diretto).",
+    action: () => {
+      const defs = Object.keys(state.team).filter(id => state.team[id].ruoli.some(r => ["DC", "TD", "TS", "MED"].includes(r)));
+      defs.forEach(id => addMod(id, 4));
+      
+      const atts = Object.keys(state.team).filter(id => state.team[id].ruoli.some(r => ["ATT", "AS", "AD"].includes(r)));
+      if (atts.length > 0) {
+        const rip = atts[Math.floor(Math.random() * atts.length)];
+        delete state.team[rip]; 
+        delete state.ratingMods[rip];
+        const node = document.getElementById("slot-" + rip);
+        if (node) { 
+          node.classList.remove("filled"); 
+          node.classList.add("empty"); 
+          node.innerHTML = `<span class="slot-role">${slots().find(s=>s.id===rip).label}</span>`; 
+        }
+      }
+    }
+  },
+  sarri: {
+    nome: "Sarrismo in verticale",
+    desc: "Tiki-taka pazzesco: +5 ai centrocampisti/trequartisti, ma la difesa prende un -2.",
+    action: () => {
+      Object.keys(state.team).forEach(id => {
+        if (state.team[id].ruoli.some(r => ["CC", "TRQ"].includes(r))) addMod(id, 5);
+        if (state.team[id].ruoli.some(r => ["DC", "TD", "TS"].includes(r))) addMod(id, -2);
+      });
+    }
+  },
+  conte: {
+    nome: "Amma faticà",
+    desc: "Gambe pesanti ma solidità estrema: +3 globale, ma perdi 2 Reroll per la fatica.",
+    action: () => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 3; state.rerolls = Math.max(0, state.rerolls - 2); updateHud(); }
+  },
+  benitez: {
+    nome: "Turnover Europeo",
+    desc: "Caffè e tattica: regala un +4 di rating a 4 giocatori scelti a caso in campo.",
+    action: () => { 
+        const pool = shuffle(Object.keys(state.team)).slice(0, 4);
+        pool.forEach(id => addMod(id, 4));
+    }
+
+  },
+  allegri: {
+    nome: "Halma, halma!",
+    desc: "Il pullman davanti alla porta: +5 a POR/DC, ma gli attaccanti si innervosiscono (-2).",
+    action: () => {
+      Object.keys(state.team).forEach(id => {
+        if (state.team[id].ruoli.some(r => ["POR", "DC"].includes(r))) addMod(id, 5);
+        if (state.team[id].ruoli.some(r => ["ATT", "AS", "AD"].includes(r))) addMod(id, -2);
+      });
+    }
+    },
+  reja: {
+    nome: "Tranquillità",
+    desc: "Il nonno di Napoli: placa l'ambiente azzerando tutti i malus globali societari.",
+    action: () => { if ((state.rogueGeneralMod || 0) < 0) state.rogueGeneralMod = 0; }
+  }
+};
+/* ============================================================
+   BACHECA TROFEI (ACHIEVEMENTS)
+   ============================================================ */
+const ACHIEVEMENTS = [
+  { id: "perfect", icon: "🏆", nome: "Scudetto Perfetto", desc: "Vinci tutte le 38 partite di campionato (38-0).", check: (pts, w, team) => w === 38 },
+  { id: "bidone", icon: "🗑️", nome: "Vincere col Bidone", desc: "Vinci lo scudetto avendo in campo Vargas, Pavoletti o Fideleff.", check: (pts, w, team) => pts >= 88 && Object.values(team).some(p => ["Eduardo Vargas", "Leonardo Pavoletti", "Ignacio Fideleff"].includes(p.nome)) },
+  { id: "nostalgia", icon: "📺", nome: "Nostalgia Canaglia", desc: "Vinci lo scudetto con soli giocatori nati prima del 1985.", check: (pts, w, team) => pts >= 88 && Object.values(team).every(p => p.annoNascita && p.annoNascita <= 1985) },
+  { id: "schifo_vero", icon: "📉", nome: "Schifo Vero", desc: "Chiudi all'ultimo posto nella modalità Amm fa schif'.", check: (pts, w, team) => state.diff && state.diff.goal === "retro" && pts < 32 }
+];
+
+function checkAndUnlockAchievements(seasonPts, seasonW, team) {
+  let unlocked = JSON.parse(localStorage.getItem("napoli380_ach") || "[]");
+  let newlyUnlocked = false;
+
+  ACHIEVEMENTS.forEach(ach => {
+    if (!unlocked.includes(ach.id) && ach.check(seasonPts, seasonW, team)) {
+      unlocked.push(ach.id);
+      newlyUnlocked = true;
+      setTimeout(() => toast(`${ach.icon} SBLOCCATO: ${ach.nome}!`), 1500);
+    }
+  });
+
+  if (newlyUnlocked) localStorage.setItem("napoli380_ach", JSON.stringify(unlocked));
+}
+
+function renderBacheca() {
+  const container = document.getElementById("achievements-list");
+  if (!container) return;
+  let unlocked = JSON.parse(localStorage.getItem("napoli380_ach") || "[]");
+  
+  container.innerHTML = ACHIEVEMENTS.map(ach => {
+    const isUnlocked = unlocked.includes(ach.id);
+    const colorClass = isUnlocked ? "ach-unlocked" : "ach-locked";
+    return `
+      <div class="mode-row ${colorClass}" style="cursor:default;">
+        <span class="mode-row__idx" style="font-size:1.5rem;">${isUnlocked ? ach.icon : "🔒"}</span>
+        <span class="mode-row__body">
+          <span class="mode-row__lab" style="${isUnlocked ? 'color: var(--giallo);' : 'color: var(--testo-mute);'}">${ach.nome}</span>
+          <span class="mode-row__desc">${ach.desc}</span>
+        </span>
+      </div>`;
+  }).join("");
+}
 
 const FLAVORS = {
   sesto: [
@@ -248,7 +441,23 @@ function init() {
       const home = document.getElementById("screen-home");
       const nav = home ? home.querySelector(".smenu") : null;
       const panels = home ? home.querySelectorAll(".subpanel") : [];
-
+if (name === "bacheca") renderBacheca(); // Aggiorna la bacheca quando la apri
+if (name === "hof") {
+        const saved = localStorage.getItem("napoli380_hof");
+        const hofContent = document.getElementById("hof-content");
+        if (saved && hofContent) {
+            const team = JSON.parse(saved);
+            let html = `<p style="margin-bottom: 15px; color: #ffd24a;">🏆 ECCO GLI INVINCIBILI DEL 38-0!</p><ul style="list-style: none; padding: 0; display: grid; gap: 8px;">`;
+            Object.values(team).forEach(p => {
+                html += `<li style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0, 161, 255, 0.2); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between;">
+                    <span><strong style="color:var(--giallo-chiaro); margin-right:8px;">${p.ruoli[0]}</strong> ${p.nome}</span>
+                    <strong style="color:var(--giallo);">${p.rating}</strong>
+                </li>`;
+            });
+            html += `</ul>`;
+            hofContent.innerHTML = html;
+        }
+      }
       if (nav) nav.style.display = name === "root" ? "flex" : "none";
       panels.forEach(panel => {
         const show = panel.dataset.panel === name;
@@ -283,6 +492,14 @@ function init() {
       playSound('click');
       e.preventDefault();
       const key = modeBtn.getAttribute("data-mode");
+      // --- INIEZIONE SALARY CAP ---
+      if (key === "salary") {
+        state.budget = 200; // Il tuo budget totale
+        state.diff = { key: "salary", label: "Salary Cap" };
+      } else {
+        state.budget = undefined; // Disattiva il limite nelle altre modalità
+      }
+      // -----------------------------
       const flag = document.getElementById("flag-hidden");
       state.hiddenRating = flag ? flag.checked : false;
       
@@ -302,6 +519,8 @@ function init() {
       playSound('fischio'); 
       if (state.rogue) startRogueResolution(); else startSeasonWithBreak(); };
   if (document.getElementById("btn-again")) document.getElementById("btn-again").onclick = () => location.reload();
+  if (document.getElementById("btn-share-txt")) document.getElementById("btn-share-txt").onclick = () => { playSound('click'); copyShareText(); };
+  if (document.getElementById("btn-share-img")) document.getElementById("btn-share-img").onclick = () => { playSound('click'); shareResultImage(); };
   if (document.getElementById("btn-career-next")) document.getElementById("btn-career-next").onclick = startCareerSwap;
   if (document.getElementById("btn-career-final")) document.getElementById("btn-career-final").onclick = showCareerFinal;
   if (document.getElementById("btn-career-home")) document.getElementById("btn-career-home").onclick = goHome;
@@ -381,8 +600,13 @@ if (document.readyState === "loading") {
   init();
 }
 
-function resetRogueState() { state.rogue = false; state.rogueBonus = null; state.rogueEvents = []; state.ratingMods = {}; state.rogueGeneralMod = 0; state.resultMods = 0; state.flags = {}; state.coach = null; state.career = null; state.slotBand = null; }
-
+function resetRogueState() { 
+   state.rogue = false; state.rogueBonus = null; state.rogueEvents = []; 
+   state.ratingMods = {}; state.rogueGeneralMod = 0; state.resultMods = 0; 
+   state.flags = {}; state.coach = null; state.career = null; 
+   state.slotBand = null; state.ultimateUsed = false; 
+   state.scheduledEvents = null; state.bonusApplied = false; 
+}
 function _dRand() { return state._rngDraft ? state._rngDraft.next() : Math.random(); }
 function _dPick(arr) { return state._rngDraft ? state._rngDraft.pick(arr) : rnd(arr); }
 
@@ -480,7 +704,11 @@ function updateHud() {
   const goalBadge = goalBadgeLabel && goalBadgeLabel !== state.diff.label
     ? `<span class="hud-pill diff-${state.diff.goal === "retro" ? "serieb" : "sesto"}">${goalBadgeLabel}</span>`
     : "";
-  hud.innerHTML = `<span class="hud-pill diff-${state.diff.key}">${state.diff.label}</span>${goalBadge}<span class="hud-pill">Reroll <strong>${state.rerolls}</strong></span>`;
+    
+  // Controlla se i reroll sono infiniti e mostra il simbolo ∞
+  const rerollText = state.rerolls === Infinity ? "∞" : state.rerolls;
+  
+  hud.innerHTML = `<span class="hud-pill diff-${state.diff.key}">${state.diff.label}</span>${goalBadge}<span class="hud-pill">Reroll <strong>${rerollText}</strong></span>`;
   renderTeamInfo(); renderEventLog();
 }
 
@@ -515,9 +743,29 @@ function renderTeamInfo() {
 }
 
 function renderEventLog() {
-  const box = $("#event-log"); if (!box) return; const evs = state.rogueEvents || []; if (!state.rogue) { box.innerHTML = `<p class="el-empty">Solo in modalità impossibile.</p>`; return; }
-  if (evs.length === 0) { box.innerHTML = `<p class="el-empty">Ancora nessun episodio.</p>`; return; }
-  box.innerHTML = evs.slice().reverse().map(e => `<div class="el-item el-neu"><span class="el-dot"></span><div class="el-body"><span class="el-name">${e.nome}</span><span class="el-text">${e.text}</span></div></div>`).join("");
+  const box = $("#event-log"); if (!box) return; 
+  const evs = state.rogueEvents || []; 
+  
+  if (!state.rogue) { box.innerHTML = `<p class="el-empty" style="text-align:center; color:var(--testo-mute);">Solo in modalità impossibile.</p>`; return; }
+  if (evs.length === 0) { box.innerHTML = `<p class="el-empty" style="text-align:center; color:var(--testo-mute);">Ancora nessun episodio.</p>`; return; }
+  
+  box.innerHTML = evs.slice().reverse().map(e => {
+    // Evidenzia i rating positivi in verde e negativi in rosso
+    let formattedText = e.text;
+    if (formattedText.includes('+')) {
+        formattedText = formattedText.replace(/(\+\d+)/g, '<strong style="color: var(--rar-noncomune);">$1</strong>');
+    } else if (formattedText.includes('-')) {
+        formattedText = formattedText.replace(/(-\d+)/g, '<strong style="color: #ff5c5c;">$1</strong>');
+    }
+
+    return `
+      <div class="el-item">
+        <div class="el-body">
+          <span class="el-name">${e.nome}</span>
+          <span class="el-text">${formattedText}</span>
+        </div>
+      </div>`;
+  }).join("");
 }
 
 function renderFormationCards() {
@@ -571,7 +819,12 @@ function applyCoachPickBonus(slot, p) {
   else if (sb.id === "palleggio_nello_stretto" && slot.accepts.some(r => ["CC","MED","TRQ"].includes(r))) delta = 5;
   else if (sb.id === "veleno" && slot.accepts.some(r => ["DC","MED"].includes(r))) delta = 3;
   else if (sb.id === "amma_fatica" && slot.accepts.some(r => ["ED","ES","TRQ"].includes(r))) delta = 3;
-  if (delta > 0) { addMod(slot.id, delta); state.rogueEvents.push({ nome: sb.nome, text: `${p.nome} (${p.stagione}): +${delta}`, kind: "single+" }); }
+  
+  if (delta > 0) { 
+      addMod(slot.id, delta); 
+      // Rimosso il riferimento a p.stagione dal testo
+      state.rogueEvents.push({ nome: sb.nome, text: `${p.nome}: +${delta}`, kind: "single+" }); 
+  }
 }
 
 
@@ -591,8 +844,8 @@ function ageGrowthRoll(age) { if (age == null) return 0; const band = AGE_GROWTH
 function seasonStartYear(stagione) { const m = /^(\d{4})\//.exec(stagione || ""); return m ? parseInt(m[1], 10) : null; }
 function careerInitialAge(p) { if (!p.annoNascita) return null; const y = seasonStartYear(p.stagione); return y == null ? null : y - p.annoNascita; }
 
-const CAREER_COACH_GENERAL = { spalletti: () => 3, sarri: () => 2, mazzarri: () => 1, gattuso: () => 1, conte: () => 2, benitez: () => 2, reja: () => 1 };
-const CAREER_COACH_SPECIAL = { spalletti: (s) => s.accepts.some(r=>["ATT","AS","AD"].includes(r))? 4 : 0, sarri: (s) => s.accepts.some(r=>["CC","MED","TRQ"].includes(r))? 5 : 0, mazzarri: (s, p, age) => (age && age < 24) ? 3 : 0, gattuso: (s) => s.accepts.some(r=>["DC","MED"].includes(r))? 3 : 0, conte: (s) => s.accepts.some(r=>["ED","ES","TRQ"].includes(r))? 3 : 0, benitez: (s) => s.accepts.includes("ATT")? 2 : 0, reja: (s, p, age) => (age && age >= 30) ? 2 : 0 };
+const CAREER_COACH_GENERAL = { spalletti: () => 3, sarri: () => 2, mazzarri: () => 1, gattuso: () => 1, conte: () => 2, benitez: () => 2, reja: () => 1, allegri: () => 2 };
+const CAREER_COACH_SPECIAL = { spalletti: (s) => s.accepts.some(r=>["ATT","AS","AD"].includes(r))? 4 : 0, sarri: (s) => s.accepts.some(r=>["CC","MED","TRQ"].includes(r))? 5 : 0, mazzarri: (s, p, age) => (age && age < 24) ? 3 : 0, gattuso: (s) => s.accepts.some(r=>["DC","MED"].includes(r))? 3 : 0, conte: (s) => s.accepts.some(r=>["ED","ES","TRQ"].includes(r))? 3 : 0, benitez: (s) => s.accepts.includes("ATT")? 2 : 0, reja: (s, p, age) => (age && age >= 30) ? 2 : 0, allegri: (s) => s.accepts.some(r=>["POR","DC"].includes(r))? 4 : 0 };
 const CAREER_COACH_TEXT = {
   spalletti: { general: "+3 rating a tutta la squadra", special: "+4 rating ad ATT, AS, AD.", specialName: "Faccia feroce", nota: "Uomini forti, destini forti." },
   sarri: { general: "+2 rating a tutta la squadra", special: "+5 rating a CC, MED, TRQ.", specialName: "Palleggio", nota: "Il Sarrismo e i 91 punti." },
@@ -600,7 +853,8 @@ const CAREER_COACH_TEXT = {
   gattuso: { general: "+1 rating a tutta la squadra", special: "+3 rating a DC e MED.", specialName: "Veleno" },
   conte: { general: "+2 rating a tutta la squadra", special: "+3 rating a ED, ES, TRQ.", specialName: "Amma faticà" },
   benitez: { general: "+2 rating a tutta la squadra", special: "+2 rating agli attaccanti.", specialName: "Turnover" },
-  reja: { general: "+1 rating a tutta la squadra", special: "+2 rating agli over 30.", specialName: "Il nonno di Napoli" }
+  reja: { general: "+1 rating a tutta la squadra", special: "+2 rating agli over 30.", specialName: "Il nonno di Napoli" },
+  allegri: { general: "+2 rating a tutta la squadra", special: "+4 rating a POR e DC.", specialName: "Corto Muso", nota: "Halma e gabbionata." }
 };
 function careerCoachBonus(slotId) { if (!state.coach) return 0; const p = state.team[slotId]; if (!p) return 0; const slot = slots().find(s => s.id === slotId); if (!slot) return 0; const age = careerAgeForSlot(slotId); const gen = CAREER_COACH_GENERAL[state.coach.id]; const spec = CAREER_COACH_SPECIAL[state.coach.id]; return (gen ? gen(slot, p, age) : 0) + (spec ? spec(slot, p, age) : 0); }
 
@@ -608,14 +862,84 @@ function tcgSplitName(nome) { const i = String(nome).indexOf(" "); return i < 0 
 function tcgHexLerp(a, b, t) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16); const ch = (sh) => { const va = (pa >> sh) & 255, vb = (pb >> sh) & 255; return Math.round(va + (vb - va) * t); }; return "#" + [16, 8, 0].map(ch).map(v => v.toString(16).padStart(2, "0")).join(""); }
 function tcgGoldStyle(rating) { return `--gold-100:#e6f5ff;--gold-200:#b3e0ff;--gold-300:#66c6ff;--gold-500:#005bbb;--gold-line:#00a1ff;--tc-glow:rgba(0,161,255,.5);--tc-glass-dur:3s;--tc-rating-glow-o:0.6;--tc-rating-glow-c:0,161,255;--tc-rating-color:#ffffff;`; }
 function tcgCardInner(p, hideR, tabRole) {
-  const n = tcgSplitName(p.nome); const rating = hideR ? "?" : p.rating; const roles = p.ruoli.map(r => `<span>${r}</span>`).join(`<span>·</span>`); const stagioneTxt = p.stagione === "Hall of Fame" ? "HoF" : p.stagione; const age = state.career ? careerInitialAge(p) : null; const ageTag = age != null ? `<div class="tc-age">${age} anni</div>` : "";
-  return `<div class="tc-left-gold"></div><div class="tc-left-panel"></div>${ageTag}<div class="tc-name-gold"></div><div class="tc-name-panel"></div><div class="tc-middle-bar"></div><div class="tc-lower-gold"></div><div class="tc-lower-panel"></div><div class="tc-player">${n.fn ? `<div class="tc-fn">${n.fn}</div>` : ""}<div class="tc-ln">${n.ln}</div></div><div class="tc-overall"><span>${rating}</span></div><div class="tc-tab"><div class="tc-tab-txt">${tabRole}</div></div><div class="tc-positions">${roles}</div><div class="tc-season-gold"></div><div class="tc-season" style="${stagioneTxt.length > 7 ? "font-size:2.5cqw;" : ""}">${stagioneTxt}</div><div class="tc-shine"></div><div class="tc-glass"></div>`;
+  const n = tcgSplitName(p.nome); 
+  const rating = hideR ? "?" : p.rating; 
+  const roles = p.ruoli.map(r => `<span>${r}</span>`).join(`<span>·</span>`); 
+  const stagioneTxt = p.stagione === "Hall of Fame" ? "HoF" : p.stagione; 
+  const age = state.career ? careerInitialAge(p) : null; 
+  const ageTag = age != null ? `<div class="tc-age">${age} anni</div>` : "";
+  
+  // Prepariamo l'etichetta del costo
+  const costoHtml = state.budget !== undefined ? `<div class="player-cost">💰 ${getPlayerCost(p.rating)} Mln</div>` : '';
+
+  // Guarda la riga del return: abbiamo spostato ${costoHtml} subito dopo ${n.ln}
+  return `<div class="tc-left-gold"></div><div class="tc-left-panel"></div>${ageTag}<div class="tc-name-gold"></div><div class="tc-name-panel"></div><div class="tc-middle-bar"></div><div class="tc-lower-gold"></div><div class="tc-lower-panel"></div><div class="tc-player">${n.fn ? `<div class="tc-fn">${n.fn}</div>` : ""}<div class="tc-ln">${n.ln}</div>${costoHtml}</div><div class="tc-overall"><span>${rating}</span></div><div class="tc-tab"><div class="tc-tab-txt">${tabRole}</div></div><div class="tc-positions">${roles}</div><div class="tc-season-gold"></div><div class="tc-season" style="${stagioneTxt.length > 7 ? "font-size:2.5cqw;" : ""}">${stagioneTxt}</div><div class="tc-shine"></div><div class="tc-glass"></div>`;
 }
 
 function renderOptionsPanel() {
+  // --- INIEZIONE UI BUDGET ---
+  let budgetContainer = document.getElementById("hud-budget");
+  if (state.budget !== undefined) {
+     if (!budgetContainer && document.querySelector(".draft-actions")) {
+         document.querySelector(".draft-actions").insertAdjacentHTML('afterbegin', `
+            <div id="hud-budget" style="width: 100%; text-align: center; margin-bottom: 10px; flex-shrink: 0; background: #001229; border: 2px solid #00ff88; padding: 10px; border-radius: 8px;">
+              <span style="color: white; font-weight: bold; font-size: 0.9rem;">BUDGET RESIDUO: </span>
+              <span id="budget-val" style="color: #00ff88; font-size: 1.6rem; font-weight: 900;"></span><span style="color: #00ff88;"> M</span>
+            </div>
+         `);
+         budgetContainer = document.getElementById("hud-budget");
+     }
+     if (budgetContainer) {
+         budgetContainer.hidden = false;
+         document.getElementById("budget-val").textContent = state.budget;
+         // Diventa rosso se sei povero
+         document.getElementById("budget-val").style.color = state.budget < 25 ? "#ff3333" : "#00ff88";
+     }
+  } else if (budgetContainer) {
+     budgetContainer.hidden = true;
+  }
+  // ---------------------------
   state._picking = false; const panel = $("#options"); const hint = $("#options-hint"); panel.innerHTML = ""; slots().forEach(s => { if (state.team[s.id]) refreshSlotRating(s.id); }); updateHud();
   const filled = Object.keys(state.team).length; $("#btn-start").disabled = filled < 11; $("#btn-start").textContent = filled < 11 ? `VIA ALLA STAGIONE (${filled}/11)` : "VIA ALLA STAGIONE";
-  const rerollBtn = $("#btn-reroll"); rerollBtn.disabled = !state.activeSlot || state.rerolls <= 0; rerollBtn.textContent = `Reroll (${state.rerolls})`;
+  // --- INIEZIONE: BOTTONE ULTIMATE DINAMICO ---
+  let ultContainer = document.getElementById("ultimate-container");
+  if (!ultContainer && document.querySelector(".draft-actions")) {
+     document.querySelector(".draft-actions").insertAdjacentHTML('afterbegin', `
+        <div id="ultimate-container" hidden style="width: 100%; text-align: center; margin-bottom: 15px; flex-shrink: 0;">
+          <button id="btn-ultimate" class="btn warning" style="width: 100%; background: linear-gradient(90deg, #ff8a00, #e52e71); border:none; font-weight:900; animation: pulseUlt 2s infinite; color: white;">🔥</button>
+          <div id="ultimate-desc" style="font-size: 0.75rem; color: #ffeb3b; margin-top: 6px; font-weight:bold;"></div>
+        </div>
+     `);
+     
+     document.getElementById("btn-ultimate").onclick = () => {
+       if (state.ultimateUsed || !state.coach) return;
+       const ult = COACH_ULTIMATES[state.coach.id];
+       if (ult) {
+         ult.action();
+         state.ultimateUsed = true;
+         renderOptionsPanel(); 
+         toast("Ultimate attivata: " + ult.nome);
+       }
+     };
+  }
+  
+  // Appare solo se sei in Rogue, hai 11 giocatori, un allenatore e non l'hai ancora usata
+  if (ultContainer = document.getElementById("ultimate-container")) {
+     if (state.rogue && state.coach && !state.ultimateUsed && filled === 11) {
+         const ult = COACH_ULTIMATES[state.coach.id];
+         if (ult) {
+           ultContainer.hidden = false;
+           document.getElementById("btn-ultimate").textContent = `🔥 USA ${ult.nome.toUpperCase()}`;
+           document.getElementById("ultimate-desc").textContent = ult.desc;
+         }
+     } else {
+         ultContainer.hidden = true;
+     }
+  }
+  // ---------------------------------------------
+  const rerollBtn = $("#btn-reroll"); 
+  rerollBtn.disabled = !state.activeSlot || state.rerolls <= 0; 
+  rerollBtn.textContent = state.rerolls === Infinity ? `Reroll (∞)` : `Reroll (${state.rerolls})`;
   if (!state.activeSlot) { hint.textContent = filled < 11 ? `Tocca un ruolo libero per pescare ${state.optionsCount} carte.` : "Undici in campo. Premi VIA ALLA STAGIONE."; return; }
   hint.textContent = `${ROLE_NAMES[state.activeSlot.accepts[0]]} · tocca per schierare.`;
   state.options.forEach((p, idx) => {
@@ -627,7 +951,20 @@ function renderOptionsPanel() {
 
 function pick(idx) {
   playSound('carta');
-  if (state._picking) return; const p = state.options[idx]; const slot = state.activeSlot; if (!p || !slot) return; state._picking = true;
+  if (state._picking) return; const p = state.options[idx];
+  // --- CONTROLLO FINANZIARIO ---
+  if (state.budget !== undefined) {
+     const cost = getPlayerCost(p.rating);
+     if (state.budget < cost) {
+        toast("Cassa vuota! Non hai abbastanza milioni.");
+        playSound('click'); // o un suono di errore se lo hai
+        return; // Annulla la scelta
+     }
+     state.budget -= cost; // Scala i soldi dal totale
+     if(typeof updateHud === 'function') updateHud(); // Aggiorna se usi questa funzione
+  }
+  // -----------------------------
+   const slot = state.activeSlot; if (!p || !slot) return; state._picking = true;
   state.team[slot.id] = p; state.usedNames.add(p.nome); state.activeSlot = null; state.options = [];
   applyCoachPickBonus(slot, p);
   markFilledSlot(slot, p); animateReveal(slot.id, effRating(slot.id));
@@ -643,7 +980,9 @@ function pick(idx) {
 }
 
 function handleDedicatedTrigger(trig, slotId) {
-  const p = state.team[slotId]; const wasName = `${p.nome} (${p.stagione})`;
+  const p = state.team[slotId]; 
+  const wasName = p.nome; // Rimosso il (${p.stagione})
+  
   if (trig.type === "repick") {
     showPickEventModal({ nome: trig.nome, kind: "repick" }, trig.text(wasName), () => { const slot = slots().find(s => s.id === slotId); delete state.team[slotId]; delete state.ratingMods[slotId]; const node = $("#slot-" + slotId); node.classList.remove("filled"); node.classList.add("empty"); node.innerHTML = `<span class="slot-role">${slot.label}</span>`; state.rogueEvents.push({ nome: trig.nome, text: trig.text(wasName), kind: "repick" }); drawRipickOptions(slot); });
     return;
@@ -683,17 +1022,43 @@ function animateReveal(slotId, rating) { const node = $("#slot-" + slotId); if (
 
 const rogueFlow = { events: [], ripickQueue: [], log: [] };
 function startRogueResolution() {
-  rogueFlow.log = []; if (state.rogueBonus) { if (!state.rogueBonus.preDraft) state.rogueBonus.apply(); rogueFlow.log.push({ type: "bonus", rar: state.rogueBonus.rar, nome: state.rogueBonus.nome, text: state.rogueBonus.desc }); }
-  rogueFlow.events = rollEvents(); rogueFlow.ripickQueue = []; rogueFlow.eventQueue = [];
-  for (const ev of rogueFlow.events) {
-    let slotId = randomSlot();
-    if (ev.kind === "ripick") { rogueFlow.ripickQueue.push({ ev, slotId }); rogueFlow.eventQueue.push({ ev, kind: "ripick", slotId, text: ev.text(slotId) }); }
-    else if (ev.kind === "spread") { ev.apply(slotId); rogueFlow.eventQueue.push({ ev, kind: "spread", slotId, text: ev.text(slotId) }); }
-    else { const d = ev.apply(slotId); rogueFlow.eventQueue.push({ ev, kind: ev.kind, slotId, text: ev.text(slotId), delta: d }); }
+  // 1. Applica il bonus pre-partita (solo la prima volta)
+  if (state.rogueBonus && !state.rogueBonus.preDraft && !state.bonusApplied) { 
+     state.rogueBonus.apply(); 
+     state.bonusApplied = true;
   }
-  for (const e of rogueFlow.eventQueue) { rogueFlow.log.push({ type: "event", kind: e.kind, nome: e.ev.nome, text: e.text }); }
-  slots().forEach(s => { if (state.team[s.id]) refreshSlotRating(s.id); });
-  showNextGeneralEvent();
+  
+  // 2. Pianifica gli imprevisti spalmandoli sul calendario (solo la prima volta)
+  if (!state.scheduledEvents) {
+      state.scheduledEvents = {};
+      const allEvents = rollEvents();
+      
+      // Scegliamo giornate casuali (da 3 a 36, escludendo la sosta alla 19)
+      const availableMds = shuffle(range(3, 36).filter(m => m !== 19)); 
+      
+      let ripickEvents = [];
+      allEvents.forEach((ev, idx) => {
+          if (ev.kind === "ripick") {
+              ripickEvents.push(ev); // Le cessioni pesanti avvengono subito
+          } else {
+              state.scheduledEvents[availableMds[idx]] = ev; // I malus avvengono durante l'anno
+          }
+      });
+
+      // 3. Se c'è un ripick (es. Clausola pagata), mettilo in coda prima del fischio d'inizio
+      if (ripickEvents.length > 0) {
+          rogueFlow.ripickQueue = ripickEvents.map(ev => ({ ev, slotId: randomSlot() }));
+      }
+  }
+
+  // 4. Se ci sono cessioni in sospeso, torna al draft per ripescare e ferma l'avvio
+  if (rogueFlow.ripickQueue && rogueFlow.ripickQueue.length > 0) {
+      processNextRipick();
+      return; // L'utente dovrà ripescare la carta e ri-cliccare "Via alla stagione"
+  }
+
+  // 5. Tutto pronto e imprevisti nascosti nel calendario: andiamo al campionato! 
+  startSeasonWithBreak();
 }
 
 function showNextGeneralEvent() {
@@ -703,7 +1068,11 @@ function showNextGeneralEvent() {
 
 function processNextRipick() {
   if (!rogueFlow.ripickQueue.length) { showRogueSummary(); return; }
-  const { ev, slotId } = rogueFlow.ripickQueue.shift(); const slot = slots().find(s => s.id === slotId); const victim = state.team[slotId]; const victimName = victim ? `${victim.nome} (${victim.stagione})` : "Un titolare";
+  const { ev, slotId } = rogueFlow.ripickQueue.shift(); 
+  const slot = slots().find(s => s.id === slotId); 
+  const victim = state.team[slotId]; 
+  const victimName = victim ? victim.nome : "Un titolare"; // Rimosso il + " (" + victim.stagione + ")"
+  
   showPickEventModal({ nome: ev.nome, kind: "repick" }, `${victimName} · ${ev.text(slotId)}`, () => { delete state.team[slotId]; delete state.ratingMods[slotId]; showScreen("#screen-draft"); buildPitch(); slots().forEach(s => { if (state.team[s.id]) markFilledSlot(s, state.team[s.id]); }); drawRipickOptions(slot); });
 }
 
@@ -716,17 +1085,47 @@ function showRogueSummary() {
 
 function doReroll() { if (!state.activeSlot || state.rerolls <= 0) return; state.rerolls--; updateHud(); drawOptions(state.activeSlot, true); }
 
+function rollWeather(halfName) {
+    state.weather = "normal";
+    // 25% di possibilità che piova nel girone
+    if (Math.random() < 0.25) { 
+        state.weather = "pioggia";
+        let mazzarriText = (state.coach && state.coach.id === "mazzarri") ? "Mazzarri esulta: statistiche fisiche e tecniche raddoppiate!" : "I tecnici perdono 3 rating, la difesa/mediana guadagna 2.";
+        setTimeout(() => toast(`🌧️ METEO AVVERSO (${halfName}): ${mazzarriText}`), 800);
+    }
+}
+
 function teamRating() { 
   const ratingOf = (state.rogue || state.career) ? id => effRating(id) : id => state.team[id].rating; 
-  let R = slots().reduce((s, sl) => s + ratingOf(sl.id), 0) / 11; 
   
-  // --- AGGIUNTA BONUS INTESA ---
+  let R = slots().reduce((s, sl) => {
+     let baseR = ratingOf(sl.id);
+     const p = state.team[sl.id];
+     
+     // --- METEO DINAMICO ---
+     if (state.weather === "pioggia") {
+        const isTecnico = p.ruoli.some(r => ["TRQ", "AS", "AD", "ATT"].includes(r));
+        const isFisico = p.ruoli.some(r => ["MED", "DC"].includes(r));
+        
+        let mod = 0;
+        if (isTecnico) mod = -3; // Tecnici faticano nel fango
+        if (isFisico) mod = 2;   // I fisici si esaltano
+        
+        if (state.coach && state.coach.id === "mazzarri" && mod !== 0) {
+           mod = Math.abs(mod) * 2; // Mazzarri trasforma gli alibi in pura forza!
+        }
+        baseR += mod;
+     }
+     return s + baseR;
+  }, 0) / 11; 
+  
   const synergyData = getActiveSynergies();
   R += synergyData.totalBonus;
 
   return (state.diff && state.diff.goal === "retro") ? R * 0.97 : R; 
 }
 function startSeasonFirstHalf() {
+  rollWeather("Andata");
   const R = teamRating(); const first = ENGINE.simulateSeason(R, 19); state.firstHalf = first; state.marketDone = false; state.secondHalfMatches = null;
   state.fixtureOpps = LEAGUE.romaOpponents(); state.firstHalfMatches = LEAGUE.buildRomaHalf({ wdl: first, team: state.team, mds: range(1, 19), opps: state.fixtureOpps });
   return { R, first };
@@ -736,8 +1135,24 @@ function startSeasonWithBreak() {
   if (Object.keys(state.team).length < 11) return;
   if (state.career) state.slotBand = null;
   if (state.career && !state.career.agesInitialized) { slots().forEach(s => { state.career.ages[s.id] = careerInitialAge(state.team[s.id]); }); state.career.agesInitialized = true; state.career.initialTeam = { ...state.team }; }
+  
   const { R, first } = startSeasonFirstHalf();
-  const goBreak = () => { renderMarketBreak(R, first); showScreen("#screen-break"); };
+  
+  const goBreak = () => { 
+    // --- INIEZIONE: Se siamo in Modalità Impossibile (rogue), c'è il 60% di chance che scatti l'evento ADL
+    if (state.rogue && Math.random() < 0.60) {
+      triggerPresidentWheel(() => {
+        // Appena hai fatto la scelta, ricalcola la forza della squadra e apri il mercato
+        renderMarketBreak(teamRating(), first); 
+        showScreen("#screen-break");
+      });
+    } else {
+      // Avanzamento standard
+      renderMarketBreak(R, first); 
+      showScreen("#screen-break"); 
+    }
+  };
+  
   playMatchReplay(state.firstHalfMatches, goBreak, { heading: "Girone d'andata", skipLabel: "Mercato ⏭" });
 }
 
@@ -846,6 +1261,7 @@ function offerReplacements(slotId) {
 }
 
 function runSeason() {
+  rollWeather("Ritorno");
   const R = teamRating(); const stats = ENGINE.seasonStats(R); const ctx = leagueContext();
   const first = state.firstHalf || ENGINE.simulateSeason(R, 19); let second = ENGINE.simulateSeason(R, 19);
   
@@ -869,8 +1285,13 @@ function runSeason() {
   if (topScorer && prizes.mvp.goals < topScorer.goals) prizes.mvp.goals = topScorer.goals;
   
   const perfect = season.w === 38;
+  // --- SALVATAGGIO HALL OF FAME ---
+  if (perfect) {
+      localStorage.setItem("napoli380_hof", JSON.stringify(state.team));
+  }
   state.lastResult = { mode: state.diff.label, board: "classica", pts: season.pts, pos: place.pos, rank: lg.romaRank, rating: R, title: place.title, cls: place.cls, perfect: perfect, win: place.win, record: vpsLabel(season.w, season.d, season.l) };
   if (state.career) recordCareerSeasonResult();
+  checkAndUnlockAchievements(season.pts, season.w, state.team);
   
   let banner = "";
   if (state.diff.goal === "retro") { banner = place.win ? `<div class="mission-banner ok">MISSIONE COMPIUTA · Amm fatt' schif'.</div>` : `<div class="mission-banner fail">MISSIONE FALLITA · Troppo forti.</div>`; }
@@ -904,7 +1325,15 @@ function clearReplayTimers() { replayTimers.forEach(clearTimeout); replayTimers 
 function playMatchReplay(matches, done, opts = {}) {
   const list = $("#replay-list"); if (!list) { done(); return; } list.innerHTML = "";
   const headingEl = $("#replay-heading"); if (headingEl && opts.heading) headingEl.textContent = opts.heading;
-  const skipBtn = $("#btn-skip-replay"); if (skipBtn && opts.skipLabel) skipBtn.textContent = opts.skipLabel;
+  
+  const skipBtn = $("#btn-skip-replay"); 
+  if (skipBtn) { 
+    if (opts.skipLabel) skipBtn.textContent = opts.skipLabel;
+    // Resetta lo stile del bottone all'inizio (lo fa tornare semi-trasparente)
+    skipBtn.classList.remove("primary");
+    skipBtn.classList.add("ghost");
+  }
+
   const speedSelect = $("#replay-speed"); const modeSelect = $("#replay-mode"); const stepBtn = $("#btn-step-replay");
   if (speedSelect) speedSelect.value = String(state.replaySpeed);
   if (modeSelect) modeSelect.value = state.replayMode;
@@ -924,19 +1353,76 @@ function playMatchReplay(matches, done, opts = {}) {
     if (state.replayMode !== "auto") { if (stepBtn) stepBtn.disabled = false; return; }
     replayTimers.push(setTimeout(step, delayMs()));
   };
+  
   const step = () => {
     if (finished) return;
-    if (i >= matches.length) { replayTimers.push(setTimeout(finish, 1100)); return; }
+    if (i >= matches.length) { 
+       if (skipBtn) {
+           skipBtn.textContent = "Continua ⏭";
+           skipBtn.classList.remove("ghost");
+           skipBtn.classList.add("primary"); 
+       }
+       return; 
+    }
     const m = matches[i++]; if (m.res === "W") pts += 3; else if (m.res === "D") pts += 1;
     if (mdEl) { mdEl.textContent = `GIORNATA ${m.md}/38`; mdEl.hidden = false; }
     const row = document.createElement("div"); const cls = m.res === "W" ? "w" : m.res === "D" ? "d" : "l"; const letter = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
-    row.className = "replay-row rr-" + cls; row.innerHTML = `<span class="rr-md">G${m.md}</span><span class="rr-opp">${m.opp}</span><span class="rr-score">${m.gf}-${m.ga}</span><span class="rr-res">${letter}</span><span class="rr-tally">${pts} pt</span>`;
-    list.appendChild(row); requestAnimationFrame(() => { row.classList.add("in"); list.scrollTop = list.scrollHeight; });
-    if (state.replayMode === "manual") {
-      if (stepBtn) stepBtn.disabled = false;
-      return;
+    
+    let scorersHtml = "";
+    if (m.scorers && m.scorers.length > 0) {
+        scorersHtml = `<div class="rr-scorers">⚽ ${m.scorers.map(s => {
+            const minMatch = s.match(/(\d+)'/);
+            const isLate = minMatch && parseInt(minMatch[1]) >= 85;
+            return isLate ? `<strong style="color: #ffd24a;">${s}</strong>` : s;
+        }).join(", ")}</div>`;
     }
-    scheduleNext();
+
+    row.className = `replay-row rr-${cls} ${m.isBoss ? 'rr-boss' : ''}`; 
+    row.innerHTML = `<span class="rr-md">G${m.md}</span><span class="rr-opp" style="${m.isBoss ? 'color:#ff5c5c; font-weight:900;' : ''}">${m.opp}</span><span class="rr-score">${m.gf}-${m.ga}</span><span class="rr-res">${letter}</span><span class="rr-tally">${pts} pt</span>${scorersHtml}`;
+    
+    list.appendChild(row); requestAnimationFrame(() => { row.classList.add("in"); list.scrollTop = list.scrollHeight; });
+    
+    if (m.isBoss) playSound('fischio');
+
+    // Funzione che gestisce il proseguimento dell'animazione
+    const finishStep = () => {
+      if (state.replayMode === "manual") {
+        if (stepBtn) stepBtn.disabled = false;
+        return;
+      }
+      scheduleNext();
+    };
+
+    // --- MAGIA: EVENTI CASUALI DURANTE IL REPLAY ---
+    if (state.rogue && state.scheduledEvents && state.scheduledEvents[m.md]) {
+        const ev = state.scheduledEvents[m.md];
+        const slotId = randomSlot(); // Sceglie casualmente chi subisce l'evento
+        
+        let d = ev.apply ? ev.apply(slotId) : null;
+        if (ev.kind === "spread") d = -1; // Fallback per eventi spread
+        
+        const text = ev.text(slotId);
+        let formattedText = text;
+        if (formattedText.includes('+')) formattedText = formattedText.replace(/(\+\d+)/g, '<strong style="color: var(--rar-noncomune);">$1</strong>');
+        else if (formattedText.includes('-')) formattedText = formattedText.replace(/(-\d+)/g, '<strong style="color: #ff5c5c;">$1</strong>');
+        
+        // Salva l'evento nel log a sinistra in tempo reale
+        state.rogueEvents.push({ nome: ev.nome, text: text, kind: ev.kind });
+        if (typeof renderEventLog === 'function') renderEventLog(); 
+        
+        // Mette in PAUSA il replay e mostra il popup dopo 600ms per creare suspense
+        setTimeout(() => {
+            showPickEventModal({ nome: ev.nome, kind: ev.kind }, formattedText, () => {
+                // Quando l'utente clicca Continua, aggiorna la grafica delle carte e riprendi il replay!
+                slots().forEach(s => { if (state.team[s.id]) refreshSlotRating(s.id); }); 
+                finishStep(); 
+            }, d);
+        }, 600); 
+        
+        delete state.scheduledEvents[m.md]; // Rimuove l'evento per non ripeterlo
+    } else {
+        finishStep(); // Nessun evento, la giornata scorre normalmente
+    }
   };
   step();
 }
@@ -967,12 +1453,12 @@ function championRouteText(champ) {
   return `Percorso europeo: ${route}. La squadra ha mostrato forza e ha messo insieme la base per un'avventura lunga e difficile.`;
 }
 
-function shareResultText() { const r = state.lastResult; return r.perfect ? "Ho fatto il 38·0 perfetto con il Napoli! Gioca a 38-0 NAPOLI!" : `Ho fatto ${r.pts} punti con il mio Napoli all-time. Gioca a 38-0 NAPOLI! Forza Napoli Sempre 💙`; }
+function shareResultText() { const r = state.lastResult; return r.perfect ? "Ho fatto il 38-0-0 perfetto con il Napoli! Gioca a 38-0-0 NAPOLI!" : `Ho fatto ${r.pts} punti con il mio Napoli all-time. Gioca a 38-0-0 NAPOLI! Forza Napoli Sempre 💙`; }
 function copyShareText() { const txt = shareResultText(); navigator.clipboard.writeText(txt).then(() => toast("Testo copiato! 📋")); }
 function shareResultImage() { toast("Condivisione non supportata in questa demo."); }
 function revealQuadrants(box, finalPts) { 
-  // Fai partire il suono SOLO se i punti finali sono strettamente maggiori di 90
-  if (finalPts > 90) {
+  // Il suono parte SOLO se i punti sono numericamente superiori a 90
+  if (Number(finalPts) > 90) {
     playSound('stadio');
   }
 
@@ -984,7 +1470,8 @@ function revealQuadrants(box, finalPts) {
       if (pts) countUp(pts, finalPts, 1500, false); 
     }, i * 150); 
   }); 
-}function countUp(el, target, dur, fmt) { dur = dur || 1400; const t0 = performance.now(); (function tick(now) { const f = Math.min(1, (now - t0) / dur); const v = Math.round(target * (1 - Math.pow(1 - f, 3))); el.textContent = fmt ? v.toLocaleString("it-IT") : v; if (f < 1) requestAnimationFrame(tick); })(performance.now()); }
+}
+function countUp(el, target, dur, fmt) { dur = dur || 1400; const t0 = performance.now(); (function tick(now) { const f = Math.min(1, (now - t0) / dur); const v = Math.round(target * (1 - Math.pow(1 - f, 3))); el.textContent = fmt ? v.toLocaleString("it-IT") : v; if (f < 1) requestAnimationFrame(tick); })(performance.now()); }
 
 setTimeout(init, 100);
 /* ===== db.js ===== */
@@ -1016,7 +1503,11 @@ const BIRTH_YEARS = {
   "Ignacio Fideleff": 1989, "Leandro Rinaudo": 1983, "Leonardo Pavoletti": 1988, 
   "Andrea Petagna": 1995, "Adam Ounas": 1996, "Nikola Maksimovic": 1991, 
   "Sebastiano Luperto": 1996, "Kevin Malcuit": 1991, "Diego Demme": 1991, 
-  "Tiemoué Bakayoko": 1994, "Tanguy Ndombele": 1996, "Eljif Elmas": 1999
+  "Tiemoué Bakayoko": 1994, "Tanguy Ndombele": 1996, "Eljif Elmas": 1999,
+  "Elseid Hysaj": 1994, "David Ospina": 1988, "Vlad Chiriches": 1989, "Lorenzo Tonelli": 1990, "Ivan Strinic": 1987,
+  "Amadou Diawara": 1997, "Marko Rog": 1995, "Emanuele Giaccherini": 1985, "Simone Verdi": 1992, "Amin Younes": 1993,
+  "Fernando Llorente": 1985, "Juan Jesus": 1991, "Pierluigi Gollini": 1995, "Alessandro Zanoli": 2000,
+  "Jens Cajuste": 1999, "Cyril Ngonge": 2000, "Natan": 2001,
 };
 
 const DB = [
@@ -1045,34 +1536,34 @@ const DB = [
   P("Stefan Schwoch", "1999/00", ["ATT"], 79),
   P("Claudio Bellucci", "1998/99", ["ATT"], 77),
   P("Francesco Montervino", "2000/01", ["MED","CC"], 76),
-  P("Francelino Matuzalem", "2005/06", ["MED","CC"], 81),
-  P("Marek Jankulovski", "2003/04", ["TS","ES"], 82),
+  P("Francelino Matuzalem", "2005/06", ["MED","CC"], 79),
+  P("Marek Jankulovski", "2003/04", ["TS","ES"], 78),
   P("Roberto Sosa", "2005/06", ["ATT"], 77),
-  P("Emanuele Calaiò", "2006/07", ["ATT"], 79),
-  P("Mariano Bogliacino", "2006/07", ["CC","TRQ"], 79),
+  P("Emanuele Calaiò", "2006/07", ["ATT"], 77),
+  P("Mariano Bogliacino", "2006/07", ["CC","TRQ"], 76),
 
   /* ---------- Era Reja / Mazzarri (2007-2013) ---------- */
   P("Ezequiel Lavezzi", "2007/08", ["ATT","AS"], 83),
   P("Ezequiel Lavezzi", "2011/12", ["ATT","AS","TRQ"], 88),
-  P("Marek Hamsik", "2007/08", ["CC","TRQ"], 81),
-  P("Marek Hamsik", "2012/13", ["CC","TRQ"], 88),
+  P("Marek Hamsik", "2007/08", ["CC","TRQ"], 84),
+  P("Marek Hamsik", "2012/13", ["CC","TRQ"], 91),
   P("Edinson Cavani", "2010/11", ["ATT"], 90),
   P("Edinson Cavani", "2012/13", ["ATT"], 94),
   P("Goran Pandev", "2011/12", ["ATT","TRQ"], 82),
   P("Christian Maggio", "2008/09", ["TD","ED"], 82),
-  P("Christian Maggio", "2011/12", ["TD","ED"], 86),
+  P("Christian Maggio", "2011/12", ["TD","ED"], 84),
   P("Paolo Cannavaro", "2011/12", ["DC"], 83),
   P("Morgan De Sanctis", "2011/12", ["POR"], 84),
   P("Walter Gargano", "2007/08", ["MED","CC"], 79),
   P("Walter Gargano", "2010/11", ["MED","CC"], 81),
   P("Hugo Campagnaro", "2009/10", ["DC","TD"], 80),
-  P("Hugo Campagnaro", "2011/12", ["DC","TD"], 84),
-  P("Gokhan Inler", "2012/13", ["CC","MED"], 84),
-  P("Juan Camilo Zuniga", "2012/13", ["TS","ES"], 84),
-  P("Fabiano Santacroce", "2008/09", ["DC"], 80),
+  P("Hugo Campagnaro", "2011/12", ["DC","TD"], 82),
+  P("Gokhan Inler", "2012/13", ["CC","MED"], 80),
+  P("Juan Camilo Zuniga", "2012/13", ["TS","ES"], 78),
+  P("Fabiano Santacroce", "2008/09", ["DC"], 77),
   P("Salvatore Aronica", "2011/12", ["DC","TS"], 77),
   P("German Denis", "2009/10", ["ATT"], 79),
-  P("Marcelo Zalayeta", "2007/08", ["ATT"], 80),
+  P("Marcelo Zalayeta", "2007/08", ["ATT"], 78),
 
   /* ---------- Era Benitez / Sarri (2013-2018) ---------- */
   P("Gonzalo Higuain", "2013/14", ["ATT"], 89),
@@ -1134,18 +1625,18 @@ const DB = [
   /* ---------- Era Conte (2024-2026) ---------- */
   P("Romelu Lukaku", "2024/25", ["ATT"], 88),
   P("Khvicha Kvaratskhelia", "2024/25", ["AS","TRQ"], 91),
-  P("Scott McTominay", "2024/25", ["CC","TRQ"], 87),
-  P("Alessandro Buongiorno", "2024/25", ["DC"], 88),
-  P("David Neres", "2024/25", ["AD","AS"], 85),
-  P("Billy Gilmour", "2024/25", ["MED","CC"], 83),
+  P("Scott McTominay", "2024/25", ["CC","TRQ"], 89),
+  P("Alessandro Buongiorno", "2024/25", ["DC"], 83),
+  P("David Neres", "2024/25", ["AD","AS"], 84),
+  P("Billy Gilmour", "2024/25", ["MED","CC"], 78),
   P("Amir Rrahmani", "2024/25", ["DC"], 85),
   P("Giovanni Di Lorenzo", "2024/25", ["TD","DC"], 86),
   P("Leonardo Spinazzola", "2024/25", ["TS","ES"], 80),
-  P("Alex Meret", "2024/25", ["POR"], 86),
-  P("Pasquale Mazzocchi", "2024/25", ["TD","TS"], 80),
-  P("Jesper Lindström", "2024/25", ["AS","TRQ"], 82),
-  P("Leo Ostigard", "2024/25", ["DC"], 82),
-  P("Noa Lang", "2024/25", ["AD","AS"], 83),
+  P("Alex Meret", "2024/25", ["POR"], 84),
+  P("Pasquale Mazzocchi", "2024/25", ["TD","TS"], 75),
+  P("Jesper Lindström", "2024/25", ["AS","TRQ"], 74),
+  P("Leo Ostigard", "2024/25", ["DC"], 77),
+  P("Noa Lang", "2024/25", ["AD","AS"], 75),
 
   /* I gregari e i "cult" storici */
   P("Gianluca Grava", "2010/11", ["DC", "TD"], 75),
@@ -1166,7 +1657,26 @@ const DB = [
   P("Diego Demme", "2020/21", ["MED", "CC"], 79),
   P("Tiemoué Bakayoko", "2020/21", ["MED"], 77),
   P("Tanguy Ndombele", "2022/23", ["CC", "MED"], 80),
-  P("Eljif Elmas", "2022/23", ["CC", "AS", "TRQ"], 82)
+  P("Eljif Elmas", "2022/23", ["CC", "AS", "TRQ"], 82),
+  /* ---------- Integrazione Era Recente (2015-2024) ---------- */
+  P("David Ospina", "2020/21", ["POR"], 83),
+  P("Elseid Hysaj", "2017/18", ["TD", "TS"], 81),
+  P("Elseid Hysaj", "2015/16", ["TD"], 81),
+  P("Vlad Chiriches", "2015/16", ["DC"], 79),
+  P("Lorenzo Tonelli", "2016/17", ["DC"], 77),
+  P("Ivan Strinic", "2015/16", ["TS"], 78),
+  P("Amadou Diawara", "2016/17", ["MED", "CC"], 80),
+  P("Marko Rog", "2016/17", ["CC"], 77),
+  P("Emanuele Giaccherini", "2016/17", ["AS", "CC"], 76),
+  P("Simone Verdi", "2018/19", ["AD", "AS", "TRQ"], 78),
+  P("Amin Younes", "2018/19", ["AS"], 77),
+  P("Fernando Llorente", "2019/20", ["ATT"], 79),
+  P("Juan Jesus", "2022/23", ["DC", "TS"], 81),
+  P("Pierluigi Gollini", "2022/23", ["POR"], 79),
+  P("Alessandro Zanoli", "2022/23", ["TD"], 75),
+  P("Jens Cajuste", "2023/24", ["CC", "MED"], 76),
+  P("Cyril Ngonge", "2023/24", ["AD", "ATT"], 79),
+  P("Natan", "2023/24", ["DC", "TS"], 76),
 ];
 
 DB.forEach(p => { p.annoNascita = BIRTH_YEARS[p.nome] || null; });
@@ -1399,22 +1909,22 @@ function findEntry(nome, stagione) {
 function nm(slotId) {
   const p = state.team[slotId];
   if (!p) return "Un giocatore";
-  return p.nome + " (" + p.stagione + ")";
+  return p.nome; // Rimosso l'aggiunta di " (" + p.stagione + ")"
 }
 
 const PICK_EVENTS = [
   { id: "crociato", w: 10, kind: "single-", injury: true, nome: "Crociato rotto",
-    text: p => `${p.nome} (${p.stagione}) salta metà stagione: -3 al rating. Che mazzata.`,
+    text: p => `${p.nome} salta metà stagione: -3 al rating. Che mazzata.`,
     apply: id => addMod(id, -3) },
   { id: "giovane", w: 8, kind: "single+", nome: "Esplosione del giovane",
-    text: p => `${p.nome} (${p.stagione}) si prende la maglia da titolare: +4 al rating.`,
+    text: p => `${p.nome} si prende la maglia da titolare: +4 al rating.`,
     cond: id => isUnder(state.team[id]),
     apply: id => addMod(id, gain(4)) },
   { id: "miracolo", w: 8, kind: "single+", nome: "Miracolo di San Gennaro",
-    text: p => `${p.nome} (${p.stagione}) viene baciato dalla fortuna e salva una partita: +3 al rating.`,
+    text: p => `${p.nome} viene baciato dalla fortuna e salva una partita: +3 al rating.`,
     apply: id => addMod(id, gain(3)) },
   { id: "doping_ko", w: 4, kind: "repick", nome: "Positivo, fuori rosa",
-    text: p => `${p.nome} (${p.stagione}) beccato! Squalificato. Tocca ripescare.`,
+    text: p => `${p.nome} beccato! Squalificato. Tocca ripescare.`,
     ripick: {} }
 ];
 
@@ -1541,6 +2051,15 @@ function rollEvents() {
         nome: "Cuore Azzurro",
         desc: "Hamsik 2007/08 e Lavezzi 2007/08 compaiono con probabilità maggiore."
       }
+     // ... sotto a reja ...
+    },
+    { id: "allegri", nome: "Massimiliano Allegri", modulo: "3-5-2", bonus: 2,
+      nota: "Corto muso e gabbionata. Si vince 1-0 e si va a casa: +2 generale.",
+      specialBonus: {
+        id: "corto_muso",
+        nome: "Corto Muso",
+        desc: "+4 al rating di portieri (POR) e difensori centrali (DC)."
+      }
     }
   ];
 
@@ -1665,8 +2184,21 @@ const applyResultMods = ENGINE.applyResultMods;
     const results = shuffle([...Array(wdl.w).fill("W"), ...Array(wdl.d).fill("D"), ...Array(wdl.l).fill("L")]);
     return mds.map((md, k) => {
       const res = results[k] || "D";
-      const oppName = opps[(md - 1) % opps.length];
-      const oppStr = (POOL.find(p => p[0] === oppName) || [oppName, 78])[1];
+      let oppName = opps[(md - 1) % opps.length];
+      let oppStr = (POOL.find(p => p[0] === oppName) || [oppName, 78])[1];
+      let isBoss = false;
+
+      // --- INIEZIONE BOSS MATCH ---
+      if (md === 19) {
+          oppName = "Milan '88 (Boss)";
+          oppStr = 98; // Diventa una partita durissima
+          isBoss = true;
+      } else if (md === 38) {
+          oppName = "Juve '17 (Boss)";
+          oppStr = 99; // Praticamente imbattibili
+          isBoss = true;
+      }
+
       const home = (md % 2) === 1; 
       const [gfR, gaR] = scoreFor(res);
       const events = [];
@@ -1678,7 +2210,7 @@ const applyResultMods = ENGINE.applyResultMods;
         const s = weightedPick(scorerPool, o => o.w).p;
         e.nome = s.nome; e.stagione = s.stagione;
       });
-      return { md, opp: oppName, oppName, oppStr, home, gf: gfR, ga: gaR, res, events, scorers: events.filter(e => e.team === "roma").map(e => `${e.nome} ${e.minute}'`) };
+      return { md, opp: oppName, oppName, oppStr, home, gf: gfR, ga: gaR, res, events, isBoss, scorers: events.filter(e => e.team === "roma").map(e => `${e.nome} ${e.minute}'`) };
     });
   }
 
