@@ -674,7 +674,7 @@ function startCareerSwap() { const growthReport = applyCareerAging(); const reti
 function applyCareerAging() { const report = []; slots().forEach(s => { const age = state.career.ages[s.id]; if (age == null) return; const newAge = age + 1; state.career.ages[s.id] = newAge; const isHof = state.team[s.id].stagione === "Hall of Fame"; let applied = ageGrowthRoll(newAge); if (applied < 0 && isHof) applied = 0; if (applied !== 0) { addMod(s.id, applied); report.push({ slotId: s.id, nome: state.team[s.id].nome, age: newAge, delta: applied }); } }); return report; }
 function renderCareerGrowthReport(report) { const box = $("#career-growth-report"); if (!box) return; if (!report.length) { box.innerHTML = `<p class="market-hint">Rose stabile: nessun cambiamento di crescita.</p>`; return; } const rows = report.map(r => { const slot = slots().find(s => s.id === r.slotId); const cls = r.delta > 0 ? "cgr-up" : "cgr-down"; const sign = r.delta > 0 ? "+" : ""; return `<li class="${cls}"><span class="cgr-role">${slot ? slot.label : r.slotId}</span><span class="cgr-name">${r.nome}</span><span class="cgr-age">${r.age} anni</span><span class="cgr-delta">${sign}${r.delta}</span></li>`; }).join(""); box.innerHTML = `<p class="market-hint">Crescita della rosa:</p><ul class="career-growth-list">${rows}</ul>`; }
 function renderCareerSwapPitch() { const container = $("#career-swap-pitch"); const left = state.career.swapsLeft; renderMarketPitch(container, { left, hint: left > 0 ? `Scegli un titolare e sostituiscilo. Hai ancora <strong>${left}</strong> cambi disponibili.` : `Tutti i cambi sono stati usati.`, onOpen: slotId => offerCareerReplacement(slotId), continueBtn: { label: `Vai alla stagione ${state.career.season + 1} →`, onClick: () => advanceCareerSeason() }, }); }
-function offerCareerReplacement(slotId) { state.career.swapsLeft--; renderCareerSwapPitch(); const opts = marketOptions(slotId); const pickArea = document.querySelector("#career-swap-pitch .market-pick-area"); renderReplacementCards(pickArea, slotId, opts, (idx) => { applyMarketReplacement(slotId, idx, opts, { phase: "swap" }); renderCareerSwapPitch(); }, () => renderCareerSwapPitch()); }
+function offerCareerReplacement(slotId) { const opts = marketOptions(slotId); const pickArea = document.querySelector("#career-swap-pitch .market-pick-area"); renderReplacementCards(pickArea, slotId, opts, (idx) => { state.career.swapsLeft--; applyMarketReplacement(slotId, idx, opts, { phase: "swap" }); renderCareerSwapPitch(); }, () => renderCareerSwapPitch()); }
 function advanceCareerSeason() { state.career.season++; state.career.swapsLeft = 0; state.marketDone = false; startSeasonWithBreak(); }
 
 function startRogue() {
@@ -1256,8 +1256,8 @@ function applyMarketReplacement(slotId, choiceIndex, opts, meta) {
 }
 
 function offerReplacements(slotId) {
-  state.marketSwapsLeft--; renderJanuaryMarketPitch(); const opts = marketOptions(slotId); const pickArea = document.querySelector("#market-area .market-pick-area");
-  renderReplacementCards(pickArea, slotId, opts, (idx) => { const res = applyMarketReplacement(slotId, idx, opts, { phase: "market" }); if (!res) { runSeason(); return; } toast(`${res.np.nome} prende il posto di ${res.oldP.nome}.`); runSeason(); }, () => runSeason());
+  const opts = marketOptions(slotId); const pickArea = document.querySelector("#market-area .market-pick-area");
+  renderReplacementCards(pickArea, slotId, opts, (idx) => { const res = applyMarketReplacement(slotId, idx, opts, { phase: "market" }); if (!res) { runSeason(); return; } state.marketSwapsLeft--; toast(`${res.np.nome} prende il posto di ${res.oldP.nome}.`); runSeason(); }, () => runSeason());
 }
 
 function runSeason() {
@@ -1368,14 +1368,15 @@ function playMatchReplay(matches, done, opts = {}) {
     if (mdEl) { mdEl.textContent = `GIORNATA ${m.md}/38`; mdEl.hidden = false; }
     const row = document.createElement("div"); const cls = m.res === "W" ? "w" : m.res === "D" ? "d" : "l"; const letter = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
     
-    let scorersHtml = "";
-    if (m.scorers && m.scorers.length > 0) {
-        scorersHtml = `<div class="rr-scorers">⚽ ${m.scorers.map(s => {
-            const minMatch = s.match(/(\d+)'/);
-            const isLate = minMatch && parseInt(minMatch[1]) >= 85;
-            return isLate ? `<strong style="color: #ffd24a;">${s}</strong>` : s;
-        }).join(", ")}</div>`;
-    }
+    const renderScorersHtml = (matchObj) => {
+      if (!matchObj.scorers || matchObj.scorers.length === 0) return "";
+      return `<div class="rr-scorers">⚽ ${matchObj.scorers.map(s => {
+          const minMatch = s.match(/(\d+)'/);
+          const isLate = minMatch && parseInt(minMatch[1]) >= 85;
+          return isLate ? `<strong style="color: #ffd24a;">${s}</strong>` : s;
+      }).join(", ")}</div>`;
+    };
+    let scorersHtml = renderScorersHtml(m);
 
     row.className = `replay-row rr-${cls} ${m.isBoss ? 'rr-boss' : ''}`; 
     row.innerHTML = `<span class="rr-md">G${m.md}</span><span class="rr-opp" style="${m.isBoss ? 'color:#ff5c5c; font-weight:900;' : ''}">${m.opp}</span><span class="rr-score">${m.gf}-${m.ga}</span><span class="rr-res">${letter}</span><span class="rr-tally">${pts} pt</span>${scorersHtml}`;
@@ -1383,8 +1384,12 @@ function playMatchReplay(matches, done, opts = {}) {
     list.appendChild(row); requestAnimationFrame(() => { row.classList.add("in"); list.scrollTop = list.scrollHeight; });
     
     if (m.isBoss) playSound('fischio');
-
-    // Funzione che gestisce il proseguimento dell'animazione
+// --- MAGIA 2: RIGORI INTERATTIVI ---
+    // Funzione che gestisce il proseguimento dell'animazione.
+    // IMPORTANTE: va definita PRIMA del blocco rigore qui sotto, perché quel blocco
+    // può fare `return` in anticipo (in attesa del click dell'utente): se finishStep
+    // fosse definita dopo, in quel caso non verrebbe mai inizializzata e la chiamata
+    // asincrona dal bottone del rigore lancerebbe un errore, bloccando il replay.
     const finishStep = () => {
       if (state.replayMode === "manual") {
         if (stepBtn) stepBtn.disabled = false;
@@ -1392,6 +1397,139 @@ function playMatchReplay(matches, done, opts = {}) {
       }
       scheduleNext();
     };
+    // C'è un 8% di probabilità a partita che ci sia un rigore, e NON deve capitare insieme a un imprevisto di ADL
+    const isPenalty = state.replayMode !== "auto" || Math.random() < 0.08; 
+    let penaltyResolved = false;
+
+    if (!penaltyResolved && Math.random() < 0.08 && (!state.scheduledEvents || !state.scheduledEvents[m.md])) {
+      const isForNapoli = Math.random() > 0.5;
+      
+      // Calcolo OVR in campo
+      const gkSlot = Object.keys(state.team).find(id => state.team[id].ruoli.includes("POR"));
+      const attSlot = Object.keys(state.team).find(id => state.team[id].ruoli.some(r => ["ATT","AS","AD"].includes(r)));
+      
+      const myGkOvr = gkSlot ? effRating(gkSlot) : 75;
+      const myAttOvr = attSlot ? effRating(attSlot) : 75;
+      const gkName = gkSlot ? state.team[gkSlot].nome : "Il portiere";
+      const attName = attSlot ? state.team[attSlot].nome : "Il rigorista";
+      const oppOvr = m.oppStr || 80;
+
+      // Innesca il Modale
+      const penModal = document.getElementById("penalty-modal");
+      document.getElementById("pen-tag").textContent = isForNapoli ? "RIGORE PER IL NAPOLI!" : "RIGORE CONTRO!";
+      document.getElementById("pen-tag").style.color = isForNapoli ? "#00ff88" : "#ff5c5c";
+      document.getElementById("pen-title").textContent = `${isForNapoli ? 'Tira' : 'Para'} contro ${m.opp}`;
+      document.getElementById("pen-desc").textContent = isForNapoli ? `${attName} (OVR ${myAttOvr}) è sul dischetto.` : `${gkName} (OVR ${myGkOvr}) è tra i pali.`;
+      
+      // Mettiamo in pausa il replay
+      setTimeout(() => {
+        playSound('fischio');
+        penModal.classList.add("show");
+
+        let answered = false; // Blocca i click doppi/multipli sui bottoni del rigore
+        document.querySelectorAll(".pen-dir").forEach(btn => {
+          // Rimuovi vecchi listener per evitare bug di click multipli
+          const newBtn = btn.cloneNode(true);
+          btn.parentNode.replaceChild(newBtn, btn);
+          
+          newBtn.addEventListener("click", function() {
+            if (answered) return; // Un rigore si tira/para una volta sola
+            answered = true;
+            // Disabilita gli ALTRI bottoni (non quello appena cliccato, altrimenti il grigio/opacità
+            // del disabled si sovrappone all'animazione gol/parata e la fa sembrare solo "più scura")
+            document.querySelectorAll(".pen-dir").forEach(b => { if (b !== this) b.classList.add("disabled"); });
+
+            playSound('carta');
+            const playerDir = this.getAttribute("data-dir");
+            const dirs = ["top-left", "top-center", "top-right", "bot-left", "bot-center", "bot-right"];
+            const aiDir = dirs[Math.floor(Math.random() * dirs.length)];
+            
+            let success = false;
+            let msg = "";
+
+            if (isForNapoli) {
+              // TIRI: Se il portiere si butta dall'altra parte, è gol. Se indovina, conta l'OVR
+              if (playerDir !== aiDir) {
+                success = true;
+                msg = `GOL! ${attName} spiazza il portiere avversario!`;
+              } else {
+                // Il portiere intuisce: calcolo OVR
+                const chance = myAttOvr > oppOvr ? 0.6 : 0.3; // 60% o 30% di segnare anche se indovina
+                success = Math.random() < chance;
+                msg = success ? `GOL! ${attName} è una cannonata anche se il portiere intuisce!` : `PARATO! Il portiere avversario ci arriva su ${attName}.`;
+              }
+              if(success) {
+                m.gf += 1; pts += (m.gf > m.ga ? 2 : (m.gf === m.ga ? 1 : 0)); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L";
+                const penMin = Math.floor(Math.random() * 94) + 1;
+                if (!m.scorers) m.scorers = [];
+                m.scorers.push(`${attName} ${penMin}' (R)`);
+              }
+            } else {
+              // PARI: Se ti butti dall'altra parte, è gol. Se indovini, conta l'OVR del tuo portiere
+              if (playerDir !== aiDir) {
+                success = false;
+                msg = `GOL SU RIGORE! ${gkName} si è buttato dalla parte sbagliata.`;
+              } else {
+                const chance = myGkOvr > oppOvr ? 0.7 : 0.4;
+                success = Math.random() < chance;
+                msg = success ? `PARATA EROICA di ${gkName}! La toglie dall'angolino!` : `GOL! ${gkName} intuisce ma il tiro era troppo preciso.`;
+              }
+              if(!success) { m.ga += 1; pts -= (m.gf < m.ga ? 1 : 0); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L"; } // Ricalcolo grezzo punti
+            }
+
+            // Mostra il risultato e chiudi
+            document.getElementById("pen-title").textContent = msg;
+            
+            // "success" indica sempre l'esito positivo per il giocatore:
+            // se tiri (isForNapoli) success = hai segnato; se pari, success = hai parato.
+            if (success) {
+              this.classList.add("pen-gol");
+              this.innerHTML = isForNapoli ? "⚽ GOL!" : "🧤 PARATA!";
+              playSound('vittoria');
+            } else {
+              this.classList.add("pen-parata");
+              this.innerHTML = isForNapoli ? "🧤 PARATO" : "⚽ GOL!";
+            }
+            
+            // Aspetta che l'animazione (più lunga) finisca prima di riprendere la simulazione
+            setTimeout(() => {
+              penModal.classList.remove("show");
+              
+              row.querySelector(".rr-score").textContent = `${m.gf}-${m.ga}`;
+              // IMPORTANTE: aggiorniamo solo le classi del risultato (rr-w/rr-d/rr-l),
+              // senza toccare "in" (altrimenti la riga torna invisibile e la partita
+              // sembra sparire dall'elenco) né "rr-boss".
+              row.classList.remove("rr-w", "rr-d", "rr-l");
+              row.classList.add(m.res === "W" ? "rr-w" : m.res === "D" ? "rr-d" : "rr-l");
+              const resLetterEl = row.querySelector(".rr-res");
+              if (resLetterEl) resLetterEl.textContent = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
+
+              // Aggiorna (o crea) il blocco marcatori per mostrare il gol su rigore
+              const newScorersHtml = renderScorersHtml(m);
+              const existingScorersEl = row.querySelector(".rr-scorers");
+              if (newScorersHtml) {
+                if (existingScorersEl) existingScorersEl.outerHTML = newScorersHtml;
+                else row.insertAdjacentHTML("beforeend", newScorersHtml);
+              } else if (existingScorersEl) {
+                existingScorersEl.remove();
+              }
+              
+              // Resetta i bottoni della porta
+              document.querySelectorAll(".pen-dir").forEach(b => {
+                  b.classList.remove("disabled", "pen-gol", "pen-parata");
+                  b.innerHTML = b.getAttribute("data-dir").includes("top") ? "Alto" : "Basso";
+              });
+
+              // AVVIA LA RIPRESA DEL REPLAY
+              finishStep(); 
+            }, 3000);
+          });
+        });
+      }, 500); // Ritardo prima di mostrare il rigore
+      
+      return; // Blocca il normale proseguimento, sarà finishStep() a riavviarlo
+    }
+    // Funzione che gestisce il proseguimento dell'animazione (già definita sopra)
 
     // --- MAGIA: EVENTI CASUALI DURANTE IL REPLAY ---
     if (state.rogue && state.scheduledEvents && state.scheduledEvents[m.md]) {
@@ -1429,15 +1567,88 @@ function playMatchReplay(matches, done, opts = {}) {
 
 let clTimers = [], clRaf = null;
 function clearClTimers() { clTimers.forEach(clearTimeout); clTimers = []; if (clRaf) cancelAnimationFrame(clRaf); clRaf = null; }
+
+const CL_ROUND_ORDER = ["sedicesimi", "ottavi", "quarti", "semifinale", "finale"];
+const CL_ROUND_LABELS = { sedicesimi: "Sedicesimi", ottavi: "Ottavi", quarti: "Quarti", semifinale: "Semifinale", finale: "Finale" };
+const CL_ROUND_PHRASES = { sedicesimi: "ai sedicesimi di finale", ottavi: "agli ottavi di finale", quarti: "ai quarti di finale", semifinale: "in semifinale", finale: "in finale" };
+
+// Calcola titolo/descrizione in base a come è andata DAVVERO la Champions (non più un testo fisso)
+function championsOutcome(champ) {
+  const lp = champ.leaguePhase;
+  if (!lp || lp.route === "out") {
+    return {
+      title: "Eliminati nella fase a gironi",
+      desc: `Il Napoli chiude ${lp ? lp.rank : "?"}° nel girone di Champions e saluta l'Europa senza raggiungere i playoff.`
+    };
+  }
+  if (champ.won) {
+    return {
+      title: "IL NAPOLI VINCE LA CHAMPIONS LEAGUE! 🏆",
+      desc: "Trionfo assoluto: gli azzurri alzano al cielo la coppa dalle grandi orecchie."
+    };
+  }
+  const phrase = CL_ROUND_PHRASES[champ.lastRound] || "nel percorso europeo";
+  return {
+    title: `Eliminati ${phrase}`,
+    desc: `Il cammino europeo del Napoli si ferma ${phrase}.`
+  };
+}
+
+// Costruisce le righe del tabellone: girone -> sedicesimi -> ottavi -> quarti -> semifinale -> finale
+function championsBracketRows(champ) {
+  const lp = champ.leaguePhase;
+  if (!lp || lp.route === "out") return [];
+  const startIdx = CL_ROUND_ORDER.indexOf(lp.route); // 0 = si parte dai sedicesimi, 1 = bye ai sedicesimi (si parte dagli ottavi)
+  const ties = champ.romaTies || [];
+  const tieByRound = {}; ties.forEach(t => { tieByRound[t.round] = t; });
+
+  return CL_ROUND_ORDER.map((roundKey, idx) => {
+    if (idx < startIdx) return { roundKey, status: "bye", detail: "Qualificazione diretta (miglior piazzamento nel girone)" };
+    const tie = tieByRound[roundKey];
+    if (tie) {
+      const napoliIsT1 = tie.team1.isRoma;
+      const opp = napoliIsT1 ? tie.team2.name : tie.team1.name;
+      const aggGf = napoliIsT1 ? tie.agg.gf : tie.agg.ga;
+      const aggGa = napoliIsT1 ? tie.agg.ga : tie.agg.gf;
+      let scoreLabel = `${aggGf}-${aggGa}`;
+      if (tie.et) scoreLabel += " dts";
+      if (tie.pens) {
+        const myPens = napoliIsT1 ? tie.pens.t1 : tie.pens.t2;
+        const oppPens = napoliIsT1 ? tie.pens.t2 : tie.pens.t1;
+        scoreLabel += ` (${myPens}-${oppPens} dcr)`;
+      }
+      const won = tie.winner.isRoma;
+      return { roundKey, status: won ? "win" : "lose", detail: `vs ${opp} · ${scoreLabel}` };
+    }
+    return { roundKey, status: "not-reached", detail: "—" };
+  });
+}
+
 function playChampions(champ, place, done) {
   document.body.classList.add("cl-mode"); showScreen("#screen-champions");
-  const stage = $("#cl-stage"); 
-  const title = champ && champ.won ? "Napoli ai quarti di finale: la corsa europea è davvero viva." : "Napoli in Champions: il percorso in Europa va avanti.";
-  const route = champ && championRouteText(champ); 
-  const routeText = route || "Azzurri in Europa, con un percorso da giocare partita dopo partita.";
-  
-  if (stage) stage.innerHTML = `<div class="cl-card"><div class="cl-tag">Champions League</div><h3>${title}</h3><p>${routeText}</p><div class="cl-grid"><div class="cl-block"><span class="cl-label">Piazzamento girone</span><strong>${champ && champ.leaguePhase ? champ.leaguePhase.rank : "-"}°</strong></div><div class="cl-block"><span class="cl-label">Miglior marcatore</span><strong>${champ && champ.stats && champ.stats.topScorer ? champ.stats.topScorer.nome : "-"}</strong></div></div></div>`;
-  
+  const stage = $("#cl-stage");
+
+  if (stage) {
+    if (!champ) {
+      stage.innerHTML = "";
+    } else {
+      const outcome = championsOutcome(champ);
+      const lp = champ.leaguePhase;
+      const rows = championsBracketRows(champ);
+      const statusIcon = { win: "✅", lose: "❌", bye: "➖", "not-reached": "" };
+      const bracketHtml = rows.length ? `<div class="cl-bracket">
+          <div class="cl-bracket-title">Il cammino in Champions</div>
+          ${rows.map(r => `<div class="cl-bracket-row cl-bracket-${r.status}">
+              <span class="cl-bracket-round">${CL_ROUND_LABELS[r.roundKey]}</span>
+              <span class="cl-bracket-detail">${r.detail}</span>
+              <span class="cl-bracket-icon">${statusIcon[r.status] || ""}</span>
+            </div>`).join("")}
+        </div>` : "";
+
+      stage.innerHTML = `<div class="cl-card"><div class="cl-tag">Champions League</div><h3>${outcome.title}</h3><p>${outcome.desc}</p><div class="cl-grid"><div class="cl-block"><span class="cl-label">Piazzamento girone</span><strong>${lp ? lp.rank : "-"}°</strong></div><div class="cl-block"><span class="cl-label">Miglior marcatore</span><strong>${champ.stats && champ.stats.topScorer ? champ.stats.topScorer.nome : "-"}</strong></div></div></div>${bracketHtml}`;
+    }
+  }
+
   const finish = () => { clearClTimers(); document.body.classList.remove("cl-mode"); done(); }; 
   const skipBtn = $("#btn-skip-cl"); 
   if (skipBtn) { 
@@ -1445,12 +1656,6 @@ function playChampions(champ, place, done) {
     skipBtn.onclick = finish; 
   } 
   // Il setTimeout è stato rimosso. Ora si prosegue solo cliccando il bottone.
-}
-
-function championRouteText(champ) {
-  if (!champ || !champ.leaguePhase) return "Azzurri in Europa, con un percorso da giocare partita dopo partita.";
-  const route = champ.leaguePhase.route || champ.lastRound || "qualificazione";
-  return `Percorso europeo: ${route}. La squadra ha mostrato forza e ha messo insieme la base per un'avventura lunga e difficile.`;
 }
 
 function shareResultText() { const r = state.lastResult; return r.perfect ? "Ho fatto il 38-0-0 perfetto con il Napoli! Gioca a 38-0-0 NAPOLI!" : `Ho fatto ${r.pts} punti con il mio Napoli all-time. Gioca a 38-0-0 NAPOLI! Forza Napoli Sempre 💙`; }
@@ -1778,7 +1983,7 @@ const BONUSES = [
     desc: "Spirito da capitano: +2 a un centrocampista.",
     apply: () => { const s = slotsByRoleGroup(["CC","MED","TRQ"]); addMod(rnd(s.length ? s : teamSlots()), 2); } },
   { id: "discorso_brusc", rar: "comune", nome: "Discorso di Bruscolotti",
-    desc: "Pall 'e fierro striglia la difesa: +2 a un difensore.",
+    desc: "Pal 'e fierro striglia la difesa: +2 a un difensore.",
     apply: () => { const s = slotsByRoleGroup(["DC","TD","TS"]); addMod(rnd(s.length ? s : teamSlots()), 2); } },
   { id: "tir_a_gir", rar: "noncomune", nome: "O' Tir a gir",
     desc: "Magia sotto l'incrocio: +3 all'ala sinistra o attaccante più forte.",
