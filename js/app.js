@@ -43,7 +43,7 @@ const SYNERGIES = [
   { id: "gemelli_gol", nome: "Gemelli del Gol", giocatori: ["Victor Osimhen", "Khvicha Kvaratskhelia"], bonus: 3, desc: "Osimhen, Kvaratskhelia: +3 Forza" },
   { id: "muro_azzurro", nome: "Muro Azzurro", giocatori: ["Kalidou Koulibaly", "Raul Albiol"], bonus: 2, desc: "Koulibaly, Albiol: +2 Forza" },
   { id: "motore_scudetto", nome: "Motore Scudetto", giocatori: ["Stanislav Lobotka", "Zambo Anguissa", "Piotr Zielinski"], bonus: 3, desc: "Lobotka, Anguissa, Zielinski: +3 Forza" },
-  { id: "fedelissimi_sarri", nome: "I Fedelissimi di Sarri", giocatori: ["Jorginho", "Allan", "Marek Hamsik"], bonus: 5, desc: "Jorginho, Allan, Hamsik: +5 Forza" },
+  { id: "fedelissimi_sarri", nome: "I Fedelissimi di Sarri", giocatori: ["Jorginho", "Marques Allan", "Marek Hamsik"], bonus: 5, desc: "Jorginho, Marques Allan, Hamsik: +5 Forza" },
   { id: "muro_di_berlino", nome: "Muro di Berlino", giocatori: ["Fabio Cannavaro", "Ciro Ferrara"], bonus: 4, desc: "Cannavaro, Ferrara: +4 Forza" },
   { id: "scugnizzi", nome: "Gli Scugnizzi", giocatori: ["Lorenzo Insigne", "Gianluca Grava"], bonus: 3, desc: "Insigne, Grava: +3 Forza" },
   { id: "disastro", nome: "Disastro Annunciato", giocatori: ["Eduardo Vargas", "Leonardo Pavoletti", "Ignacio Fideleff"], bonus: -5, desc: "Vargas, Pavoletti, Fideleff: -5 OVR. Perfetto per retrocedere!" },
@@ -74,6 +74,19 @@ const CAREER_BANDS = [
 ];
 
 const FORMATIONS = {
+  "4-4-2": [ 
+    { id: "POR", label: "POR", accepts: ["POR"], x: 50, y: 91 }, 
+    { id: "TD", label: "TD", accepts: ["TD"], x: 84, y: 74 }, 
+    { id: "DC1", label: "DC", accepts: ["DC"], x: 64, y: 80 }, 
+    { id: "DC2", label: "DC", accepts: ["DC"], x: 36, y: 80 }, 
+    { id: "TS", label: "TS", accepts: ["TS"], x: 16, y: 74 }, 
+    { id: "ED", label: "ED", accepts: ["ED", "AD"], x: 86, y: 46 }, 
+    { id: "CC1", label: "CC", accepts: ["CC", "MED"], x: 64, y: 50 }, 
+    { id: "CC2", label: "CC", accepts: ["CC", "MED"], x: 36, y: 50 }, 
+    { id: "ES", label: "ES", accepts: ["ES", "AS"], x: 14, y: 46 }, 
+    { id: "ATT1", label: "ATT", accepts: ["ATT"], x: 62, y: 16 }, 
+    { id: "ATT2", label: "ATT", accepts: ["ATT"], x: 38, y: 16 } 
+  ],
   "4-3-3": [ { id: "POR", label: "POR", accepts: ["POR"], x: 50, y: 91 }, { id: "TD", label: "TD", accepts: ["TD"], x: 84, y: 73 }, { id: "DC1", label: "DC", accepts: ["DC"], x: 64, y: 79 }, { id: "DC2", label: "DC", accepts: ["DC"], x: 36, y: 79 }, { id: "TS", label: "TS", accepts: ["TS"], x: 16, y: 73 }, { id: "MED", label: "MED", accepts: ["MED"], x: 50, y: 58 }, { id: "CC1", label: "CC", accepts: ["CC"], x: 72, y: 46 }, { id: "CC2", label: "CC", accepts: ["CC"], x: 28, y: 46 }, { id: "AD", label: "AD", accepts: ["AD"], x: 80, y: 21 }, { id: "AS", label: "AS", accepts: ["AS"], x: 20, y: 21 }, { id: "ATT", label: "ATT", accepts: ["ATT"], x: 50, y: 11 } ],
   "4-2-3-1": [ { id: "POR", label: "POR", accepts: ["POR"], x: 50, y: 91 }, { id: "TD", label: "TD", accepts: ["TD"], x: 84, y: 74 }, { id: "DC1", label: "DC", accepts: ["DC"], x: 64, y: 80 }, { id: "DC2", label: "DC", accepts: ["DC"], x: 36, y: 80 }, { id: "TS", label: "TS", accepts: ["TS"], x: 16, y: 74 }, { id: "MED1", label: "MED", accepts: ["MED"], x: 64, y: 57 }, { id: "MED2", label: "MED", accepts: ["MED"], x: 36, y: 57 }, { id: "AD", label: "AD", accepts: ["AD"], x: 83, y: 32 }, { id: "TRQ", label: "TRQ", accepts: ["TRQ"], x: 50, y: 30 }, { id: "AS", label: "AS", accepts: ["AS"], x: 17, y: 32 }, { id: "ATT", label: "ATT", accepts: ["ATT"], x: 50, y: 11 } ],
   "3-5-2": [ { id: "POR", label: "POR", accepts: ["POR"], x: 50, y: 91 }, { id: "DC1", label: "DC", accepts: ["DC"], x: 50, y: 73 }, { id: "DC2", label: "DC", accepts: ["DC"], x: 75, y: 75 }, { id: "DC3", label: "DC", accepts: ["DC"], x: 25, y: 75 }, { id: "QD", label: "ED", accepts: ["ED"], x: 89, y: 50 }, { id: "CC1", label: "CC", accepts: ["CC"], x: 68, y: 52 }, { id: "MED", label: "MED", accepts: ["MED"], x: 50, y: 58 }, { id: "CC2", label: "CC", accepts: ["CC"], x: 32, y: 52 }, { id: "QS", label: "ES", accepts: ["ES"], x: 11, y: 50 }, { id: "ATT1", label: "ATT", accepts: ["ATT"], x: 62, y: 16 }, { id: "ATT2", label: "ATT", accepts: ["ATT"], x: 38, y: 16 } ],
@@ -290,7 +303,16 @@ const ACHIEVEMENTS = [
   { id: "perfect", icon: "🏆", nome: "Scudetto Perfetto", desc: "Vinci tutte le 38 partite di campionato (38-0).", check: (pts, w, team) => w === 38 },
   { id: "bidone", icon: "🗑️", nome: "Vincere col Bidone", desc: "Vinci lo scudetto avendo in campo Vargas, Pavoletti o Fideleff.", check: (pts, w, team) => pts >= 88 && Object.values(team).some(p => ["Eduardo Vargas", "Leonardo Pavoletti", "Ignacio Fideleff"].includes(p.nome)) },
   { id: "nostalgia", icon: "📺", nome: "Nostalgia Canaglia", desc: "Vinci lo scudetto con soli giocatori nati prima del 1985.", check: (pts, w, team) => pts >= 88 && Object.values(team).every(p => p.annoNascita && p.annoNascita <= 1985) },
-  { id: "schifo_vero", icon: "📉", nome: "Schifo Vero", desc: "Chiudi all'ultimo posto nella modalità Amm fa schif'.", check: (pts, w, team) => state.diff && state.diff.goal === "retro" && pts < 32 }
+  { id: "schifo_vero", icon: "📉", nome: "Schifo Vero", desc: "Chiudi all'ultimo posto nella modalità Amm fa schif'.", check: (pts, w, team) => state.diff && state.diff.goal === "retro" && pts < 32 },
+  
+  /* ============================================================
+     NUOVI TROFEI AGGIUNTI
+     ============================================================ */
+  { id: "champs_winner", icon: "⭐", nome: "Sul Tetto d'Europa", desc: "Vinci la Champions League con il Napoli.", check: (pts, w, team) => state.champions && state.champions.won },
+  { id: "mazzarri_goal", icon: "🌧️", nome: "L'Orologio di Mazzarri", desc: "Porta a termine con successo la missione Zona Mazzarri (arrivare secondi).", check: (pts, w, team) => state.diff && state.diff.goal === "sesto" && state.lastResult && state.lastResult.pos === "2°" },
+  { id: "maradona_legend", icon: "👑", nome: "La Mano de Dios", desc: "Schiera Diego Armando Maradona in campo in una run.", check: (pts, w, team) => Object.values(team).some(p => p.nome.includes("Diego Armando Maradona")) },
+  { id: "dream_squad", icon: "💎", nome: "Galattici a Fuorigrotta", desc: "Vinci lo scudetto schierando un undici in cui ogni titolare ha almeno 90 di Overall.", check: (pts, w, team) => pts >= 88 && Object.values(team).length === 11 && Object.values(team).every(p => p.rating >= 90) },
+  { id: "muro_azzurro", icon: "🛡️", nome: "Rullo Compressore", desc: "Chiudi una stagione di campionato totalizzando almeno 90 punti.", check: (pts, w, team) => pts >= 90 }
 ];
 
 function checkAndUnlockAchievements(seasonPts, seasonW, team) {
@@ -470,27 +492,100 @@ function init() {
     // 1. Click su "Jamm' a jucà" e menu principali
     const menuBtn = e.target.closest("[data-menu]");
     if (menuBtn) {
-      playSound('click');
+       playSound('click');
       e.preventDefault();
       const name = menuBtn.getAttribute("data-menu");
       const home = document.getElementById("screen-home");
       const nav = home ? home.querySelector(".smenu") : null;
       const panels = home ? home.querySelectorAll(".subpanel") : [];
 if (name === "bacheca") renderBacheca(); // Aggiorna la bacheca quando la apri
+if (name === "leaderboard") renderLeaderboard(); // Aggiorna la classifica globale quando la apri
 if (name === "hof") {
-        const saved = localStorage.getItem("napoli380_hof");
         const hofContent = document.getElementById("hof-content");
-        if (saved && hofContent) {
-            const team = JSON.parse(saved);
-            let html = `<p style="margin-bottom: 15px; color: #ffd24a;">🏆 ECCO GLI INVINCIBILI DEL 38-0!</p><ul style="list-style: none; padding: 0; display: grid; gap: 8px;">`;
-            Object.values(team).forEach(p => {
-                html += `<li style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0, 161, 255, 0.2); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between;">
-                    <span><strong style="color:var(--celeste-chiaro); margin-right:8px;">${p.ruoli[0]}</strong> ${p.nome}</span>
-                    <strong style="color:var(--celeste);">${p.rating}</strong>
-                </li>`;
-            });
-            html += `</ul>`;
-            hofContent.innerHTML = html;
+        const dbCounter = document.getElementById("db-counter");
+        
+        if (hofContent) {
+            const coll = getCollection();
+            const allCards = DB.slice().sort((a, b) => b.rating - a.rating);
+            
+            // Inizializza la pagina del database se non esiste
+            if (state.dbPage == null) state.dbPage = 0;
+            const pageSize = 20; // 20 carte per pagina (5 righe da 4)
+            const totalPages = Math.ceil(allCards.length / pageSize);
+            
+            if (state.dbPage >= totalPages) state.dbPage = 0;
+            
+            const renderDbPage = () => {
+                let ownedCount = 0;
+                // Calcola quante carte possiede in totale (su tutto il DB)
+                allCards.forEach(p => {
+                    if (coll.some(x => x.nome === p.nome && x.stagione === p.stagione)) ownedCount++;
+                });
+
+                const pageStart = state.dbPage * pageSize;
+                const pageCards = allCards.slice(pageStart, pageStart + pageSize);
+                
+                let html = "";
+                pageCards.forEach(p => {
+                    const isOwned = coll.some(x => x.nome === p.nome && x.stagione === p.stagione);
+                    
+                    let cls = "player-card tcg " + (isOwned ? "db-card-owned" : "db-card-unowned");
+                    if (p.rating >= 90) cls += " tcg-legend";
+                    if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+                    let styleAttr = tcgGoldStyle(p.rating);
+                    
+                    const statusBadge = isOwned 
+                        ? '<div class="card-banner" style="background:#00ff88; color:#00112b;">✓ POSSEDUTA</div>' 
+                        : '<div class="card-banner" style="background:rgba(255,255,255,0.1); color:var(--testo-mute);">NON POSSEDUTA</div>';
+                    
+                    html += `<div class="${cls}" style="${styleAttr}">
+                        ${tcgCardInner(p, false, p.ruoli[0])}
+                        ${statusBadge}
+                    </div>`;
+                });
+                
+                // Aggiunge i controlli di paginazione in fondo alla griglia
+                let paginationHtml = "";
+                if (totalPages > 1) {
+                    paginationHtml = `
+                        <div style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 25px; margin-bottom: 15px;">
+                            <button type="button" id="db-prev" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">⬅ Precedente</button>
+                            <span style="font-family: var(--font-cond); color: var(--celeste-chiaro); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em;">Pagina ${state.dbPage + 1} di ${totalPages}</span>
+                            <button type="button" id="db-next" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">Successiva ➔</button>
+                        </div>
+                    `;
+                }
+
+                hofContent.className = "card-db-grid";
+                hofContent.innerHTML = html + paginationHtml;
+                
+                if (dbCounter) {
+                    dbCounter.textContent = `${ownedCount} / ${allCards.length}`;
+                }
+
+                // Collegamento dei bottoni pagina precedente / successiva
+                const btnPrev = document.getElementById("db-prev");
+                const btnNext = document.getElementById("db-next");
+                
+                if (btnPrev) {
+                    btnPrev.onclick = () => {
+                        playSound('click');
+                        state.dbPage = (state.dbPage - 1 + totalPages) % totalPages;
+                        renderDbPage();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    };
+                }
+                if (btnNext) {
+                    btnNext.onclick = () => {
+                        playSound('click');
+                        state.dbPage = (state.dbPage + 1) % totalPages;
+                        renderDbPage();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    };
+                }
+            };
+
+            renderDbPage();
         }
       }
       if (nav) nav.style.display = name === "root" ? "flex" : "none";
@@ -499,6 +594,9 @@ if (name === "hof") {
         panel.hidden = !show;
         panel.style.display = show ? "block" : "none";
       });
+   if (name === "collection") {
+          renderCollection();
+      }
       if (home) home.setAttribute("data-panel", name);
       return;
     }
@@ -538,7 +636,7 @@ if (name === "hof") {
       const flag = document.getElementById("flag-hidden");
       state.hiddenRating = flag ? flag.checked : false;
       
-      if (key === "custom") { showScreen("#screen-custom"); document.getElementById("btn-home").hidden = false; return; }
+      
       if (key === "rogue") { startRogue(); return; }
       if (key === "carriera") { startCareer(); return; }
       startWith(key, DIFFICULTIES[key]);
@@ -548,11 +646,18 @@ if (name === "hof") {
 
  // 4. Collegamento bottoni di gioco
   if (document.getElementById("btn-reroll")) document.getElementById("btn-reroll").onclick = doReroll;
-  if (document.getElementById("btn-start")) document.getElementById("btn-start").onclick = () => {
-     playSound('click'); 
-     if (Object.keys(state.team).length < 11) return;
-      playSound('fischio'); 
-      if (state.rogue) startRogueResolution(); else startSeasonWithBreak(); };
+  if (document.getElementById("btn-start")) {
+      document.getElementById("btn-start").onclick = () => {
+         playSound('click'); 
+         if (Object.keys(state.team).length < 11) return;
+         if (state.diff && state.diff.key === "dreamteam" && !state.captainId) {
+             toast("👑 Scegli prima il capitano toccando un giocatore in campo!");
+             return;
+         }
+         playSound('fischio'); 
+         if (state.rogue) startRogueResolution(); else startSeasonWithBreak(); 
+      };
+  }
   if (document.getElementById("btn-again")) document.getElementById("btn-again").onclick = () => location.reload();
   if (document.getElementById("btn-share-txt")) document.getElementById("btn-share-txt").onclick = () => { playSound('click'); copyShareText(); };
   if (document.getElementById("btn-share-img")) document.getElementById("btn-share-img").onclick = () => { playSound('click'); shareResultImage(); };
@@ -561,66 +666,69 @@ if (name === "hof") {
   if (document.getElementById("btn-career-home")) document.getElementById("btn-career-home").onclick = goHome;
   if (document.getElementById("btn-home")) document.getElementById("btn-home").onclick = goHome;
 
-  // --- AGGIUNTA: Gestione pulsante e slider modalità personalizzata ---
- // Gestione pulsante e slider modalità personalizzata con controllo incrociato Min/Max
-  const btnCustomGo = document.getElementById("btn-custom-go");
-  if (btnCustomGo) {
-    btnCustomGo.onclick = () => {
-      playSound('click');
-      const rerolls = parseInt(document.getElementById("cfg-reroll").value, 10);
-      const options = parseInt(document.getElementById("cfg-options").value, 10);
-      let min = parseInt(document.getElementById("cfg-min").value, 10);
-      let max = parseInt(document.getElementById("cfg-max").value, 10);
-
-      // Controllo di sicurezza: se min supera max, li invertiamo o blocchiamo
-      if (min > max) min = max;
-
-      state.diff = { 
-        key: "custom", 
-        label: "Personalizzata", 
-        min: min, 
-        max: max, 
-        reroll: rerolls, 
-        options: options 
+ // --- AVVIO SQUADRA DEI SOGNI ---
+  const btnDreamTeam = document.getElementById("btn-start-dreamteam");
+  if (btnDreamTeam) {
+      btnDreamTeam.onclick = () => {
+          playSound('click');
+          const coll = getCollection();
+          
+          const validFormations = Object.values(FORMATIONS).filter(slots => canFillFormation(slots, coll));
+          if (validFormations.length === 0) {
+              toast("❌ Non hai abbastanza carte compatibili nei ruoli giusti per scendere in campo!");
+              return;
+          }
+          
+          state.diff = { key: "dreamteam", label: "Squadra dei Sogni", min: 1, max: 99, reroll: 0, options: 5 };
+          state.rerolls = 0; // Reroll azzerati a 0 come richiesto!
+          state.optionsCount = 5;
+          state.team = {}; state.usedNames = new Set(); state.activeSlot = null; state.options = []; 
+          resetRogueState(); updateHud(); renderFormationCards(); showScreen("#screen-modulo");
       };
-      
-      state.rerolls = rerolls;
-      state.optionsCount = options;
-      state.team = {}; 
-      state.usedNames = new Set(); 
-      state.activeSlot = null; 
-      state.options = []; 
-      
-      resetRogueState(); 
-      updateHud(); 
-      renderFormationCards(); 
-      showScreen("#screen-modulo");
-    };
   }
 
-  // Sincronizzazione in tempo reale con blocco automatico Min <= Max
-  const minInput = document.getElementById("cfg-min");
-  const maxInput = document.getElementById("cfg-max");
-  const minOut = document.getElementById("cfg-min-out");
-  const maxOut = document.getElementById("cfg-max-out");
-
-  ["reroll", "options", "min", "max"].forEach(id => {
-    const input = document.getElementById("cfg-" + id);
-    const output = document.getElementById("cfg-" + id + "-out");
-    if (input && output) {
-      input.oninput = () => {
-        if (id === "min" && maxInput && parseInt(input.value) > parseInt(maxInput.value)) {
-          input.value = maxInput.value; // Impedisce a Min di superare Max
-        }
-        if (id === "max" && minInput && parseInt(input.value) < parseInt(minInput.value)) {
-          input.value = minInput.value; // Impedisce a Max di scendere sotto Min
-        }
-        output.value = input.value;
-      };
-    }
-  });
   // ------------------------------------------------------------------
+// --- INIZIALIZZA ECONOMIA, NEGOZIO E COLLEZIONE ---
+  updateWalletUI();
 
+ // Aggiungi il listener per il bottone di reindirizzamento alla collezione dal negozio
+  const btnCollezioneNegozio = document.querySelector('[data-panel="shop"] .btn.ghost');
+  if(btnCollezioneNegozio) {
+      // Rimuove l'avviso provvisorio della Fase 1
+      btnCollezioneNegozio.removeAttribute("onclick");
+      
+      btnCollezioneNegozio.onclick = () => {
+          playSound('click');
+          renderCollection(); // Disegna le carte
+          
+          // Nasconde il negozio e mostra la collezione
+          const home = document.getElementById("screen-home");
+          const panels = home ? home.querySelectorAll(".subpanel") : [];
+          
+          panels.forEach(panel => {
+              const show = panel.dataset.panel === "collection";
+              panel.hidden = !show;
+              panel.style.display = show ? "block" : "none";
+          });
+          if (home) home.setAttribute("data-panel", "collection");
+      };
+  }
+
+  // Motore di acquisto e spacchettamento
+  document.querySelectorAll(".pack-card").forEach(btn => {
+     btn.onclick = function() {
+         playSound('click');
+         const packType = this.getAttribute("data-pack");
+         const cost = packType === 'scugnizzo' ? 100 : (packType === 'azzurro' ? 300 : 800);
+         
+         if (getCredits() >= cost) {
+             addCredits(-cost, `Acquisto Pacchetto ${packType.toUpperCase()}`);
+             openPack(packType);
+         } else {
+             toast("❌ Crediti insufficienti! Gioca per vincerne altri.");
+         }
+     }
+  });
   document.body.dataset.screen = "screen-home";
   document.body.dataset.live = "off";
 }
@@ -642,6 +750,7 @@ function resetRogueState() {
    state.slotBand = null; state.ultimateUsed = false; 
    state.scheduledEvents = null; state.bonusApplied = false; 
    state.captainId = null;
+   state.tactic = "equilibrata";
 }
 function _dRand() { return state._rngDraft ? state._rngDraft.next() : Math.random(); }
 function _dPick(arr) { return state._rngDraft ? state._rngDraft.pick(arr) : rnd(arr); }
@@ -683,22 +792,50 @@ function renderCareerFormationCompare() {
     const eff = isFinal ? effRating(s.id) : p.rating; 
     const age = isFinal ? state.career.ages[s.id] : careerInitialAge(p); 
     const iconCls = (p.stagione === "Hall of Fame") ? " slot-icon" : "";
-    return `<div class="slot filled${iconCls}" style="left:${s.x}%; top:${s.y}%;">${slotTokenInnerHTML(p, eff, age, state.captainId === s.id, s.id)}</div>`; 
+    // Esclude le Icone dal legendCls
+    const legendCls = (eff >= 90 && p.stagione !== "Hall of Fame") ? " slot-legend" : "";
+    
+    return `<div class="slot filled${iconCls}${legendCls}" style="left:${s.x}%; top:${s.y}%;">${slotTokenInnerHTML(p, eff, age, state.captainId === s.id, s.id)}</div>`; 
   }).join("")}</div>`; 
   
   box.innerHTML = `<h3 class="cfc-title">La rosa, prima e dopo</h3><div class="cfc-grid"><div class="cfc-col"><span class="cfc-label">Stagione 1</span>${pitchHTML(initial, false)}</div><div class="cfc-col"><span class="cfc-label">Stagione 10</span>${pitchHTML(state.team, true)}</div></div>`; 
 }
 function renderMarketPitch(container, cfg) {
-  const continueHTML = cfg.continueBtn ? `<div class="break-actions"><button type="button" class="btn primary market-continue-btn">${cfg.continueBtn.label}</button></div>` : "";
+  const continueHTML = cfg.continueBtn ? `
+     <div id="tactic-container-break" style="width: 100%; max-width: 480px; margin: 0 auto 15px auto;">
+       <p class="options-hint" style="margin-bottom:8px; font-size:0.75rem; text-align:center;">CAMBIA MENTALITÀ (RITORNO)</p>
+       <div class="tactic-selector" style="display: flex; gap: 6px; width: 100%; background: rgba(0, 11, 26, 0.6); border-radius: 12px; padding: 4px; border: 1px solid rgba(0, 161, 255, 0.2);">
+         <button class="tactic-btn-break ${state.tactic === 'catenaccio' ? 'active' : ''}" data-t="catenaccio" style="flex:1; padding:8px 0; font-family:var(--font-cond); font-size:0.75rem; font-weight:700; text-transform:uppercase; background:transparent; border:none; color:var(--testo-dim); border-radius:8px; cursor:pointer; transition:0.2s;">🛡️ Difensiva</button>
+         <button class="tactic-btn-break ${state.tactic === 'equilibrata' || !state.tactic ? 'active' : ''}" data-t="equilibrata" style="flex:1; padding:8px 0; font-family:var(--font-cond); font-size:0.75rem; font-weight:700; text-transform:uppercase; background:transparent; border:none; color:var(--testo-dim); border-radius:8px; cursor:pointer; transition:0.2s;">⚖️ Equilibrata</button>
+         <button class="tactic-btn-break ${state.tactic === 'zemanlandia' ? 'active' : ''}" data-t="zemanlandia" style="flex:1; padding:8px 0; font-family:var(--font-cond); font-size:0.75rem; font-weight:700; text-transform:uppercase; background:transparent; border:none; color:var(--testo-dim); border-radius:8px; cursor:pointer; transition:0.2s;">⚔️ Zemanlandia</button>
+       </div>
+     </div>
+     <div class="break-actions"><button type="button" class="btn primary market-continue-btn">${cfg.continueBtn.label}</button></div>` : "";
+     
   container.innerHTML = `<p class="market-hint">${cfg.hint}</p><div class="pitch market-pitch"><div class="pitch-lines"></div>${slots().map(s => { 
     const p = state.team[s.id]; 
     const eff = effRating(s.id); 
     const iconCls = (p && p.stagione === "Hall of Fame") ? " slot-icon" : "";
-    return `<div class="slot filled${cfg.left <= 0 ? " locked-out" : ""}${iconCls}" style="left:${s.x}%; top:${s.y}%;" data-slot="${s.id}">${slotTokenInnerHTML(p, eff, careerAgeForSlot(s.id), state.captainId === s.id, s.id)}</div>`; 
+    const legendCls = (eff >= 90 && p && p.stagione !== "Hall of Fame") ? " slot-legend" : "";
+    return `<div class="slot filled${cfg.left <= 0 ? " locked-out" : ""}${iconCls}${legendCls}" style="left:${s.x}%; top:${s.y}%;" data-slot="${s.id}">${slotTokenInnerHTML(p, eff, careerAgeForSlot(s.id), state.captainId === s.id, s.id)}</div>`; 
   }).join("")}</div><div class="market-pick-area"></div>${continueHTML}`;
   
   if (cfg.left > 0) container.querySelectorAll(".market-pitch .slot").forEach(el => { el.addEventListener("click", () => cfg.onOpen(el.dataset.slot)); });
-  if (cfg.continueBtn) container.querySelector(".market-continue-btn").addEventListener("click", cfg.continueBtn.onClick);
+  
+  if (cfg.continueBtn) {
+     container.querySelector(".market-continue-btn").addEventListener("click", cfg.continueBtn.onClick);
+     container.querySelectorAll(".tactic-btn-break").forEach(btn => {
+         if(btn.classList.contains("active")) { btn.style.background = "var(--celeste)"; btn.style.color = "#00112b"; }
+         btn.onclick = function() {
+             if(typeof playSound === 'function') playSound('click');
+             container.querySelectorAll(".tactic-btn-break").forEach(b => {
+                 b.classList.remove("active"); b.style.background = "transparent"; b.style.color = "var(--testo-dim)";
+             });
+             this.classList.add("active"); this.style.background = "var(--celeste)"; this.style.color = "#00112b";
+             state.tactic = this.getAttribute("data-t");
+         };
+     });
+  }
 }
 
 function renderReplacementCards(container, slotId, opts, onPick, onCancel) {
@@ -798,10 +935,13 @@ function updateHud() {
     ? `<span class="hud-pill diff-${state.diff.goal === "retro" ? "serieb" : "sesto"}">${goalBadgeLabel}</span>`
     : "";
     
-  // Controlla se i reroll sono infiniti e mostra il simbolo ∞
   const rerollText = state.rerolls === Infinity ? "∞" : state.rerolls;
   
-  hud.innerHTML = `<span class="hud-pill diff-${state.diff.key}">${state.diff.label}</span>${goalBadge}<span class="hud-pill">Reroll <strong>${rerollText}</strong></span>`;
+  // Se siamo nella Squadra dei Sogni, rimuoviamo completamente la pillola dei reroll
+  const isDreamTeam = state.diff.key === "dreamteam";
+  const rerollPill = isDreamTeam ? "" : `<span class="hud-pill">Reroll <strong>${rerollText}</strong></span>`;
+  
+  hud.innerHTML = `<span class="hud-pill diff-${state.diff.key}">${state.diff.label}</span>${goalBadge}${rerollPill}`;
   renderTeamInfo(); renderEventLog();
 }
 
@@ -883,13 +1023,49 @@ function renderEventLog() {
   }).join("");
 }
 
+// Controlla se la collezione ha carte a sufficienza per riempire questo specifico modulo
+function canFillFormation(formationSlots, collection) {
+    let collCopy = [...collection];
+    for (let slot of formationSlots) {
+        let foundIdx = collCopy.findIndex(p => p.ruoli.some(r => slot.accepts.includes(r)));
+        if (foundIdx === -1) return false;
+        collCopy.splice(foundIdx, 1); // Rimuove il giocatore usato così non può tappare 2 buchi
+    }
+    return true;
+}
+
 function renderFormationCards() {
   const wrap = $("#formation-cards"); wrap.innerHTML = "";
+  const isDreamTeam = state.diff && state.diff.key === "dreamteam";
+  const coll = getCollection();
+
   Object.entries(FORMATIONS).forEach(([key, slots]) => {
-    const card = el("button", "formation-card"); const mini = el("div", "mini-pitch");
+    // Controlla se il modulo è bloccato
+    const canFill = !isDreamTeam || canFillFormation(slots, coll);
+    
+    const card = el("button", "formation-card"); 
+    if (!canFill) {
+        card.style.opacity = "0.4";
+        card.style.filter = "grayscale(100%)";
+        card.style.cursor = "not-allowed";
+    }
+
+    const mini = el("div", "mini-pitch");
     slots.forEach(s => { const dot = el("span", "mini-dot"); dot.style.left = s.x + "%"; dot.style.top = s.y + "%"; mini.appendChild(dot); });
-    card.appendChild(mini); card.appendChild(el("div", "formation-name", key));
-    card.addEventListener("click", () => { state.formationKey = key; buildPitch(); showScreen("#screen-draft"); }); wrap.appendChild(card);
+    card.appendChild(mini); 
+    
+    let labelHTML = key;
+    if (!canFill) labelHTML += ' <span style="font-size: 0.8rem; color: #ff5c5c;">(Mancano carte) 🔒</span>';
+    card.appendChild(el("div", "formation-name", labelHTML));
+    
+    card.addEventListener("click", () => { 
+        if (!canFill) {
+            toast("❌ Non hai giocatori compatibili in Collezione per riempire questo modulo.");
+            return;
+        }
+        state.formationKey = key; buildPitch(); showScreen("#screen-draft"); 
+    }); 
+    wrap.appendChild(card);
   });
 }
 
@@ -904,7 +1080,6 @@ function buildPitch() {
 function buildCareerSlotBand() { const bands = shuffle(CAREER_BANDS.slice()); state.slotBand = {}; slots().forEach((s, i) => { state.slotBand[s.id] = bands[i]; }); }
 
 function eligiblePool(slot, excludeNames = []) {
-  // Legge i limiti min e max dalla modalità attiva (standard o personalizzata)
   const minLimit = state.diff && state.diff.min != null ? state.diff.min : 1;
   const maxLimit = state.diff && state.diff.max != null ? state.diff.max : 99;
 
@@ -912,8 +1087,10 @@ function eligiblePool(slot, excludeNames = []) {
   const min = band ? band.min : minLimit; 
   const max = band ? band.max : maxLimit;
 
-  // Filtra il DB prendendo SOLO i giocatori che rientrano strettamente nel range min - max
-  return DB.filter(p => 
+  // NOVITÀ: Sceglie se usare tutto il gioco o solo le carte che hai trovato!
+  const sourceDB = (state.diff && state.diff.key === "dreamteam") ? getCollection() : DB;
+
+  return sourceDB.filter(p => 
     p.rating >= min && 
     p.rating <= max && 
     p.ruoli.some(r => slot.accepts.includes(r)) && 
@@ -925,7 +1102,7 @@ function eligiblePool(slot, excludeNames = []) {
 function onSlotClick(slot) {
   const filled = Object.keys(state.team).length;
   
-  // Se la squadra è completa ma manca il capitano, il click assegna la fascia!
+  // Assegnazione Capitano a 11 giocatori completi
   if (filled === 11 && !state.captainId) {
     if (state.team[slot.id]) {
         playSound('click');
@@ -937,6 +1114,44 @@ function onSlotClick(slot) {
     return;
   }
 
+  // --- LOGICA SQUADRA DEI SOGNI (Scambi e Sostituzioni) ---
+  if (state.diff && state.diff.key === "dreamteam") {
+      if (state.activeSlot && state.team[state.activeSlot.id]) {
+          if (state.activeSlot.id === slot.id) {
+              state.activeSlot = null;
+              highlightSlots(); renderOptionsPanel();
+              return;
+          }
+          
+          const s1 = state.activeSlot;
+          const s2 = slot;
+          const p1 = state.team[s1.id];
+          const p2 = state.team[s2.id]; 
+          
+          const p1CanGoS2 = !p1 || p1.ruoli.some(r => s2.accepts.includes(r));
+          const p2CanGoS1 = !p2 || p2.ruoli.some(r => s1.accepts.includes(r));
+          
+          if (p1CanGoS2 && p2CanGoS1) {
+              playSound('carta');
+              if (p2) state.team[s1.id] = p2; else delete state.team[s1.id];
+              if (p1) state.team[s2.id] = p1; else delete state.team[s2.id];
+              
+              if (p2) markFilledSlot(s1, p2); else { const n1 = $("#slot-" + s1.id); n1.className = "slot empty"; n1.innerHTML = `<span class="slot-role">${s1.label}</span>`; }
+              if (p1) markFilledSlot(s2, p1); else { const n2 = $("#slot-" + s2.id); n2.className = "slot empty"; n2.innerHTML = `<span class="slot-role">${s2.label}</span>`; }
+              
+              state.activeSlot = null; highlightSlots(); renderOptionsPanel();
+              return;
+          } else {
+              toast("❌ Ruoli non compatibili per lo scambio!");
+              return;
+          }
+      } else {
+          drawOptions(slot);
+          return;
+      }
+  }
+
+  // --- LOGICA STANDARD DRAFT ---
   if (state.team[slot.id]) return; 
   if (state.activeSlot && state.activeSlot.id !== slot.id) return;
   if (state.activeSlot) return; 
@@ -963,11 +1178,24 @@ function applyCoachPickBonus(slot, p) {
 function drawOptions(slot, excludeCurrent = false) {
   const exclude = excludeCurrent ? state.options.map(o => o.nome + o.stagione) : [];
   state.activeSlot = slot;
+  state.dreamTeamPage = 0; // Reset alla prima pagina quando apri uno slot
   state.options = buildOptionPool(slot, exclude);
   highlightSlots(); renderOptionsPanel();
 }
 
-function highlightSlots() { slots().forEach(s => { const node = $("#slot-" + s.id); node.classList.toggle("active", !!state.activeSlot && state.activeSlot.id === s.id); node.classList.toggle("locked-out", !!state.activeSlot && state.activeSlot.id !== s.id && !state.team[s.id]); }); }
+function highlightSlots() { 
+  const isDreamTeam = state.diff && state.diff.key === "dreamteam";
+  slots().forEach(s => { 
+    const node = $("#slot-" + s.id); 
+    node.classList.toggle("active", !!state.activeSlot && state.activeSlot.id === s.id); 
+    // In Dream Team non blocchiamo mai gli slot pieni, così puoi cliccarli per scambiarli!
+    if (isDreamTeam) {
+        node.classList.remove("locked-out");
+    } else {
+        node.classList.toggle("locked-out", !!state.activeSlot && state.activeSlot.id !== s.id && !state.team[s.id]); 
+    }
+  }); 
+}
 
 const AGE_GROWTH_VALUES = [3, 2, 1, 0, -1];
 const AGE_GROWTH_TABLE = [ { max: 20, weights: [1, 1, 1, 0, 0] }, { max: 24, weights: [1, 2, 4, 1, 0] }, { max: 28, weights: [0, 1, 6, 1, 0] }, { max: 33, weights: [0, 0, 1, 1, 1] }, { max: Infinity, weights: [0, 0, 0, 1, 3] } ];
@@ -1030,8 +1258,10 @@ function renderOptionsPanel() {
      budgetContainer.hidden = true;
   }
   // ---------------------------
+  
   state._picking = false; const panel = $("#options"); const hint = $("#options-hint"); panel.innerHTML = ""; slots().forEach(s => { if (state.team[s.id]) refreshSlotRating(s.id); }); updateHud();
   const filled = Object.keys(state.team).length; $("#btn-start").disabled = filled < 11; $("#btn-start").textContent = filled < 11 ? `VIA ALLA STAGIONE (${filled}/11)` : "VIA ALLA STAGIONE";
+  
   // --- INIEZIONE: BOTTONE ULTIMATE DINAMICO ---
   let ultContainer = document.getElementById("ultimate-container");
   if (!ultContainer && document.querySelector(".draft-actions")) {
@@ -1068,9 +1298,50 @@ function renderOptionsPanel() {
      }
   }
   // ---------------------------------------------
- const rerollBtn = $("#btn-reroll"); 
-  rerollBtn.disabled = !state.activeSlot || state.rerolls <= 0; 
-  rerollBtn.textContent = state.rerolls === Infinity ? `Reroll (∞)` : `Reroll (${state.rerolls})`;
+  
+  // --- INIEZIONE: MENTALITA' TATTICA ---
+  const acts = document.querySelector(".draft-actions");
+  if (filled === 11 && state.captainId) {
+     let tCont = document.getElementById("tactic-container");
+     if (!tCont && acts) {
+         acts.insertAdjacentHTML('beforebegin', `
+         <div id="tactic-container" style="width: 100%; margin-bottom: 15px;">
+           <p class="options-hint" style="margin-bottom:8px; font-size:0.75rem; text-align:center;">IMPOSTA LA MENTALITÀ</p>
+           <div class="tactic-selector" style="display: flex; gap: 6px; width: 100%; background: rgba(0, 11, 26, 0.6); border-radius: 12px; padding: 4px; border: 1px solid rgba(0, 161, 255, 0.2);">
+             <button class="tactic-btn ${state.tactic === 'catenaccio' ? 'active' : ''}" data-t="catenaccio" style="flex:1; padding:8px 0; font-family:var(--font-cond); font-size:0.75rem; font-weight:700; text-transform:uppercase; background:transparent; border:none; color:var(--testo-dim); border-radius:8px; cursor:pointer; transition:0.2s;">🛡️ Difensiva</button>
+             <button class="tactic-btn ${state.tactic === 'equilibrata' || !state.tactic ? 'active' : ''}" data-t="equilibrata" style="flex:1; padding:8px 0; font-family:var(--font-cond); font-size:0.75rem; font-weight:700; text-transform:uppercase; background:transparent; border:none; color:var(--testo-dim); border-radius:8px; cursor:pointer; transition:0.2s;">⚖️ Equilibrata</button>
+             <button class="tactic-btn ${state.tactic === 'zemanlandia' ? 'active' : ''}" data-t="zemanlandia" style="flex:1; padding:8px 0; font-family:var(--font-cond); font-size:0.75rem; font-weight:700; text-transform:uppercase; background:transparent; border:none; color:var(--testo-dim); border-radius:8px; cursor:pointer; transition:0.2s;">⚔️ Zemanlandia</button>
+           </div>
+         </div>`);
+         
+         document.querySelectorAll(".tactic-btn").forEach(btn => {
+             if(btn.classList.contains("active")) { btn.style.background = "var(--celeste)"; btn.style.color = "#00112b"; }
+             btn.onclick = function() {
+                 if(typeof playSound === 'function') playSound('click');
+                 document.querySelectorAll(".tactic-btn").forEach(b => {
+                     b.classList.remove("active"); b.style.background = "transparent"; b.style.color = "var(--testo-dim)";
+                 });
+                 this.classList.add("active"); this.style.background = "var(--celeste)"; this.style.color = "#00112b";
+                 state.tactic = this.getAttribute("data-t");
+             };
+         });
+     }
+  } else {
+      const tCont = document.getElementById("tactic-container");
+      if(tCont) tCont.remove();
+  }
+  // ---------------------------------------------
+  
+  const rerollBtn = $("#btn-reroll"); 
+  if (rerollBtn) {
+      if (state.diff && state.diff.key === "dreamteam") {
+          rerollBtn.hidden = true; // Nasconde del tutto il bottone reroll
+      } else {
+          rerollBtn.hidden = false;
+          rerollBtn.disabled = !state.activeSlot || state.rerolls <= 0; 
+          rerollBtn.textContent = state.rerolls === Infinity ? `Reroll (∞)` : `Reroll (${state.rerolls})`;
+      }
+  }
   
   const needsCaptain = (filled === 11 && !state.captainId);
   $("#btn-start").disabled = filled < 11 || needsCaptain;
@@ -1079,24 +1350,86 @@ function renderOptionsPanel() {
       $("#btn-start").textContent = "SCEGLI IL CAPITANO SUL CAMPO";
       hint.textContent = "La squadra è pronta! Tocca un giocatore in campo per dargli la fascia di Capitano (+3 OVR).";
       return;
+  } 
+  
+  // SE LA SQUADRA È COMPLETA E IL CAPITANO È STATO SCELTO
+  if (filled === 11 && state.captainId) {
+      hint.textContent = "Capitano scelto! Clicca su 'VIA ALLA STAGIONE' per iniziare la partita.";
+      $("#btn-start").textContent = "VIA ALLA STAGIONE";
   } else if (!state.activeSlot) { 
       hint.textContent = filled < 11 ? `Tocca un ruolo libero per pescare ${state.optionsCount} carte.` : "Undici in campo. Premi VIA ALLA STAGIONE."; 
       $("#btn-start").textContent = filled < 11 ? `VIA ALLA STAGIONE (${filled}/11)` : "VIA ALLA STAGIONE";
       return; 
   }
   
-  hint.textContent = `${ROLE_NAMES[state.activeSlot.accepts[0]]} · tocca per schierare.`;
-  state.options.forEach((p, idx) => {
+  // Hint per gli scambi nel Dream Team
+  let hintText = `${ROLE_NAMES[state.activeSlot.accepts[0]]} · tocca per schierare.`;
+  if (state.diff && state.diff.key === "dreamteam" && state.team[state.activeSlot.id]) {
+      hintText = `${ROLE_NAMES[state.activeSlot.accepts[0]]} · Tocca un sostituto qui sotto, oppure clicca un'altra carta in campo per scambiarli!`;
+  }
+  hint.textContent = hintText;
+
+  // --- GESTIONE PAGINAZIONE PER SQUADRA DEI SOGNI ---
+  const pageSize = 4;
+  let displayOptions = state.options;
+  let totalPages = 1;
+  let pageStart = 0;
+
+  if (state.diff && state.diff.key === "dreamteam") {
+      totalPages = Math.ceil(state.options.length / pageSize) || 1;
+      if (state.dreamTeamPage == null) state.dreamTeamPage = 0;
+      if (state.dreamTeamPage >= totalPages) state.dreamTeamPage = 0;
+      pageStart = state.dreamTeamPage * pageSize;
+      displayOptions = state.options.slice(pageStart, pageStart + pageSize);
+  }
+
+  displayOptions.forEach((p, idx) => {
+    const absoluteIdx = pageStart + idx;
     let cls = "player-card tcg card-reveal";
-    if (p.rating >= 90) cls += " tcg-legend"; // ATTIVA EFFETTO OLOGRAFICO
-    if (p.stagione === "Hall of Fame") cls += " tcg-icon"; // STILE ICON BIANCO/ORO
+    if (p.rating >= 90) cls += " tcg-legend"; 
+    if (p.stagione === "Hall of Fame") cls += " tcg-icon"; 
     
     let styleAttr = ""; 
     if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating);
     const inner = tcgCardInner(p, state.hiddenRating, state.activeSlot.accepts[0]); 
     const card = el("div", cls); if (styleAttr) card.style.cssText = styleAttr;
-    card.innerHTML = inner; card.addEventListener("click", () => pick(idx)); panel.appendChild(card); setTimeout(() => card.classList.add("revealed"), 60 + idx * 90);
+    card.innerHTML = inner; 
+    card.addEventListener("click", () => pick(absoluteIdx)); // Usa l'indice globale corretto
+    panel.appendChild(card); 
+    setTimeout(() => card.classList.add("revealed"), 60 + idx * 90);
   });
+
+  // Tasto Pagina Successiva (visibile solo se ci sono più di 4 carte nella Squadra dei Sogni)
+  // Controlli di paginazione (Precedente / Successiva) per la Squadra dei Sogni
+  if (state.diff && state.diff.key === "dreamteam" && totalPages > 1) {
+      const navWrap = el("div");
+      navWrap.style.cssText = "display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin-top: 12px;";
+
+      const prevBtn = el("button", "btn ghost", "⬅ Precedente");
+      prevBtn.style.fontSize = "0.85rem";
+      prevBtn.onclick = () => {
+          playSound('click');
+          state.dreamTeamPage = (state.dreamTeamPage - 1 + totalPages) % totalPages;
+          renderOptionsPanel();
+      };
+
+      const nextBtn = el("button", "btn ghost", "Successiva ➔");
+      nextBtn.style.fontSize = "0.85rem";
+      nextBtn.onclick = () => {
+          playSound('click');
+          state.dreamTeamPage = (state.dreamTeamPage + 1) % totalPages;
+          renderOptionsPanel();
+      };
+
+      navWrap.appendChild(prevBtn);
+      navWrap.appendChild(nextBtn);
+      panel.appendChild(navWrap);
+
+      // Indicatore testuale della pagina attiva
+      const pageInfo = el("div", "", `Pagina ${state.dreamTeamPage + 1} di ${totalPages}`);
+      pageInfo.style.cssText = "text-align: center; font-family: var(--font-cond); font-size: 0.78rem; color: var(--testo-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em;";
+      panel.appendChild(pageInfo);
+  }
 }
 
 function pick(idx) {
@@ -1107,14 +1440,20 @@ function pick(idx) {
      const cost = getPlayerCost(p.rating);
      if (state.budget < cost) {
         toast("Cassa vuota! Non hai abbastanza milioni.");
-        playSound('click'); // o un suono di errore se lo hai
-        return; // Annulla la scelta
+        playSound('click'); 
+        return; 
      }
-     state.budget -= cost; // Scala i soldi dal totale
-     if(typeof updateHud === 'function') updateHud(); // Aggiorna se usi questa funzione
+     state.budget -= cost; 
+     if(typeof updateHud === 'function') updateHud(); 
   }
   // -----------------------------
-   const slot = state.activeSlot; if (!p || !slot) return; state._picking = true;
+  const slot = state.activeSlot; if (!p || !slot) return; state._picking = true;
+  
+  // NUOVO: Rimpiazzo (Libera il giocatore sostituito rimettendolo tra i disponibili)
+  if (state.team[slot.id]) {
+      state.usedNames.delete(state.team[slot.id].nome);
+  }
+
   state.team[slot.id] = p; state.usedNames.add(p.nome); state.activeSlot = null; state.options = [];
   applyCoachPickBonus(slot, p);
   markFilledSlot(slot, p); animateReveal(slot.id, effRating(slot.id));
@@ -1143,7 +1482,19 @@ function handleDedicatedTrigger(trig, slotId) {
   }
 }
 
-function lastNameOf(fullName) { const parts = fullName.trim().split(/\s+/); if (parts.length === 1) return parts[0]; return parts[parts.length - 1]; }
+function lastNameOf(fullName) { 
+  const parts = fullName.trim().split(/\s+/); 
+  if (parts.length <= 1) return parts[0] || ""; 
+  
+  // Se il nome è composto da 3 parole (es. "Giovanni Di Lorenzo") 
+  // e la seconda è una particella nobiliare/cognome composto ("Di", "De", "Del", ecc.)
+  const particles = ["di", "de", "del", "della", "degli", "dei", "da", "van", "von"];
+  if (parts.length === 3 && particles.includes(parts[1].toLowerCase())) {
+    return parts[1] + " " + parts[2]; // Restituisce "Di Lorenzo"
+  }
+  
+  return parts[parts.length - 1]; // Per tutti gli altri casi prende l'ultima parola
+}
 function careerAgeForSlot(slotId) { if (!state.career || !state.team[slotId]) return null; const tracked = state.career.ages[slotId]; return tracked != null ? tracked : careerInitialAge(state.team[slotId]); }
 function slotTokenInnerHTML(p, eff, age, isCaptain, slotId) { 
   const ageTag = age != null ? `<span class="slot-age">${age} anni</span>` : ""; 
@@ -1164,8 +1515,13 @@ function markFilledSlot(slot, p) {
   if (!node) return; 
   node.classList.remove("empty", "active"); 
   node.classList.add("filled"); 
+  
   if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
+  
   const eff = effRating(slot.id); 
+  // ATTIVO SOLO SE NON È UNA ICONA (Hall of Fame)
+  if (eff >= 90 && p.stagione !== "Hall of Fame") node.classList.add("slot-legend"); else node.classList.remove("slot-legend");
+  
   node.innerHTML = slotTokenInnerHTML(p, eff, careerAgeForSlot(slot.id), state.captainId === slot.id, slot.id); 
 }
 function triggerPickEvent(slotId, isFirstPick) {
@@ -1178,8 +1534,13 @@ function refreshSlotRating(slotId) {
   const node = $("#slot-" + slotId); 
   const p = state.team[slotId]; 
   if (!node || !p) return; 
+  
   if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
+  
   const eff = effRating(slotId); 
+  // ATTIVO SOLO SE NON È UNA ICONA (Hall of Fame)
+  if (eff >= 90 && p.stagione !== "Hall of Fame") node.classList.add("slot-legend"); else node.classList.remove("slot-legend");
+  
   node.innerHTML = slotTokenInnerHTML(p, eff, careerAgeForSlot(slotId), state.captainId === slotId, slotId); 
   tcgGoldStyle(eff).split(";").filter(Boolean).forEach(rule => { const i = rule.indexOf(":"); if (i > 0) node.style.setProperty(rule.slice(0, i).trim(), rule.slice(i + 1).trim()); }); 
 }
@@ -1306,7 +1667,9 @@ function teamRating() {
 function startSeasonFirstHalf() {
   rollWeather("Andata");
   const R = teamRating(); const first = ENGINE.simulateSeason(R, 19); state.firstHalf = first; state.marketDone = false; state.secondHalfMatches = null;
-  state.fixtureOpps = LEAGUE.napoliOpponents(); state.firstHalfMatches = LEAGUE.buildNapoliHalf({ wdl: first, team: state.team, mds: range(1, 19), opps: state.fixtureOpps });
+  state.fixtureOpps = LEAGUE.napoliOpponents(); 
+  // Invia la tattica al simulatore (tactic: state.tactic)
+  state.firstHalfMatches = LEAGUE.buildNapoliHalf({ wdl: first, team: state.team, mds: range(1, 19), opps: state.fixtureOpps, tactic: state.tactic });
   return { R, first };
 }
 
@@ -1400,26 +1763,36 @@ function drawPlayersWithRarity(pool, count, excludeNamesAndSeasons = []) {
 }
 
 function buildOptionPool(slot, exclude = []) {
-  // Prende rigorosamente solo i giocatori filtrati dal range min/max
   const base = eligiblePool(slot, exclude);
-  
-  // Applichiamo il filtro del range anche sul bacino di riserva, evitando di pescare fuori dai limiti
   const minLimit = state.diff && state.diff.min != null ? state.diff.min : 1;
   const maxLimit = state.diff && state.diff.max != null ? state.diff.max : 99;
 
-  const broad = DB.filter(p => 
-    p.rating >= minLimit && 
+  const sourceDB = (state.diff && state.diff.key === "dreamteam") ? getCollection() : DB;
+
+  const broad = sourceDB.filter(p => 
+    p && p.rating >= minLimit && 
     p.rating <= maxLimit && 
-    p.ruoli.some(r => slot.accepts.includes(r)) && 
+    p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && 
     !exclude.includes(p.nome + p.stagione) &&
     !state.usedNames.has(p.nome)
   );
 
-  // Unisce i pool rispettando sempre i paletti e pesca le carte
   const combinedPool = base.concat(broad.filter(p => !base.some(b => b.nome === p.nome && b.stagione === p.stagione)));
   
+  // Modalità Squadra dei Sogni: Ordinati dal più forte al più debole
+  if (state.diff && state.diff.key === "dreamteam") {
+      if (combinedPool.length === 0) {
+          return [{ nome: "Mister Scarparo", stagione: "Emergenza", ruoli: [slot.accepts[0]], rating: 50, annoNascita: 2000 }];
+      }
+      // Ordina dal rating più alto al più basso
+      combinedPool.sort((a, b) => b.rating - a.rating);
+      return combinedPool;
+  }
+
   return drawPlayersWithRarity(combinedPool, state.optionsCount, exclude);
 }
+
+
 
 function drawRipickOptions(slot) { 
   let pool = DB.filter(p => p.ruoli.some(r => slot.accepts.includes(r))); 
@@ -1431,7 +1804,16 @@ function drawRipickOptions(slot) {
 
 function marketOptions(slotId) { 
   const slot = slots().find(s => s.id === slotId); 
-  let pool = DB.filter(p => p.ruoli.some(r => slot.accepts.includes(r))); 
+  const sourceDB = (state.diff && state.diff.key === "dreamteam") ? getCollection() : DB;
+  let pool = sourceDB.filter(p => p && p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && !state.usedNames.has(p.nome)); 
+  
+  if (state.diff && state.diff.key === "dreamteam") {
+      if (pool.length === 0) {
+          return [{ nome: "Mister Scarparo", stagione: "Emergenza", ruoli: [slot.accepts[0]], rating: 50, annoNascita: 2000 }];
+      }
+      return shuffle(pool).slice(0, state.optionsCount);
+  }
+  
   return drawPlayersWithRarity(pool, state.optionsCount);
 }
 function applyMarketReplacement(slotId, choiceIndex, opts, meta) {
@@ -1448,80 +1830,163 @@ function offerReplacements(slotId) {
 
 function runSeason() {
   rollWeather("Ritorno");
-  const R = teamRating(); const stats = ENGINE.seasonStats(R); const ctx = leagueContext();
-  const first = state.firstHalf || ENGINE.simulateSeason(R, 19); let second = ENGINE.simulateSeason(R, 19);
+  const R = teamRating(); 
+  const stats = ENGINE.seasonStats(R); 
+  const ctx = leagueContext();
+  const first = state.firstHalf || ENGINE.simulateSeason(R, 19); 
+  let second = ENGINE.simulateSeason(R, 19);
   
   if (state.diff && state.diff.goal === "sesto") {
-    const Banda = ["Christian Maggio", "Paolo Cannavaro", "Walter Gargano", "Hugo Campagnaro"]; const names = slots().map(s => state.team[s.id].nome); const count = Banda.filter(h => names.includes(h)).length;
-    if (count > 0) { const pull = count * 0.18; const delta = Math.round((63 - (first.pts + second.pts)) * pull); second = ENGINE.applyResultMods(second, Math.round(delta / 2)); }
+    const Banda = ["Christian Maggio", "Paolo Cannavaro", "Walter Gargano", "Hugo Campagnaro"]; 
+    const names = slots().map(s => state.team[s.id].nome); 
+    const count = Banda.filter(h => names.includes(h)).length;
+    if (count > 0) { 
+        const pull = count * 0.18; 
+        const delta = Math.round((63 - (first.pts + second.pts)) * pull); 
+        second = ENGINE.applyResultMods(second, Math.round(delta / 2)); 
+    }
   }
   
   let season = { w: first.w + second.w, d: first.d + second.d, l: first.l + second.l, pts: first.pts + second.pts };
   const opps = state.fixtureOpps || (state.fixtureOpps = LEAGUE.napoliOpponents());
-  if (!state.firstHalfMatches) state.firstHalfMatches = LEAGUE.buildNapoliHalf({ wdl: first, team: state.team, mds: range(1, 19), opps });
-  state.secondHalfMatches = LEAGUE.buildNapoliHalf({ wdl: second, team: state.team, mds: range(20, 38), opps });
+  if (!state.firstHalfMatches) state.firstHalfMatches = LEAGUE.buildNapoliHalf({ wdl: first, team: state.team, mds: range(1, 19), opps, tactic: state.tactic });
+  state.secondHalfMatches = LEAGUE.buildNapoliHalf({ wdl: second, team: state.team, mds: range(20, 38), opps, tactic: state.tactic });
  
   const allMatches = [...(state.firstHalfMatches || []), ...(state.secondHalfMatches || [])];
-  const lg = LEAGUE.simulate({ team: state.team, napoliMatches: allMatches }); state.league = lg;
+  const lg = LEAGUE.simulate({ team: state.team, napoliMatches: allMatches }); 
+  state.league = lg;
   
-  let champ = null; if (CHAMPIONS.isEligible("classica", lg.napoliRank)) { champ = CHAMPIONS.simulate({ R, team: state.team }); } state.champions = champ;
+  let champ = null; 
+  if (CHAMPIONS.isEligible("classica", lg.napoliRank)) { 
+      champ = CHAMPIONS.simulate({ R, team: state.team }); 
+  } 
+  state.champions = champ;
   
-  const place = placementFromRank(lg.napoliRank, season.pts); const prizes = awards(state.team, R, season.pts);
+  const place = placementFromRank(lg.napoliRank, season.pts); 
+  const prizes = awards(state.team, R, season.pts);
   const topScorer = lg.topScorer ? lg.topScorer : prizes.scorer;
   if (topScorer && prizes.mvp.goals < topScorer.goals) prizes.mvp.goals = topScorer.goals;
   
   const perfect = season.w === 38;
-  // --- SALVATAGGIO HALL OF FAME ---
+  
   if (perfect) {
       localStorage.setItem("napoli380_hof", JSON.stringify(state.team));
   }
-  state.lastResult = { mode: state.diff.label, board: "classica", pts: season.pts, pos: place.pos, rank: lg.napoliRank, rating: R, title: place.title, cls: place.cls, perfect: perfect, win: place.win, record: vpsLabel(season.w, season.d, season.l) };
+  
+  state.lastResult = { 
+      mode: state.diff.label, 
+      board: "classica", 
+      pts: season.pts, 
+      pos: place.pos, 
+      rank: lg.napoliRank, 
+      rating: R, 
+      title: place.title, 
+      cls: place.cls, 
+      perfect: perfect, 
+      win: place.win, 
+      record: vpsLabel(season.w, season.d, season.l) 
+  };
+  
   if (state.career) recordCareerSeasonResult();
   checkAndUnlockAchievements(season.pts, season.w, state.team);
+  updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.leaguePhase.pts : 0);
   
   let banner = "";
-  if (state.diff.goal === "retro") { banner = place.win ? `<div class="mission-banner ok">MISSIONE COMPIUTA · Amm fatt' schif'.</div>` : `<div class="mission-banner fail">MISSIONE FALLITA · Troppo forti.</div>`; }
-  else if (state.diff.goal === "sesto") { banner = place.win ? `<div class="mission-banner ok">ZONA MAZZARRI RAGGIUNTA!</div>` : `<div class="mission-banner fail">MISSIONE FALLITA.</div>`; }
-  else if (perfect) { banner = `<div class="mission-banner perfect">38·0 · STAGIONE PERFETTA · Tutta Napoli impazzisce! 🔥</div>`; }
+  if (state.diff.goal === "retro") { 
+      banner = place.win ? '<div class="mission-banner ok">MISSIONE COMPIUTA · Amm fatt\' schif\'.</div>' : '<div class="mission-banner fail">MISSIONE FALLITA · Troppo forti.</div>'; 
+  }
+  else if (state.diff.goal === "sesto") { 
+      banner = place.win ? '<div class="mission-banner ok">ZONA MAZZARRI RAGGIUNTA!</div>' : '<div class="mission-banner fail">MISSIONE FALLITA.</div>'; 
+  }
+  else if (perfect) { 
+      banner = '<div class="mission-banner perfect">38·0 · STAGIONE PERFETTA · Tutta Napoli impazzisce! 🔥</div>'; 
+  }
+
+  // --- RICOMPENSE IN CREDITI DI FINE STAGIONE ---
+  let earned = 0;
+  let reason = "";
   
+  if (perfect) { earned = 1000; reason = "Stagione Perfetta 38-0!"; }
+  else if (lg.napoliRank === 1) { earned = 400; reason = "Vittoria Scudetto"; }
+  else if (lg.napoliRank <= 4) { earned = 250; reason = "Qualif. Champions"; }
+  else if (lg.napoliRank <= 7) { earned = 150; reason = "Qualif. Europea"; }
+  else if (lg.napoliRank <= 17) { earned = 50; reason = "Salvezza raggiunta"; }
+  else { earned = 10; reason = "Retrocessione..."; }
+  
+  if (champ && champ.won) {
+      earned += 500;
+      reason += " + Vittoria Champions!";
+  }
+
+  // Aggiunge i soldi silenziosamente
+  let creds = getCredits();
+  localStorage.setItem('napoli380_credits', creds + earned);
+  if(typeof updateWalletUI === 'function') updateWalletUI();
+
+  // CREAZIONE PANNELLI GRAFICI
   const coachLine = state.coach ? `<div class="rec-coach">Allenatore: <strong>${state.coach.nome}</strong></div>` : "";
   const quadrants = [];
+  
   quadrants.push(`<div class="scoreboard ${place.cls}"><div class="sb-rating"><span class="sb-label">Forza squadra</span><span class="sb-big">${R.toFixed(1)}</span></div><div class="sb-points"><span class="sb-label">Punti in campionato</span><span class="sb-big" id="pts-counter">0</span><span class="sb-record">${vpsLabel(season.w, season.d, season.l)}</span></div><div class="sb-place"><span class="sb-label">Piazzamento</span><span class="sb-pos">${place.pos}</span></div></div>`);
-  quadrants.push(`<div class="verdict ${place.cls}"><h3>${place.title}</h3><p>${place.flavor}</p>
-  <div class="awards verdict-awards" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
-    <div class="award-card"><span class="award-label">Capocannoniere</span><span class="award-name">${topScorer.nome}</span><span class="award-detail">${topScorer.goals} gol</span></div>
-    <div class="award-card"><span class="award-label">MVP Assoluto</span><span class="award-name">${prizes.mvp.nome}</span></div>
-    <div class="award-card"><span class="award-label">Guanto d'Oro</span><span class="award-name">${prizes.bestGk.nome}</span></div>
-    <div class="award-card"><span class="award-label">Miglior Difensore</span><span class="award-name">${prizes.bestDef.nome}</span></div>
-  </div></div>`);
-  quadrants.push(`<details class="lineup-recap recap-toggle" open><summary class="lineup-recap-summary">L'undici schierato</summary>${coachLine}<ul>${slots().map(s => { 
+  
+  quadrants.push(
+    `<div class="verdict ${place.cls}">
+        <h3>${place.title}</h3>
+        <p>${place.flavor}</p>
+        
+        <div style="margin-top: 15px; padding: 12px; border-radius: 12px; background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); display: flex; align-items: center; justify-content: center; gap: 10px; animation: pmPop 0.5s ease 1s backwards;">
+            <span style="font-size: 1.8rem;">💰</span>
+            <div style="text-align: left;">
+                <div style="color: #00ff88; font-family: var(--font-display); font-size: 1.4rem; line-height: 1;">+${earned} CREDITI</div>
+                <div style="color: var(--testo-dim); font-size: 0.8rem; text-transform: uppercase;">${reason}</div>
+            </div>
+        </div>
+
+        <div class="awards verdict-awards" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-top: 15px;">
+          <div class="award-card"><span class="award-label">Capocannoniere</span><span class="award-name">${topScorer.nome}</span><span class="award-detail">${topScorer.goals} gol</span></div>
+          <div class="award-card"><span class="award-label">MVP Assoluto</span><span class="award-name">${prizes.mvp.nome}</span></div>
+          <div class="award-card"><span class="award-label">Guanto d'Oro</span><span class="award-name">${prizes.bestGk.nome}</span></div>
+          <div class="award-card"><span class="award-label">Miglior Difensore</span><span class="award-name">${prizes.bestDef.nome}</span></div>
+        </div>
+    </div>`
+  );
+
+  // Costruzione pulita dell'HTML senza annidare i backtick!
+  const lineupItems = slots().map(s => { 
     const p = state.team[s.id]; 
     const eff = effRating(s.id); 
-    
-    // Creazione dei badge
     let badges = "";
-    if (topScorer && p.nome === topScorer.nome) badges += ` <span class="player-badge top-scorer">⚽ Goleador</span>`;
-    if (prizes.mvp && p.nome === prizes.mvp.nome) badges += ` <span class="player-badge mvp">👑 MVP</span>`;
-    
-    return `<li><span class="lr-role">${s.label}</span><span class="lr-player">${p.nome}${badges}</span><strong class="lr-eff">${eff}</strong></li>`; 
-  }).join("")}</ul></details>`);const box = $("#result-body"); box.innerHTML = (banner ? `<div class="quadrant" data-q="0">${banner}</div>` : "") + quadrants.map((q, i) => `<div class="quadrant" data-q="${i + 1}">${q}</div>`).join("");
+    if (topScorer && p.nome === topScorer.nome) badges += " <span class=\"player-badge top-scorer\">⚽ Goleador</span>";
+    if (prizes.mvp && p.nome === prizes.mvp.nome) badges += " <span class=\"player-badge mvp\">👑 MVP</span>";
+    return "<li><span class=\"lr-role\">" + s.label + "</span><span class=\"lr-player\">" + p.nome + badges + "</span><strong class=\"lr-eff\">" + eff + "</strong></li>"; 
+  }).join("");
+
+  quadrants.push(
+    "<details class=\"lineup-recap recap-toggle\" open>" +
+    "<summary class=\"lineup-recap-summary\">L'undici schierato</summary>" + 
+    coachLine + 
+    "<ul>" + lineupItems + "</ul>" +
+    "</details>"
+  );
   
-  // Creiamo una funzione che verifica la sfida solo a fine girone di ritorno
+  const box = document.getElementById("result-body"); 
+  const bannerHtml = banner ? `<div class="quadrant" data-q="0">${banner}</div>` : "";
+  const quadsHtml = quadrants.map((q, i) => `<div class="quadrant" data-q="${i + 1}">${q}</div>`).join("");
+  if (box) box.innerHTML = bannerHtml + quadsHtml;
+  
   const checkSfidaAndProceed = () => {
     if (state.sfidaRitorno) {
       if (second.pts >= state.sfidaRitorno) {
         toast(`🎯 SFIDA VINTA! Hai fatto ${second.pts} punti nel ritorno! La squadra ci crede!`);
-        if (state.career) state.career.swapsLeft = (state.career.swapsLeft || 0) + 1; // Cambio extra
-      } else {
-        toast(`❌ Sfida fallita: solo ${second.pts} punti nel ritorno.`);
+        if (state.career) state.career.swapsLeft = (state.career.swapsLeft || 0) + 1;
+      } else { 
+        toast(`❌ Sfida fallita: solo ${second.pts} punti nel ritorno.`); 
       }
     }
-    
-    // Proceda poi con Champions o schermata finale
-    if (champ) {
-      playChampions(champ, place, () => { showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts); });
-    } else {
-      showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts);
+    if (champ) { 
+        playChampions(champ, place, () => { showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts); });
+    } else { 
+        showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts); 
     }
   };
 
@@ -1666,15 +2131,17 @@ function playMatchReplay(matches, done, opts = {}) {
             let msg = "";
 
             if (isForNapoli) {
-              // TIRI: Se il portiere si butta dall'altra parte, è gol. Se indovina, conta l'OVR
+              // TIRI: Più facile che il portiere avversario pari il nostro rigore
               if (playerDir !== aiDir) {
-                success = true;
-                msg = `GOL! ${attName} spiazza il portiere avversario!`;
+                // 10% di probabilità di parata miracolosa anche se il portiere ha scelto l'angolo sbagliato
+                const miracolo = Math.random() < 0.10;
+                success = !miracolo; // true = gol, false = parata
+                msg = success ? `GOL! ${attName} spiazza il portiere avversario!` : `PARATA INCREDIBILE! Il portiere avversario ci arriva di puro riflesso!`;
               } else {
-                // Il portiere intuisce: calcolo OVR
-                const chance = myAttOvr > oppOvr ? 0.6 : 0.3; // 60% o 30% di segnare anche se indovina
+                // Il portiere avversario intuisce: abbassiamo drasticamente la percentuale di segnare (10% o 25%)
+                const chance = myAttOvr > oppOvr ? 0.25 : 0.10; 
                 success = Math.random() < chance;
-                msg = success ? `GOL! ${attName} è una cannonata anche se il portiere intuisce!` : `PARATO! Il portiere avversario ci arriva su ${attName}.`;
+                msg = success ? `GOL! ${attName} calcia forte e batte il portiere nonostante l'intuizione!` : `PARATO! Il portiere avversario intuisce e respinge il tiro di ${attName}!`;
               }
               if(success) {
                 m.gf += 1; pts += (m.gf > m.ga ? 2 : (m.gf === m.ga ? 1 : 0)); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L";
@@ -1683,16 +2150,19 @@ function playMatchReplay(matches, done, opts = {}) {
                 m.scorers.push(`${attName} ${penMin}' (R)`);
               }
             } else {
-              // PARI: Se ti butti dall'altra parte, è gol. Se indovini, conta l'OVR del tuo portiere
+              // RIGORE CONTRO: Molto più facile per il nostro portiere parare
               if (playerDir !== aiDir) {
-                success = false;
-                msg = `GOL SU RIGORE! ${gkName} si è buttato dalla parte sbagliata.`;
+                // 20% di probabilità di parata d'istinto anche se il nostro portiere si è buttato dal lato sbagliato
+                const parataMiracolo = Math.random() < 0.20;
+                success = parataMiracolo; // true = parata, false = gol
+                msg = success ? `PARATA CLAMOROSA! ${gkName} respinge d'istinto nonostante fosse in controtempo!` : `GOL SU RIGORE! ${gkName} si è buttato dalla parte sbagliata.`;
               } else {
-                const chance = myGkOvr > oppOvr ? 0.7 : 0.4;
-                success = Math.random() < chance;
-                msg = success ? `PARATA EROICA di ${gkName}! La toglie dall'angolino!` : `GOL! ${gkName} intuisce ma il tiro era troppo preciso.`;
+                // Se indoviniamo l'angolo, la percentuale di parata schizza al 75% o 90%
+                const chance = myGkOvr > oppOvr ? 0.90 : 0.75; 
+                success = Math.random() < chance; // true = parata, false = gol
+                msg = success ? `PARATA EROICA di ${gkName}! Neutralizza il rigore alla grande!` : `GOL! ${gkName} intuisce ma il tiro era troppo angolato.`;
               }
-              if(!success) { m.ga += 1; pts -= (m.gf < m.ga ? 1 : 0); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L"; } // Ricalcolo grezzo punti
+              if(!success) { m.ga += 1; pts -= (m.gf < m.ga ? 1 : 0); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L"; } 
             }
 
             // Mostra il risultato e chiudi
@@ -1942,6 +2412,31 @@ function revealQuadrants(box, finalPts) {
 function countUp(el, target, dur, fmt) { dur = dur || 1400; const t0 = performance.now(); (function tick(now) { const f = Math.min(1, (now - t0) / dur); const v = Math.round(target * (1 - Math.pow(1 - f, 3))); el.textContent = fmt ? v.toLocaleString("it-IT") : v; if (f < 1) requestAnimationFrame(tick); })(performance.now()); }
 
 setTimeout(init, 100);
+/* ============================================================
+   SISTEMA ECONOMIA (FUT AZZURRO)
+   ============================================================ */
+function getCredits() {
+  return parseInt(localStorage.getItem('napoli380_credits') || "0", 10);
+}
+
+function updateWalletUI() {
+  const w = document.getElementById("wallet-credits");
+  if (w) {
+      countUp(w, getCredits(), 800, true); // Usa la funzione countUp già esistente per un bell'effetto!
+  }
+}
+
+function addCredits(amount, reason) {
+  let creds = getCredits();
+  creds += amount;
+  localStorage.setItem('napoli380_credits', creds);
+  updateWalletUI();
+  if (reason && amount > 0) {
+      toast(`💰 +${amount} Crediti! (${reason})`);
+  } else if (reason && amount < 0) {
+      toast(`💸 ${amount} Crediti (${reason})`);
+  }
+}
 /* ===== db.js ===== */
 /* ============================================================
    38-0 NAPOLI - DATABASE GIOCATORI
@@ -1963,7 +2458,7 @@ const P = (nome, stagione, ruoli, rating) => ({ nome, stagione, ruoli, rating })
 
 const BIRTH_YEARS = {
   "Diego Armando Maradona": 1960, "Careca": 1960, "Bruno Giordano": 1956, "Alemão": 1961, "Gianfranco Zola": 1966, "Ciro Ferrara": 1967, "Giuseppe Bruscolotti": 1951, "Ruud Krol": 1949, "Luciano Castellini": 1945, "Antonio Juliano": 1942, "Andrea Carnevale": 1961, "Laurent Blanc": 1965, "Daniel Fonseca": 1969, "Fabio Cannavaro": 1973, "Roberto Ayala": 1973, "Fabio Pecchia": 1973,
-  "Marek Hamsik": 1987, "Edinson Cavani": 1987, "Ezequiel Lavezzi": 1985, "Gonzalo Higuain": 1987, "Dries Mertens": 1987, "Lorenzo Insigne": 1991, "Kalidou Koulibaly": 1991, "Josè Callejon": 1987, "Jorginho": 1991, "Allan": 1991, "Faouzi Ghoulam": 1991, "Raul Albiol": 1985, "Pepe Reina": 1982, "Christian Maggio": 1982, "Paolo Cannavaro": 1981, "Walter Gargano": 1984, "Morgan De Sanctis": 1977, "Hugo Campagnaro": 1980, "Gokhan Inler": 1984, "Juan Camilo Zuniga": 1990, "Goran Pandev": 1983,
+  "Marek Hamsik": 1987, "Edinson Cavani": 1987, "Ezequiel Lavezzi": 1985, "Gonzalo Higuain": 1987, "Dries Mertens": 1987, "Lorenzo Insigne": 1991, "Kalidou Koulibaly": 1991, "Josè Callejon": 1987, "Jorginho": 1991, "Marques Allan": 1991, "Faouzi Ghoulam": 1991, "Raul Albiol": 1985, "Pepe Reina": 1982, "Christian Maggio": 1982, "Paolo Cannavaro": 1981, "Walter Gargano": 1984, "Morgan De Sanctis": 1977, "Hugo Campagnaro": 1980, "Gokhan Inler": 1984, "Juan Camilo Zuniga": 1990, "Goran Pandev": 1983,
   "Victor Osimhen": 1998, "Khvicha Kvaratskhelia": 2001, "Piotr Zielinski": 1994, "Stanislav Lobotka": 1994, "Zambo Anguissa": 1995, "Giovanni Di Lorenzo": 1993, "Kim Min-jae": 1996, "Amir Rrahmani": 1994, "Alex Meret": 1997, "Mathias Olivera": 1997, "Giacomo Raspadori": 2000, "Giovanni Simeone": 1995, "Matteo Politano": 1993, "Hirving Lozano": 1995, "Fabian Ruiz": 1996, "Arkadiusz Milik": 1994, "Mario Rui": 1991,
   "Romelu Lukaku": 1993, "Alessandro Buongiorno": 1999, "Scott McTominay": 1996, "Billy Gilmour": 1997, "David Neres": 1997, "Leonardo Spinazzola": 1993, "Pasquale Mazzocchi": 1995, "Jesper Lindström": 2000, "Leo Ostigard": 1999, "Noa Lang": 1999,
   "Pino Taglialatela": 1969, "Francesco Turrini": 1965, "Stefan Schwoch": 1969, "Claudio Bellucci": 1975, "Francelino Matuzalem": 1980, "Francesco Montervino": 1978, "Marek Jankulovski": 1977, "Roberto Sosa": 1974, "Emanuele Calaiò": 1979, "Mariano Bogliacino": 1980, "Fabiano Santacroce": 1980, "Salvatore Aronica": 1978, "Michele Pazienza": 1984, "Marcelo Zalayeta": 1978, "German Denis": 1981, "Eduardo Vargas": 1989, "Michu": 1986, "Jonathan De Guzman": 1985, "Valon Behrami": 1985, "Blerim Dzemaili": 1986, "Omar El Kaddouri": 1987, "Nicolas Spolli": 1986,
@@ -2076,8 +2571,8 @@ const DB = [
   P("Marek Hamsik", "2017/18", ["CC","MED"], 90),
   P("Jorginho", "2015/16", ["MED","CC"], 84),
   P("Jorginho", "2017/18", ["MED","CC"], 89),
-  P("Allan", "2015/16", ["CC","MED"], 85),
-  P("Allan", "2017/18", ["CC","MED"], 89),
+  P("Marques Allan", "2015/16", ["CC","MED"], 85),
+  P("Marques Allan", "2017/18", ["CC","MED"], 89),
   P("Kalidou Koulibaly", "2015/16", ["DC"], 86),
   P("Kalidou Koulibaly", "2017/18", ["DC"], 93),
   P("Raul Albiol", "2013/14", ["DC"], 83),
@@ -2178,7 +2673,7 @@ const DB = [
   P("Cyril Ngonge", "2023/24", ["AD", "ATT"], 79),
   P("Natan", "2023/24", ["DC", "TS"], 76),
   /* ---------- Nuove Leggende Iconiche & Eroi Storici ---------- */
-  P("Dino Zoff", "Hall of Fame", ["POR"], 94),
+  P("Dino Zoff", "Hall of Fame", ["POR"], 99),
   P("Dino Zoff", "1970/71", ["POR"], 90),
   P("José Altafini", "Hall of Fame", ["ATT"], 99),
   P("José Altafini", "1965/66", ["ATT"], 89),
@@ -2737,7 +3232,7 @@ const applyResultMods = ENGINE.applyResultMods;
 
   function buildNapoliHalf(opts) {
     useRng(opts && opts.rng);
-    const { wdl, team, mds, opps } = opts;
+    const { wdl, team, mds, opps, tactic } = opts; // <-- AGGIUNTO 'tactic'
     const players = Object.values(team || {});
     const scorerPool = players.map(p => ({ p, w: (GOAL_W[(p.ruoli || [])[0]] ?? 0.05) * Math.pow((p.rating || 75) / 80, 2) }));
     const results = shuffle([...Array(wdl.w).fill("W"), ...Array(wdl.d).fill("D"), ...Array(wdl.l).fill("L")]);
@@ -2759,7 +3254,7 @@ const applyResultMods = ENGINE.applyResultMods;
       }
 
       const home = (md % 2) === 1; 
-      const [gfR, gaR] = scoreFor(res);
+      const [gfR, gaR] = scoreFor(res, tactic);
       const events = [];
       for (let i = 0; i < gfR; i++) events.push({ team: "napoli", minute: ri(1, 94) });
       for (let i = 0; i < gaR; i++) events.push({ team: "opp", minute: ri(1, 94) });
@@ -2773,11 +3268,38 @@ const applyResultMods = ENGINE.applyResultMods;
     });
   }
 
-  function scoreFor(res) {
-    if (res === "W") { const gf = weightedPick([1, 2, 3, 4], W34); return [gf, ri(0, gf - 1)]; }
-    if (res === "L") { const ga = weightedPick([1, 2, 3, 4], W34); return [ri(0, ga - 1), ga]; }
-    const g = weightedPick([0, 1, 2], x => ({ 0: 30, 1: 50, 2: 20 }[x])); return [g, g];
+  function scoreFor(res, tactic) {
+  if (res === "W") { 
+    if (tactic === "catenaccio") {
+       const gf = weightedPick([1, 2], x => ({1: 75, 2: 25}[x]));
+       return [gf, gf === 2 && ri(1,10) > 8 ? 1 : 0]; // Vince 1-0 o 2-0
+    }
+    if (tactic === "zemanlandia") {
+       const gf = weightedPick([2, 3, 4, 5], x => ({2: 15, 3: 40, 4: 30, 5: 15}[x]));
+       return [gf, ri(1, gf - 1)]; // Goleade (es. 4-2, 3-1)
+    }
+    const gf = weightedPick([1, 2, 3, 4], W34); return [gf, ri(0, gf - 1)]; 
   }
+  if (res === "L") { 
+    if (tactic === "catenaccio") {
+       const ga = weightedPick([1, 2], x => ({1: 75, 2: 25}[x]));
+       return [ga === 2 && ri(1,10) > 8 ? 1 : 0, ga]; // Perde 0-1 o 0-2
+    }
+    if (tactic === "zemanlandia") {
+       const ga = weightedPick([2, 3, 4, 5], x => ({2: 15, 3: 40, 4: 30, 5: 15}[x]));
+       return [ri(1, ga - 1), ga]; 
+    }
+    const ga = weightedPick([1, 2, 3, 4], W34); return [ri(0, ga - 1), ga]; 
+  }
+  // Pareggio ("D")
+  if (tactic === "catenaccio") {
+     const g = weightedPick([0, 1], x => ({0: 70, 1: 30}[x])); return [g, g]; // 0-0, 1-1
+  }
+  if (tactic === "zemanlandia") {
+     const g = weightedPick([2, 3, 4], x => ({2: 50, 3: 40, 4: 10}[x])); return [g, g]; // 2-2, 3-3
+  }
+  const g = weightedPick([0, 1, 2], x => ({ 0: 30, 1: 50, 2: 20 }[x])); return [g, g];
+}
 
   const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
   const cmp = (a, b) => (b.pts - a.pts) || ((b.gf - b.ga) - (a.gf - a.ga)) || (b.gf - a.gf) || byName(a.name, b.name);
@@ -3066,6 +3588,602 @@ const applyResultMods = ENGINE.applyResultMods;
     },
     show() { const l = PATCH_NOTES[0]; if (l) open(l, true); },
   };
-  
-})();
+})(); /* <--- ECCO LA PARENTESI CHE CHIUDE LE PATCH NOTES! DEVE STARE QUI! */
 
+/* ============================================================
+   SISTEMA PACCHETTI E COLLEZIONE (FUT AZZURRO)
+   ============================================================ */
+function getCollection() {
+    return JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
+}
+
+function openPack(type) {
+    const getByRating = (min, max) => DB.filter(p => p.rating >= min && p.rating <= max);
+    const randItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    let cards = [];
+    
+    // Probabilità basate sul tipo di pacchetto
+    if (type === 'scugnizzo') {
+        for(let i=0; i<3; i++) {
+            let roll = Math.random();
+            if(roll < 0.02) cards.push(randItem(getByRating(88, 99)));      // 2% Walkout
+            else if(roll < 0.15) cards.push(randItem(getByRating(80, 87))); // 13% Oro
+            else cards.push(randItem(getByRating(1, 79)));                  // 85% Base
+        }
+    } else if (type === 'azzurro') {
+        cards.push(randItem(getByRating(80, 99))); // 1 garantito 80+
+        for(let i=0; i<2; i++) {
+            let roll = Math.random();
+            if(roll < 0.10) cards.push(randItem(getByRating(88, 99)));      // 10% Walkout
+            else if(roll < 0.35) cards.push(randItem(getByRating(80, 87))); // 25% Oro
+            else cards.push(randItem(getByRating(1, 79)));
+        }
+    } else if (type === 'd10s') {
+        cards.push(randItem(getByRating(88, 99))); // 1 garantito 88+ (Walkout!)
+        for(let i=0; i<2; i++) {
+            let roll = Math.random();
+            if(roll < 0.30) cards.push(randItem(getByRating(88, 99)));      // 30% ulteriore Walkout
+            else if(roll < 0.70) cards.push(randItem(getByRating(80, 87))); // 40% Oro
+            else cards.push(randItem(getByRating(1, 79)));
+        }
+    }
+    
+    triggerWalkoutAnimation(cards);
+}
+
+function triggerWalkoutAnimation(cards) {
+    const overlay = document.getElementById("pack-overlay");
+    const container = document.getElementById("pack-cards");
+    const summary = document.getElementById("pack-summary");
+    const dupesText = document.getElementById("pack-dupes-text");
+    const btnClose = document.getElementById("btn-close-pack");
+    
+    container.innerHTML = "";
+    summary.style.display = "none";
+    dupesText.innerHTML = "";
+    let earnedFromDupes = 0;
+    
+    let coll = getCollection();
+    let newCardsToSave = [];
+    
+    // 1. ORDINA LE CARTE: La più forte sarà la prima ad apparire (index 0)
+    cards.sort((a, b) => b.rating - a.rating);
+    
+    // 2. CREA IL DOM PER TUTTE E 3 LE CARTE
+    cards.forEach((p, index) => {
+        const isDupe = coll.some(x => x.nome === p.nome && x.stagione === p.stagione);
+        p.isWalkout = p.rating >= 88 || p.stagione === 'Hall of Fame';
+        
+        if (isDupe) {
+            earnedFromDupes += (getPlayerCost(p.rating) * 3); 
+        } else {
+            newCardsToSave.push(p);
+        }
+
+        const wrap = document.createElement("div");
+        wrap.className = "pack-item-container";
+        
+        // SETUP INIZIALE: Nascoste. 
+        wrap.style.opacity = "0";
+        wrap.style.display = "none"; // Non occupano spazio all'inizio
+        
+        let cls = "player-card tcg pack-card-front";
+        if (p.rating >= 90) cls += " tcg-legend";
+        if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+        let styleAttr = tcgGoldStyle(p.rating);
+        
+        const bannerHtml = isDupe 
+            ? '<div class="card-banner banner-dupe">DOPPIONE</div>' 
+            : '<div class="card-banner banner-new">NUOVO</div>';
+        
+        wrap.innerHTML = `
+            <div class="pack-card-inner">
+                <div class="pack-card-back"></div>
+                <div class="${cls}" style="${styleAttr}">
+                    ${tcgCardInner(p, false, p.ruoli[0])}
+                    ${bannerHtml}
+                </div>
+            </div>
+        `;
+        
+        // Se è la carta 2 o 3, applico da subito la classe "flipped"
+        // così quando appariranno saranno GIÀ GIRATE
+        if (index > 0) {
+            wrap.classList.add("flipped");
+        }
+        
+        // Disattiva i click
+        wrap.style.pointerEvents = "none";
+        
+        container.appendChild(wrap);
+        p.node = wrap; 
+    });
+
+    overlay.classList.add("show");
+
+    // ==========================================
+    // 3. REGIA AUTOMATICA, FLUIDA E SENZA LAG
+    // ==========================================
+    
+    // T=300ms: Appare la prima carta (grande, di dorso)
+    setTimeout(() => {
+        cards[0].node.style.display = "block";
+        void cards[0].node.offsetWidth; // Forza il browser ad applicare il display block prima della transizione
+        cards[0].node.style.opacity = "1";
+        cards[0].node.style.transform = "scale(1.15)";
+        playSound('carta');
+    }, 300);
+
+    // T=1800ms: La prima carta si gira da sola
+    setTimeout(() => {
+        cards[0].node.classList.add("flipped");
+        playSound('carta');
+        
+        if (cards[0].isWalkout) {
+            setTimeout(() => playSound('stadio'), 200);
+            cards[0].node.querySelector('.pack-card-front').classList.add('walkout-glow');
+        }
+    }, 1800);
+
+    // T=3800ms: La prima carta si rimpicciolisce, e a fianco "poppano" le altre due (già girate)
+    setTimeout(() => {
+        cards[0].node.style.transform = "scale(1)"; // Torna normale
+        
+        cards[1].node.style.display = "block";
+        cards[2].node.style.display = "block";
+        
+        void cards[1].node.offsetWidth; // Reflow visivo
+        
+        cards[1].node.style.opacity = "1";
+        cards[2].node.style.opacity = "1";
+        playSound('click');
+    }, 3800);
+
+    // T=4600ms: Appare il menù per raccogliere e andare via
+    setTimeout(() => {
+        summary.style.display = "block";
+        if (earnedFromDupes > 0) {
+            dupesText.innerHTML = `Hai trovato dei Doppioni!<br>Vendita rapida: 💰 +${earnedFromDupes} Crediti`;
+        } else {
+            dupesText.innerHTML = `Tutte carte nuove!`;
+            dupesText.style.color = "var(--celeste-chiaro)";
+        }
+    }, 4600);
+
+    // Salva e chiudi
+    btnClose.onclick = () => {
+        playSound('click');
+        if (newCardsToSave.length > 0) {
+            coll.push(...newCardsToSave);
+            coll.sort((a, b) => b.rating - a.rating); // Ordina la collezione
+            localStorage.setItem('napoli380_collection', JSON.stringify(coll));
+        }
+        if (earnedFromDupes > 0) {
+            addCredits(earnedFromDupes, "Vendita Doppioni");
+        }
+        
+        overlay.classList.remove("show");
+        renderCollection(); 
+    };
+}
+
+// Funzione per renderizzare la collezione nel sottomenu (Aggiornata con Paginazione 3x3)
+function renderCollection() {
+    const coll = getCollection();
+    const grid = document.getElementById("collection-grid");
+    const count = document.getElementById("collection-count");
+    const wallet = document.getElementById("collection-wallet");
+    
+    if(!grid) return;
+    
+    wallet.textContent = getCredits();
+    count.textContent = coll.length;
+    grid.innerHTML = "";
+    
+    // Rimuovi eventuali bottoni di paginazione vecchi
+    let vecchiBottoni = document.getElementById("collection-pagination");
+    if (vecchiBottoni) vecchiBottoni.remove();
+    
+    if (coll.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Non hai ancora nessuna carta. Apri un pacchetto nel Negozio!</p>`;
+        return;
+    }
+    
+    // Ordina la collezione dalle carte più forti a quelle più deboli
+    coll.sort((a, b) => b.rating - a.rating);
+    
+    // --- LOGICA PAGINAZIONE (9 Carte alla volta per griglia 3x3) ---
+    if (state.collectionPage == null) state.collectionPage = 0;
+    const pageSize = 9; 
+    const totalPages = Math.ceil(coll.length / pageSize);
+    
+    // Sicurezza nel caso si vendano carte e l'ultima pagina sparisca
+    if (state.collectionPage >= totalPages) state.collectionPage = 0;
+    
+    const pageStart = state.collectionPage * pageSize;
+    const pageCards = coll.slice(pageStart, pageStart + pageSize);
+    
+    pageCards.forEach(p => {
+        let cls = "player-card tcg";
+        if (p.rating >= 90) cls += " tcg-legend";
+        if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+        let styleAttr = tcgGoldStyle(p.rating);
+        
+        const card = document.createElement("div");
+        card.className = cls;
+        card.style.cssText = styleAttr;
+        card.innerHTML = tcgCardInner(p, false, p.ruoli[0]);
+        grid.appendChild(card);
+    });
+
+    // --- COSTRUZIONE BOTTONI PRECEDENTE E SUCCESSIVA ---
+    if (totalPages > 1) {
+        const navWrap = document.createElement("div");
+        navWrap.id = "collection-pagination";
+        navWrap.style.cssText = "display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 25px; margin-bottom: 20px; width: 100%;";
+        
+        navWrap.innerHTML = `
+            <button type="button" id="coll-prev" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">⬅ Precedente</button>
+            <span style="font-family: var(--font-cond); color: var(--celeste-chiaro); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em;">Pagina ${state.collectionPage + 1} di ${totalPages}</span>
+            <button type="button" id="coll-next" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">Successiva ➔</button>
+        `;
+        
+        // Inserisce i bottoni subito sotto la griglia delle carte
+        grid.parentNode.insertBefore(navWrap, grid.nextSibling);
+
+        // Collegamento click
+        document.getElementById("coll-prev").onclick = () => {
+            playSound('click');
+            state.collectionPage = (state.collectionPage - 1 + totalPages) % totalPages;
+            renderCollection();
+        };
+        
+        document.getElementById("coll-next").onclick = () => {
+            playSound('click');
+            state.collectionPage = (state.collectionPage + 1) % totalPages;
+            renderCollection();
+        };
+    }
+}
+/* ============================================================
+   SISTEMA DI LOGIN E SINCRONIZZAZIONE CLOUD (FIREBASE)
+   ============================================================ */
+const FAKE_DOMAIN = "@napoli380.game"; // Dominio inventato per ingannare Firebase
+
+// Elementi grafici del widget
+const authLoggedOut = document.getElementById("auth-logged-out");
+const authLoggedIn = document.getElementById("auth-logged-in");
+const authUsernameInput = document.getElementById("auth-username");
+const authPasswordInput = document.getElementById("auth-password");
+const btnLoginRegister = document.getElementById("btn-login-register");
+const btnLogout = document.getElementById("btn-logout");
+const loggedUsernameDisplay = document.getElementById("logged-username");
+
+let syncTimeout = null;
+
+// --- 1. FUNZIONE PER SALVARE SUL CLOUD ---
+function syncToCloud() {
+  if (typeof auth === "undefined" || !auth.currentUser) return; // Salva solo se loggato
+  
+  clearTimeout(syncTimeout);
+  // Ritardo di 2 secondi per evitare di "spammare" il server se succedono tante cose insieme
+  syncTimeout = setTimeout(() => {
+    const creds = parseInt(localStorage.getItem('napoli380_credits') || "0", 10);
+    const coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
+    const ach = JSON.parse(localStorage.getItem('napoli380_ach') || "[]");
+
+    db.collection("users").doc(auth.currentUser.uid).set({
+      credits: creds,
+      collection: coll,
+      achievements: ach,
+      lastSync: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).then(() => {
+      console.log("☁️ Salvataggio Cloud completato in background!");
+    });
+  }, 2000); 
+}
+
+// --- 2. MAGIA: INTERCETTA I SALVATAGGI LOCALI E LI MANDA AL CLOUD ---
+const originalSetItem = localStorage.setItem;
+localStorage.setItem = function(key, value) {
+  originalSetItem.apply(this, arguments); // Salva normalmente in locale
+  // Se stiamo modificando monete, carte o trofei, avvisa il Cloud!
+  if (key === 'napoli380_credits' || key === 'napoli380_collection' || key === 'napoli380_ach') {
+    syncToCloud();
+  }
+};
+
+// --- 3. FUNZIONE PER CARICARE DAL CLOUD AL LOGIN ---
+function loadFromCloud(uid) {
+  db.collection("users").doc(uid).get().then(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      
+      // Sovrascrive il salvataggio locale usando il comando originale (per non far scattare di nuovo il salvataggio cloud)
+      if (data.credits !== undefined) originalSetItem.call(localStorage, 'napoli380_credits', data.credits);
+      if (data.collection) originalSetItem.call(localStorage, 'napoli380_collection', JSON.stringify(data.collection));
+      if (data.achievements) originalSetItem.call(localStorage, 'napoli380_ach', JSON.stringify(data.achievements));
+
+      // Aggiorna visivamente i numeri sullo schermo
+      if(typeof updateWalletUI === 'function') updateWalletUI();
+      if(typeof renderCollection === 'function' && document.getElementById("collection-grid") && document.getElementById("collection-grid").innerHTML !== "") renderCollection();
+      if(typeof renderBacheca === 'function') renderBacheca();
+      
+      toast("☁️ Dati sincronizzati dal Cloud!");
+    } else {
+      // È un utente appena registrato: carica i suoi attuali salvataggi locali sul server
+      syncToCloud();
+    }
+  }).catch(err => console.error("Errore caricamento Cloud:", err));
+}
+
+/* ============================================================
+   CLASSIFICA GLOBALE (PER MODALITÀ)
+   Somma di punti campionato + punti competizioni europee (Champions),
+   una riga per utente loggato per ogni modalità giocata.
+   ============================================================ */
+const LEADERBOARD_MODES = [
+  { key: "rogue",       label: "Cazzimma" },
+  { key: "carriera",    label: "Carriera" },
+  { key: "impossibile", label: "Classica" },
+  { key: "serieb",      label: "Amm fa schif'" },
+  { key: "salary",      label: "Salary Cap" },
+  { key: "sesto",       label: "Zona Mazzarri" },
+  { key: "dreamteam",   label: "Sogni" },
+];
+
+function lbEscape(str) {
+  return String(str == null ? "" : str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// --- SCRIVE (in incremento) il risultato di fine stagione sulla classifica globale ---
+function updateLeaderboard(modeKey, modeLabel, campPts, europePts) {
+  if (typeof auth === "undefined" || typeof db === "undefined" || !auth.currentUser) return; // Solo giocatori loggati
+  if (!modeKey) return;
+
+  const uid = auth.currentUser.uid;
+  const emailName = auth.currentUser.email ? auth.currentUser.email.replace(FAKE_DOMAIN, "") : "Giocatore";
+  const username = (authUsernameInput && authUsernameInput.value.trim()) || (loggedUsernameDisplay && loggedUsernameDisplay.textContent) || emailName;
+  const camp = campPts || 0;
+  const europe = europePts || 0;
+
+  db.collection("leaderboard_" + modeKey).doc(uid).set({
+    username: username,
+    modeLabel: modeLabel || modeKey,
+    camp: firebase.firestore.FieldValue.increment(camp),
+    europe: firebase.firestore.FieldValue.increment(europe),
+    total: firebase.firestore.FieldValue.increment(camp + europe),
+    games: firebase.firestore.FieldValue.increment(1),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).catch(err => console.error("Errore aggiornamento classifica globale:", err));
+}
+
+// --- LEGGE e disegna la classifica globale della modalità scelta ---
+function renderLeaderboard(modeKey) {
+  const container = document.getElementById("lb-home");
+  if (!container) return;
+  if (!modeKey) modeKey = state.lbMode || LEADERBOARD_MODES[0].key;
+  state.lbMode = modeKey;
+
+  const tabsHtml = `<div class="lb-tabs">${LEADERBOARD_MODES.map(m =>
+    `<button type="button" class="lb-tab${m.key === modeKey ? " is-active" : ""}" data-lbmode="${m.key}">${m.label}</button>`
+  ).join("")}</div>`;
+
+  container.innerHTML = tabsHtml + `<div class="lb-list" id="lb-rows"><p class="lb-empty">Caricamento classifica…</p></div>`;
+
+  container.querySelectorAll(".lb-tab").forEach(btn => {
+    btn.onclick = () => { playSound('click'); renderLeaderboard(btn.getAttribute("data-lbmode")); };
+  });
+
+  const rows = document.getElementById("lb-rows");
+  if (typeof db === "undefined") {
+    if (rows) rows.innerHTML = `<p class="lb-empty">Classifica non disponibile al momento.</p>`;
+    return;
+  }
+
+  db.collection("leaderboard_" + modeKey).orderBy("total", "desc").limit(50).get().then(snap => {
+    const rowsEl = document.getElementById("lb-rows");
+    if (!rowsEl) return;
+    if (snap.empty) {
+      rowsEl.innerHTML = `<p class="lb-empty">Nessuno ha ancora completato questa modalità da loggato. Fai login e gioca per essere il primo in classifica!</p>`;
+      return;
+    }
+    const myUid = (typeof auth !== "undefined" && auth.currentUser) ? auth.currentUser.uid : null;
+    let i = 0;
+    let html = "";
+    snap.forEach(doc => {
+      i++;
+      const d = doc.data();
+      const posLabel = i === 1 ? "🥇" : i === 2 ? "🥈" : i === 3 ? "🥉" : i;
+      const meClass = doc.id === myUid ? " lb-row--me" : "";
+      html += `<div class="lb-row${meClass}">
+        <span class="lb-pos">${posLabel}</span>
+        <span class="lb-name">${lbEscape(d.username)}</span>
+        <span class="lb-stat"><strong>${d.camp || 0}</strong><small>campionato</small></span>
+        <span class="lb-stat"><strong>${d.europe || 0}</strong><small>europa</small></span>
+        <span class="lb-stat lb-stat--total"><strong>${d.total || 0}</strong><small>totale</small></span>
+      </div>`;
+    });
+    rowsEl.innerHTML = html;
+  }).catch(err => {
+    console.error("Errore caricamento classifica globale:", err);
+    const rowsEl = document.getElementById("lb-rows");
+    if (rowsEl) rowsEl.innerHTML = `<p class="lb-empty">Errore nel caricamento della classifica. Riprova più tardi.</p>`;
+  });
+}
+
+// --- 4. GESTIONE AUTENTICAZIONE ---
+if (typeof auth !== "undefined") {
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      // 🟢 UTENTE ONLINE
+      if(authLoggedOut) authLoggedOut.style.display = "none";
+      if(authLoggedIn) authLoggedIn.style.display = "flex";
+      
+      // Estrae il nome. Se il campo di input non è vuoto, usa quello (che ha le maiuscole originali), 
+      // altrimenti usa quello minuscolo di Firebase
+      const emailName = user.email.replace(FAKE_DOMAIN, "");
+      const displayName = authUsernameInput.value.trim() || emailName;
+      if(loggedUsernameDisplay) loggedUsernameDisplay.textContent = displayName;
+      
+      // Quando riconosce l'utente, scarica immediatamente i suoi dati!
+      loadFromCloud(user.uid);
+      
+    } else {
+      // 🔴 UTENTE OFFLINE (Ospite)
+      if(authLoggedOut) authLoggedOut.style.display = "flex";
+      if(authLoggedIn) authLoggedIn.style.display = "none";
+    }
+  });
+/* ============================================================
+   SUPPORTO TASTO INVIO PER IL LOGIN
+   ============================================================ */
+[authUsernameInput, authPasswordInput].forEach(input => {
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (btnLoginRegister) btnLoginRegister.click();
+      }
+    });
+  }
+});
+  
+ // Popup dedicato: ACCOUNT ESISTENTE ma PASSWORD SBAGLIATA (diverso dal popup "nuovo account")
+  function showWrongPasswordModal(username) {
+    let modal = document.getElementById("wrong-password-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "wrong-password-modal";
+      modal.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);";
+      modal.innerHTML =
+        '<div style="background:#0b1e33;border:1px solid #5a2323;border-radius:14px;max-width:360px;width:90%;padding:24px;text-align:center;color:#fff;box-shadow:0 10px 40px rgba(0,0,0,.5);font-family:inherit;">' +
+          '<div style="font-size:38px;margin-bottom:8px;">🔒</div>' +
+          '<h3 style="margin:0 0 10px;font-size:18px;">Password errata</h3>' +
+          '<p id="wrong-password-text" style="margin:0 0 20px;font-size:14px;color:#cfd8e3;line-height:1.4;"></p>' +
+          '<button type="button" id="wrong-password-ok" style="width:100%;padding:10px;border-radius:8px;border:none;background:#d63b3b;color:#fff;font-weight:600;cursor:pointer;">Riprova</button>' +
+        '</div>';
+      document.body.appendChild(modal);
+      modal.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+      modal.querySelector("#wrong-password-ok").addEventListener("click", () => {
+        modal.style.display = "none";
+        if (authPasswordInput) { authPasswordInput.value = ""; authPasswordInput.focus(); }
+      });
+    }
+    modal.querySelector("#wrong-password-text").innerHTML =
+      'L\'account "<strong>' + username + '</strong>" esiste già, ma la password inserita non è corretta. Riprova.';
+    modal.style.display = "flex";
+  }
+
+ // Tasto ACCEDI / REGISTRATI (Logica blindata e definitiva)
+  if(btnLoginRegister) {
+    btnLoginRegister.onclick = () => {
+      playSound('click');
+      const rawUsername = authUsernameInput.value.trim();
+      const password = authPasswordInput.value.trim();
+      
+      if (!rawUsername || !password) { toast("❌ Inserisci nome utente e password!"); return; }
+      if (password.length < 6) { toast("❌ La password deve avere almeno 6 caratteri!"); return; }
+
+      const usernameLower = rawUsername.toLowerCase();
+      const fakeEmail = usernameLower + FAKE_DOMAIN;
+      
+      const prevText = btnLoginRegister.textContent;
+      btnLoginRegister.textContent = "Attendere...";
+
+      // 1. Controlliamo nel registro Firestore se l'username esiste
+      db.collection("usernames").doc(usernameLower).get().then(doc => {
+        if (doc.exists) {
+          // --- L'ACCOUNT ESISTE NEL REGISTRO ---
+          auth.signInWithEmailAndPassword(fakeEmail, password)
+            .then(() => {
+              toast("Bentornato " + rawUsername + "!");
+              btnLoginRegister.textContent = prevText;
+            })
+            .catch(() => {
+              // Siccome l'account esiste, questo errore PUÒ ESSERE SOLO la password errata!
+              const pwModal = document.getElementById("wrong-password-modal");
+              const pwUserText = document.getElementById("wrong-username-text");
+              const btnPwOk = document.getElementById("btn-wrong-pw-ok");
+              
+              if(pwModal) {
+                pwUserText.textContent = rawUsername;
+                pwModal.classList.add("show");
+                btnPwOk.onclick = () => {
+                  playSound('click');
+                  pwModal.classList.remove("show");
+                  btnLoginRegister.textContent = prevText;
+                };
+              } else {
+                toast("❌ Password errata!");
+                btnLoginRegister.textContent = prevText;
+              }
+            });
+            
+        } else {
+          // --- L'ACCOUNT NON È NEL REGISTRO ---
+          // Proviamo comunque l'accesso su Firebase (per recuperare eventuali vecchi account legacy)
+          auth.signInWithEmailAndPassword(fakeEmail, password)
+            .then((userCred) => {
+              // Era un vecchio account! Lo registriamo subito nel database per le prossime volte
+              db.collection("usernames").doc(usernameLower).set({ uid: userCred.user.uid });
+              toast("Bentornato " + rawUsername + "!");
+              btnLoginRegister.textContent = prevText;
+            })
+            .catch(() => {
+              // L'account non esiste proprio da nessuna parte: chiediamo di crearne uno nuovo!
+              const regModal = document.getElementById("confirm-register-modal");
+              const regText = document.getElementById("confirm-register-text");
+              const btnCancel = document.getElementById("btn-register-cancel");
+              const btnConfirm = document.getElementById("btn-register-confirm");
+              
+              if(regModal) {
+                regText.innerHTML = `L'account "<strong>${rawUsername}</strong>" non esiste.<br>Vuoi registrare un NUOVO account con questo nome?`;
+                regModal.classList.add("show");
+                
+                btnCancel.onclick = () => {
+                  playSound('click');
+                  regModal.classList.remove("show");
+                  btnLoginRegister.textContent = prevText;
+                };
+                
+                btnConfirm.onclick = () => {
+                  playSound('click');
+                  regModal.classList.remove("show");
+                  btnLoginRegister.textContent = "Creazione...";
+                  
+                  auth.createUserWithEmailAndPassword(fakeEmail, password)
+                    .then((userCred) => {
+                      db.collection("usernames").doc(usernameLower).set({ uid: userCred.user.uid });
+                      toast("Benvenuto! Account creato con successo.");
+                      btnLoginRegister.textContent = prevText;
+                    })
+                    .catch(() => {
+                      toast("❌ Errore nella creazione dell'account.");
+                      btnLoginRegister.textContent = prevText;
+                    });
+                };
+              } else {
+                btnLoginRegister.textContent = prevText;
+              }
+            });
+        }
+      }).catch(() => {
+        toast("❌ Errore di connessione al database.");
+        btnLoginRegister.textContent = prevText;
+      });
+    };
+  }
+
+  // Tasto ESCI
+  if(btnLogout) {
+    btnLogout.onclick = () => {
+      playSound('click');
+      auth.signOut().then(() => {
+        toast("Sei uscito. Stai giocando come Ospite.");
+        authUsernameInput.value = "";
+        authPasswordInput.value = "";
+      });
+    };
+  }
+}
