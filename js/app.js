@@ -42,7 +42,12 @@ const SYNERGIES = [
   { id: "magica", nome: "Ma-Gi-Ca", giocatori: ["Diego Armando Maradona", "Bruno Giordano", "Careca"], bonus: 5, desc: "Maradona, Giordano, Careca: +5 Forza" },
   { id: "gemelli_gol", nome: "Gemelli del Gol", giocatori: ["Victor Osimhen", "Khvicha Kvaratskhelia"], bonus: 3, desc: "Osimhen, Kvaratskhelia: +3 Forza" },
   { id: "muro_azzurro", nome: "Muro Azzurro", giocatori: ["Kalidou Koulibaly", "Raul Albiol"], bonus: 2, desc: "Koulibaly, Albiol: +2 Forza" },
-  { id: "motore_scudetto", nome: "Motore Scudetto", giocatori: ["Stanislav Lobotka", "Zambo Anguissa", "Piotr Zielinski"], bonus: 3, desc: "Lobotka, Anguissa, Zielinski: +3 Forza" }
+  { id: "motore_scudetto", nome: "Motore Scudetto", giocatori: ["Stanislav Lobotka", "Zambo Anguissa", "Piotr Zielinski"], bonus: 3, desc: "Lobotka, Anguissa, Zielinski: +3 Forza" },
+  { id: "fedelissimi_sarri", nome: "I Fedelissimi di Sarri", giocatori: ["Jorginho", "Allan", "Marek Hamsik"], bonus: 5, desc: "Jorginho, Allan, Hamsik: +5 Forza" },
+  { id: "muro_di_berlino", nome: "Muro di Berlino", giocatori: ["Fabio Cannavaro", "Ciro Ferrara"], bonus: 4, desc: "Cannavaro, Ferrara: +4 Forza" },
+  { id: "scugnizzi", nome: "Gli Scugnizzi", giocatori: ["Lorenzo Insigne", "Gianluca Grava"], bonus: 3, desc: "Insigne, Grava: +3 Forza" },
+  { id: "disastro", nome: "Disastro Annunciato", giocatori: ["Eduardo Vargas", "Leonardo Pavoletti", "Ignacio Fideleff"], bonus: -5, desc: "Vargas, Pavoletti, Fideleff: -5 OVR. Perfetto per retrocedere!" },
+  { id: "difesa_colabrodo", nome: "Difesa Colabrodo", giocatori: ["Miguel Britos", "Leandro Rinaudo"], bonus: -3, desc: "Britos, Rinaudo: -3 OVR. Brividi in difesa." }
 ];
 
 // Funzione che controlla quali intese sono attive in campo in questo momento
@@ -153,6 +158,28 @@ const PRESIDENT_EVENTS = [
         if(atts.length) addMod(atts[Math.floor(Math.random()*atts.length)], -2);
     },
     btnB: "Difendi la squadra", effB: "I giocatori apprezzano (+1 rating globale), ma sfidi la società.",
+    actionB: () => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1; }
+  }
+  ,{
+    title: "Conferenza Stampa Infuocata", icon: "🎤",
+    desc: "I giornalisti criticano aspramente il gioco della squadra. Cosa rispondi in diretta TV?",
+    btnA: "Difendi i ragazzi", effA: "Perdi 1 Reroll (la stampa ti attacca), ma la squadra si compatta (+1 globale).",
+    actionA: () => { state.rerolls = Math.max(0, state.rerolls - 1); state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1; if(typeof updateHud === 'function') updateHud(); },
+    btnB: "Fai autocritica", effB: "Guadagni 2 Reroll (la società apprezza l'onestà), ma i giocatori si deprimono (-1 globale).",
+    actionB: () => { state.rerolls += 2; state.rogueGeneralMod = (state.rogueGeneralMod || 0) - 1; if(typeof updateHud === 'function') updateHud(); }
+  },
+  {
+    title: "Sponsor Invadente", icon: "🤝",
+    desc: "Uno sponsor offre fondi pazzeschi, ma pretende che la squadra pensi solo all'attacco.",
+    btnA: "Accetta i milioni", effA: "Guadagni +4 Reroll e (se Salary Cap) +25 Mln, ma i difensori perdono lucidità (-2).",
+    actionA: () => { 
+        state.rerolls += 4; 
+        if(state.budget !== undefined) state.budget += 25; // Aggiunge soldi nel Salary Cap
+        const defs = Object.keys(state.team).filter(id => state.team[id].ruoli.some(r => ["DC","TD","TS"].includes(r)));
+        defs.forEach(id => addMod(id, -2)); // Malus ai difensori
+        if(typeof updateHud === 'function') updateHud(); 
+    },
+    btnB: "Rifiuta sdegnato", effB: "Nessun bonus, ma lo spogliatoio apprezza l'integrità (+1 globale).",
     actionB: () => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1; }
   }
 ];
@@ -293,7 +320,7 @@ function renderBacheca() {
       <div class="mode-row ${colorClass}" style="cursor:default;">
         <span class="mode-row__idx" style="font-size:1.5rem;">${isUnlocked ? ach.icon : "🔒"}</span>
         <span class="mode-row__body">
-          <span class="mode-row__lab" style="${isUnlocked ? 'color: var(--giallo);' : 'color: var(--testo-mute);'}">${ach.nome}</span>
+          <span class="mode-row__lab" style="${isUnlocked ? 'color: var(--celeste);' : 'color: var(--testo-mute);'}">${ach.nome}</span>
           <span class="mode-row__desc">${ach.desc}</span>
         </span>
       </div>`;
@@ -422,7 +449,15 @@ function awards(team, teamRating, totalPts) {
   const serieATop = clamp(Math.round(ENGINE.gauss(24, 3)), 18, 31);
   const mvp = players.map(p => ({ p, score: p.rating + p.goals * 0.8 + ENGINE.gauss(0, 3.5) })).reduce((a, b) => (b.score > a.score ? b : a)).p;
   if (mvp.goals > scorer.goals) mvp.goals = scorer.goals;
-  return { players, scorer, serieATop, mvp };
+
+  // NUOVA LOGICA: MIGLIOR PORTIERE E DIFENSORE
+  const gks = players.filter(p => p.ruoli.includes("POR"));
+  const bestGk = gks.length ? gks.reduce((a, b) => (b.rating > a.rating ? b : a)) : {nome: "Nessuno"};
+  
+  const defs = players.filter(p => p.ruoli.includes("DC") || p.ruoli.includes("TD") || p.ruoli.includes("TS"));
+  const bestDef = defs.length ? defs.reduce((a, b) => (b.rating > a.rating ? b : a)) : {nome: "Nessuno"};
+
+  return { players, scorer, serieATop, mvp, bestGk, bestDef };
 }
 
 function init() {
@@ -450,8 +485,8 @@ if (name === "hof") {
             let html = `<p style="margin-bottom: 15px; color: #ffd24a;">🏆 ECCO GLI INVINCIBILI DEL 38-0!</p><ul style="list-style: none; padding: 0; display: grid; gap: 8px;">`;
             Object.values(team).forEach(p => {
                 html += `<li style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0, 161, 255, 0.2); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between;">
-                    <span><strong style="color:var(--giallo-chiaro); margin-right:8px;">${p.ruoli[0]}</strong> ${p.nome}</span>
-                    <strong style="color:var(--giallo);">${p.rating}</strong>
+                    <span><strong style="color:var(--celeste-chiaro); margin-right:8px;">${p.ruoli[0]}</strong> ${p.nome}</span>
+                    <strong style="color:var(--celeste);">${p.rating}</strong>
                 </li>`;
             });
             html += `</ul>`;
@@ -606,6 +641,7 @@ function resetRogueState() {
    state.flags = {}; state.coach = null; state.career = null; 
    state.slotBand = null; state.ultimateUsed = false; 
    state.scheduledEvents = null; state.bonusApplied = false; 
+   state.captainId = null;
 }
 function _dRand() { return state._rngDraft ? state._rngDraft.next() : Math.random(); }
 function _dPick(arr) { return state._rngDraft ? state._rngDraft.pick(arr) : rnd(arr); }
@@ -635,18 +671,45 @@ function showCareerFinal() {
   renderCareerFormationCompare(); showScreen("#screen-career-final");
 }
 
-function renderCareerFormationCompare() { const box = $("#career-formation-compare"); if (!box) return; const initial = state.career.initialTeam; if (!initial) { box.innerHTML = ""; return; } const pitchHTML = (team, isFinal) => `<div class="pitch compare-pitch"><div class="pitch-lines"></div>${slots().map(s => { const p = team[s.id]; if (!p) return ""; const eff = isFinal ? effRating(s.id) : p.rating; const age = isFinal ? state.career.ages[s.id] : careerInitialAge(p); return `<div class="slot filled" style="left:${s.x}%; top:${s.y}%;">${slotTokenInnerHTML(p, eff, age)}</div>`; }).join("")}</div>`; box.innerHTML = `<h3 class="cfc-title">La rosa, prima e dopo</h3><div class="cfc-grid"><div class="cfc-col"><span class="cfc-label">Stagione 1</span>${pitchHTML(initial, false)}</div><div class="cfc-col"><span class="cfc-label">Stagione 10</span>${pitchHTML(state.team, true)}</div></div>`; }
-
+function renderCareerFormationCompare() { 
+  const box = $("#career-formation-compare"); 
+  if (!box) return; 
+  const initial = state.career.initialTeam; 
+  if (!initial) { box.innerHTML = ""; return; } 
+  
+  const pitchHTML = (team, isFinal) => `<div class="pitch compare-pitch"><div class="pitch-lines"></div>${slots().map(s => { 
+    const p = team[s.id]; 
+    if (!p) return ""; 
+    const eff = isFinal ? effRating(s.id) : p.rating; 
+    const age = isFinal ? state.career.ages[s.id] : careerInitialAge(p); 
+    const iconCls = (p.stagione === "Hall of Fame") ? " slot-icon" : "";
+    return `<div class="slot filled${iconCls}" style="left:${s.x}%; top:${s.y}%;">${slotTokenInnerHTML(p, eff, age, state.captainId === s.id, s.id)}</div>`; 
+  }).join("")}</div>`; 
+  
+  box.innerHTML = `<h3 class="cfc-title">La rosa, prima e dopo</h3><div class="cfc-grid"><div class="cfc-col"><span class="cfc-label">Stagione 1</span>${pitchHTML(initial, false)}</div><div class="cfc-col"><span class="cfc-label">Stagione 10</span>${pitchHTML(state.team, true)}</div></div>`; 
+}
 function renderMarketPitch(container, cfg) {
   const continueHTML = cfg.continueBtn ? `<div class="break-actions"><button type="button" class="btn primary market-continue-btn">${cfg.continueBtn.label}</button></div>` : "";
-  container.innerHTML = `<p class="market-hint">${cfg.hint}</p><div class="pitch market-pitch"><div class="pitch-lines"></div>${slots().map(s => { const p = state.team[s.id]; const eff = (state.rogue || state.career) ? effRating(s.id) : p.rating; return `<div class="slot filled${cfg.left <= 0 ? " locked-out" : ""}" style="left:${s.x}%; top:${s.y}%;" data-slot="${s.id}">${slotTokenInnerHTML(p, eff, careerAgeForSlot(s.id))}</div>`; }).join("")}</div><div class="market-pick-area"></div>${continueHTML}`;
+  container.innerHTML = `<p class="market-hint">${cfg.hint}</p><div class="pitch market-pitch"><div class="pitch-lines"></div>${slots().map(s => { 
+    const p = state.team[s.id]; 
+    const eff = effRating(s.id); 
+    const iconCls = (p && p.stagione === "Hall of Fame") ? " slot-icon" : "";
+    return `<div class="slot filled${cfg.left <= 0 ? " locked-out" : ""}${iconCls}" style="left:${s.x}%; top:${s.y}%;" data-slot="${s.id}">${slotTokenInnerHTML(p, eff, careerAgeForSlot(s.id), state.captainId === s.id, s.id)}</div>`; 
+  }).join("")}</div><div class="market-pick-area"></div>${continueHTML}`;
+  
   if (cfg.left > 0) container.querySelectorAll(".market-pitch .slot").forEach(el => { el.addEventListener("click", () => cfg.onOpen(el.dataset.slot)); });
   if (cfg.continueBtn) container.querySelector(".market-continue-btn").addEventListener("click", cfg.continueBtn.onClick);
 }
 
 function renderReplacementCards(container, slotId, opts, onPick, onCancel) {
   const slot = slots().find(s => s.id === slotId);
-  container.innerHTML = `<p class="market-hint">Rinforzo per ${ROLE_NAMES[slot.accepts[0]]}, esce ${state.team[slotId].nome}.</p><div class="options-cards market-options">${opts.map((p, i) => { let cls = "player-card tcg", styleAttr = ""; if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating); return `<div class="${cls}" style="${styleAttr}" data-i="${i}">${tcgCardInner(p, state.hiddenRating, slot.accepts[0])}</div>`; }).join("")}</div><button type="button" class="btn ghost market-cancel-btn">Annulla</button>`;
+  container.innerHTML = `<p class="market-hint">Rinforzo per ${ROLE_NAMES[slot.accepts[0]]}, esce ${state.team[slotId].nome}.</p><div class="options-cards market-options">${opts.map((p, i) => { 
+    let cls = "player-card tcg", styleAttr = ""; 
+    if (p.rating >= 90) cls += " tcg-legend";
+    if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+    if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating); 
+    return `<div class="${cls}" style="${styleAttr}" data-i="${i}">${tcgCardInner(p, state.hiddenRating, slot.accepts[0])}</div>`; 
+  }).join("")}</div><button type="button" class="btn ghost market-cancel-btn">Annulla</button>`;
   container.querySelectorAll(".player-card").forEach(card => { card.onclick = () => onPick(+card.dataset.i); }); container.querySelector(".market-cancel-btn").onclick = onCancel;
 }
 
@@ -671,7 +734,37 @@ function renderCareerEventsReport(report) {
   box.innerHTML = `<p class="market-hint">Imprevisti della chiusura stagione.</p><ul class="career-growth-list">${rows}</ul>`; 
 }
 function startCareerSwap() { const growthReport = applyCareerAging(); const retireReport = checkCareerRetirements(); state.career.swapsLeft = 3; const eventsReport = retireReport.concat(applyCareerEvents(retireReport.map(r => r.slotId))); const area = $("#career-swap-area"); area.innerHTML = `<div class="career-swap-intro"><p class="market-hint">Qui puoi cambiare i titolari e mettere in campo una rosa più adatta alla nuova stagione.</p></div><div id="career-events-report"></div><div id="career-growth-report"></div><div id="career-swap-pitch"></div>`; renderCareerEventsReport(eventsReport); renderCareerGrowthReport(growthReport); renderCareerSwapPitch(); showScreen("#screen-career-swap"); }
-function applyCareerAging() { const report = []; slots().forEach(s => { const age = state.career.ages[s.id]; if (age == null) return; const newAge = age + 1; state.career.ages[s.id] = newAge; const isHof = state.team[s.id].stagione === "Hall of Fame"; let applied = ageGrowthRoll(newAge); if (applied < 0 && isHof) applied = 0; if (applied !== 0) { addMod(s.id, applied); report.push({ slotId: s.id, nome: state.team[s.id].nome, age: newAge, delta: applied }); } }); return report; }
+function applyCareerAging() { 
+  const report = []; 
+  slots().forEach(s => { 
+    const age = state.career.ages[s.id]; 
+    if (age == null) return; 
+    const newAge = age + 1; 
+    state.career.ages[s.id] = newAge; 
+    const isHof = state.team[s.id].stagione === "Hall of Fame"; 
+    
+    let applied = ageGrowthRoll(newAge); 
+    
+    if (newAge >= 33 && !isHof) {
+        applied = -1; // Declino over 33
+    } else if (applied < 0 && isHof) {
+        applied = 0; 
+    }
+    
+    // NUOVA LOGICA EVOLUZIONE CARTE
+    if (newAge <= 24 && applied > 0 && Math.random() > 0.65 && !isHof) {
+        applied += 4; // Super boost evolutivo
+        state.team[s.id].nome = "🌟 " + state.team[s.id].nome; // Aggiunge la stellina
+        setTimeout(() => toast("EVOLUZIONE! " + state.team[s.id].nome + " è diventato un fenomeno!"), 1000);
+    }
+
+    if (applied !== 0) { 
+      addMod(s.id, applied); 
+      report.push({ slotId: s.id, nome: state.team[s.id].nome, age: newAge, delta: applied }); 
+    } 
+  }); 
+  return report; 
+}
 function renderCareerGrowthReport(report) { const box = $("#career-growth-report"); if (!box) return; if (!report.length) { box.innerHTML = `<p class="market-hint">Rose stabile: nessun cambiamento di crescita.</p>`; return; } const rows = report.map(r => { const slot = slots().find(s => s.id === r.slotId); const cls = r.delta > 0 ? "cgr-up" : "cgr-down"; const sign = r.delta > 0 ? "+" : ""; return `<li class="${cls}"><span class="cgr-role">${slot ? slot.label : r.slotId}</span><span class="cgr-name">${r.nome}</span><span class="cgr-age">${r.age} anni</span><span class="cgr-delta">${sign}${r.delta}</span></li>`; }).join(""); box.innerHTML = `<p class="market-hint">Crescita della rosa:</p><ul class="career-growth-list">${rows}</ul>`; }
 function renderCareerSwapPitch() { const container = $("#career-swap-pitch"); const left = state.career.swapsLeft; renderMarketPitch(container, { left, hint: left > 0 ? `Scegli un titolare e sostituiscilo. Hai ancora <strong>${left}</strong> cambi disponibili.` : `Tutti i cambi sono stati usati.`, onOpen: slotId => offerCareerReplacement(slotId), continueBtn: { label: `Vai alla stagione ${state.career.season + 1} →`, onClick: () => advanceCareerSeason() }, }); }
 function offerCareerReplacement(slotId) { const opts = marketOptions(slotId); const pickArea = document.querySelector("#career-swap-pitch .market-pick-area"); renderReplacementCards(pickArea, slotId, opts, (idx) => { state.career.swapsLeft--; applyMarketReplacement(slotId, idx, opts, { phase: "swap" }); renderCareerSwapPitch(); }, () => renderCareerSwapPitch()); }
@@ -715,8 +808,23 @@ function updateHud() {
 function renderTeamInfo() {
   const box = $("#team-info"); if (!box) return; if (!state.diff) { box.innerHTML = ""; return; }
   const goalTxt = state.diff.goal === "retro" ? "Obiettivo: chiudere 20°" : state.diff.goal === "sesto" ? "Obiettivo: arrivare secondi" : "Obiettivo: scudetto perfetto 38·0";
-  const modulo = state.formationKey || "-"; const careerCT = state.career && state.coach ? CAREER_COACH_TEXT[state.coach.id] : null;
-  const coachBlock = (state.rogue || state.career) && state.coach ? `<div class="ti-row ti-coach"><span class="ti-label">Allenatore</span><span class="ti-value">${state.coach.nome}</span></div>${state.coach.specialBonus ? `<div class="ti-row ti-special-bonus"><span class="ti-label">${careerCT && careerCT.specialName ? careerCT.specialName : state.coach.specialBonus.nome}</span><span class="ti-sb-desc">${careerCT ? careerCT.special : state.coach.specialBonus.desc}</span></div>` : ""}` : "";
+  const modulo = state.formationKey || "-"; 
+  
+  const careerCT = state.career && state.coach ? CAREER_COACH_TEXT[state.coach.id] : null;
+  const genLabel = careerCT ? careerCT.general : (state.coach ? `+${state.coach.bonus} rating generale` : "");
+  
+  const coachBlock = (state.rogue || state.career) && state.coach ? `
+    <div class="ti-row ti-coach">
+      <span class="ti-label">Allenatore</span>
+      <span class="ti-value">${state.coach.nome}</span>
+    </div>
+    <div class="ti-row ti-general-bonus">
+      <span class="ti-label">Bonus Generale</span>
+      <span class="ti-sb-desc">${genLabel}</span>
+    </div>
+    ${state.coach.specialBonus ? `<div class="ti-row ti-special-bonus"><span class="ti-label">${careerCT && careerCT.specialName ? careerCT.specialName : state.coach.specialBonus.nome}</span><span class="ti-sb-desc">${careerCT ? careerCT.special : state.coach.specialBonus.desc}</span></div>` : ""}` 
+  : "";
+  
   const bonusBlock = (state.rogue && state.rogueBonus) ? `<div class="ti-row ti-bonus"><span class="ti-label">Bonus pre-run</span><span class="ti-value">${state.rogueBonus.nome}</span></div>` : "";
   let bandaBlock = "";
   if (state.diff.goal === "sesto") {
@@ -733,8 +841,15 @@ function renderTeamInfo() {
       <div class="ti-head" style="border:none; padding:0;">
         <span class="ti-label" style="color: #ffd24a;">✨ INTESE ATTIVE</span>
       </div>
-      <div class="ti-body" style="display: flex; flex-direction: column; gap: 6px; align-items: center;">
-        ${synergyData.active.map(syn => `<div class="synergy-badge" title="${syn.desc}">🔥 ${syn.nome} (+${syn.bonus})</div>`).join("")}
+      <div class="ti-body" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+        ${synergyData.active.map(syn => `
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div class="synergy-badge" title="${syn.desc}">🔥 ${syn.nome} (+${syn.bonus})</div>
+            <span style="font-size: 0.75rem; color: var(--testo-dim); text-align: center; line-height: 1.2;">
+              ${syn.giocatori.join(" · ")}
+            </span>
+          </div>
+        `).join("")}
       </div>
     </div>`;
   }
@@ -808,8 +923,24 @@ function eligiblePool(slot, excludeNames = []) {
 }
 
 function onSlotClick(slot) {
-  if (state.team[slot.id]) return; if (state.activeSlot && state.activeSlot.id !== slot.id) return;
-  if (state.activeSlot) return; drawOptions(slot);
+  const filled = Object.keys(state.team).length;
+  
+  // Se la squadra è completa ma manca il capitano, il click assegna la fascia!
+  if (filled === 11 && !state.captainId) {
+    if (state.team[slot.id]) {
+        playSound('click');
+        state.captainId = slot.id;
+        refreshSlotRating(slot.id);
+        renderOptionsPanel();
+        toast("Fascia assegnata a " + state.team[slot.id].nome + " (+3 OVR)!");
+    }
+    return;
+  }
+
+  if (state.team[slot.id]) return; 
+  if (state.activeSlot && state.activeSlot.id !== slot.id) return;
+  if (state.activeSlot) return; 
+  drawOptions(slot);
 }
 
 function applyCoachPickBonus(slot, p) {
@@ -937,14 +1068,33 @@ function renderOptionsPanel() {
      }
   }
   // ---------------------------------------------
-  const rerollBtn = $("#btn-reroll"); 
+ const rerollBtn = $("#btn-reroll"); 
   rerollBtn.disabled = !state.activeSlot || state.rerolls <= 0; 
   rerollBtn.textContent = state.rerolls === Infinity ? `Reroll (∞)` : `Reroll (${state.rerolls})`;
-  if (!state.activeSlot) { hint.textContent = filled < 11 ? `Tocca un ruolo libero per pescare ${state.optionsCount} carte.` : "Undici in campo. Premi VIA ALLA STAGIONE."; return; }
+  
+  const needsCaptain = (filled === 11 && !state.captainId);
+  $("#btn-start").disabled = filled < 11 || needsCaptain;
+  
+  if (needsCaptain) {
+      $("#btn-start").textContent = "SCEGLI IL CAPITANO SUL CAMPO";
+      hint.textContent = "La squadra è pronta! Tocca un giocatore in campo per dargli la fascia di Capitano (+3 OVR).";
+      return;
+  } else if (!state.activeSlot) { 
+      hint.textContent = filled < 11 ? `Tocca un ruolo libero per pescare ${state.optionsCount} carte.` : "Undici in campo. Premi VIA ALLA STAGIONE."; 
+      $("#btn-start").textContent = filled < 11 ? `VIA ALLA STAGIONE (${filled}/11)` : "VIA ALLA STAGIONE";
+      return; 
+  }
+  
   hint.textContent = `${ROLE_NAMES[state.activeSlot.accepts[0]]} · tocca per schierare.`;
   state.options.forEach((p, idx) => {
-    let cls = "player-card tcg card-reveal", styleAttr = ""; if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating);
-    const inner = tcgCardInner(p, state.hiddenRating, state.activeSlot.accepts[0]); const card = el("div", cls); if (styleAttr) card.style.cssText = styleAttr;
+    let cls = "player-card tcg card-reveal";
+    if (p.rating >= 90) cls += " tcg-legend"; // ATTIVA EFFETTO OLOGRAFICO
+    if (p.stagione === "Hall of Fame") cls += " tcg-icon"; // STILE ICON BIANCO/ORO
+    
+    let styleAttr = ""; 
+    if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating);
+    const inner = tcgCardInner(p, state.hiddenRating, state.activeSlot.accepts[0]); 
+    const card = el("div", cls); if (styleAttr) card.style.cssText = styleAttr;
     card.innerHTML = inner; card.addEventListener("click", () => pick(idx)); panel.appendChild(card); setTimeout(() => card.classList.add("revealed"), 60 + idx * 90);
   });
 }
@@ -995,17 +1145,44 @@ function handleDedicatedTrigger(trig, slotId) {
 
 function lastNameOf(fullName) { const parts = fullName.trim().split(/\s+/); if (parts.length === 1) return parts[0]; return parts[parts.length - 1]; }
 function careerAgeForSlot(slotId) { if (!state.career || !state.team[slotId]) return null; const tracked = state.career.ages[slotId]; return tracked != null ? tracked : careerInitialAge(state.team[slotId]); }
-function slotTokenInnerHTML(p, eff, age) { const ageTag = age != null ? `<span class="slot-age">${age} anni</span>` : ""; return `<span class="slot-rating">${eff}</span><span class="slot-name">${lastNameOf(p.nome)}</span><span class="slot-season">${p.stagione}</span>${ageTag}`; }
-function markFilledSlot(slot, p) { const node = $("#slot-" + slot.id); if (!node) return; node.classList.remove("empty", "active"); node.classList.add("filled"); const eff = (state.rogue || state.career) ? effRating(slot.id) : p.rating; node.innerHTML = slotTokenInnerHTML(p, eff, careerAgeForSlot(slot.id)); }
-
+function slotTokenInnerHTML(p, eff, age, isCaptain, slotId) { 
+  const ageTag = age != null ? `<span class="slot-age">${age} anni</span>` : ""; 
+  const capTag = isCaptain ? `<span class="slot-captain">C</span>` : "";
+  
+  // NUOVO: Calcola e mostra la crescita (+1, -1, ecc.)
+  let growthTag = "";
+  if (slotId && state.ratingMods && state.ratingMods[slotId]) {
+      const mod = state.ratingMods[slotId];
+      if (mod > 0) growthTag = `<span class="slot-growth up">+${mod}</span>`;
+      else if (mod < 0) growthTag = `<span class="slot-growth down">${mod}</span>`;
+  }
+  
+  return `${capTag}${growthTag}<span class="slot-rating">${eff}</span><span class="slot-name">${lastNameOf(p.nome)}</span><span class="slot-season">${p.stagione}</span>${ageTag}`; 
+}
+function markFilledSlot(slot, p) { 
+  const node = $("#slot-" + slot.id); 
+  if (!node) return; 
+  node.classList.remove("empty", "active"); 
+  node.classList.add("filled"); 
+  if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
+  const eff = effRating(slot.id); 
+  node.innerHTML = slotTokenInnerHTML(p, eff, careerAgeForSlot(slot.id), state.captainId === slot.id, slot.id); 
+}
 function triggerPickEvent(slotId, isFirstPick) {
   const ev = rollPickEvent(slotId, isFirstPick); const p = state.team[slotId];
   if (ev.kind === "repick") { showPickEventModal(ev, ev.text(p), () => { const slot = slots().find(s => s.id === slotId); delete state.team[slotId]; delete state.ratingMods[slotId]; const node = $("#slot-" + slotId); node.classList.remove("filled"); node.classList.add("empty"); node.innerHTML = `<span class="slot-role">${slot.label}</span>`; drawRipickOptions(slot); }); return; }
   const d = ev.apply(slotId); refreshSlotRating(slotId); const txt = ev.text(p); state.rogueEvents.push({ nome: ev.nome, text: txt, kind: ev.kind }); showPickEventModal(ev, txt, () => renderOptionsPanel(), d);
 }
 
-function refreshSlotRating(slotId) { const node = $("#slot-" + slotId); const p = state.team[slotId]; if (!node || !p) return; const eff = effRating(slotId); node.innerHTML = slotTokenInnerHTML(p, eff, careerAgeForSlot(slotId)); tcgGoldStyle(eff).split(";").filter(Boolean).forEach(rule => { const i = rule.indexOf(":"); if (i > 0) node.style.setProperty(rule.slice(0, i).trim(), rule.slice(i + 1).trim()); }); }
-
+function refreshSlotRating(slotId) { 
+  const node = $("#slot-" + slotId); 
+  const p = state.team[slotId]; 
+  if (!node || !p) return; 
+  if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
+  const eff = effRating(slotId); 
+  node.innerHTML = slotTokenInnerHTML(p, eff, careerAgeForSlot(slotId), state.captainId === slotId, slotId); 
+  tcgGoldStyle(eff).split(";").filter(Boolean).forEach(rule => { const i = rule.indexOf(":"); if (i > 0) node.style.setProperty(rule.slice(0, i).trim(), rule.slice(i + 1).trim()); }); 
+}
 function showPickEventModal(ev, text, onClose, delta) {
   let overlay = $("#pick-modal"); if (!overlay) { overlay = el("div", "pick-modal"); overlay.id = "pick-modal"; document.body.appendChild(overlay); }
   let cls = "pm-pos"; if (ev.kind === "repick") cls = "pm-repick"; else if (delta < 0 || ev.kind === "single-" || ev.kind === "neg") cls = "pm-neg";
@@ -1087,16 +1264,18 @@ function doReroll() { if (!state.activeSlot || state.rerolls <= 0) return; state
 
 function rollWeather(halfName) {
     state.weather = "normal";
-    // 25% di possibilità che piova nel girone
-    if (Math.random() < 0.25) { 
+    // 15% di possibilità che piova (il meteo vale per l'intero girone: il motore simula
+    // ogni girone come blocco unico, quindi non c'è un tiro di dado per singola partita)
+    if (Math.random() < 0.15) { 
         state.weather = "pioggia";
-        let mazzarriText = (state.coach && state.coach.id === "mazzarri") ? "Mazzarri esulta: statistiche fisiche e tecniche raddoppiate!" : "I tecnici perdono 3 rating, la difesa/mediana guadagna 2.";
-        setTimeout(() => toast(`🌧️ METEO AVVERSO (${halfName}): ${mazzarriText}`), 800);
+        const mazzarriOn = state.coach && state.coach.id === "mazzarri";
+        const mazzarriText = mazzarriOn ? "Mazzarri ci sguazza: pioggia e fango diventano un bonus per tutta la squadra!" : "Fango in campo: i tecnici (TRQ, AS, AD) perdono 2 rating, i fisici (DC, MED) ne guadagnano 2.";
+        setTimeout(() => toast(`🌧️ E CHIOVE PURE! (${halfName}): ${mazzarriText}`), 800);
     }
 }
 
 function teamRating() { 
-  const ratingOf = (state.rogue || state.career) ? id => effRating(id) : id => state.team[id].rating; 
+  const ratingOf = id => effRating(id);
   
   let R = slots().reduce((s, sl) => {
      let baseR = ratingOf(sl.id);
@@ -1104,15 +1283,15 @@ function teamRating() {
      
      // --- METEO DINAMICO ---
      if (state.weather === "pioggia") {
-        const isTecnico = p.ruoli.some(r => ["TRQ", "AS", "AD", "ATT"].includes(r));
+        const isTecnico = p.ruoli.some(r => ["TRQ", "AS", "AD"].includes(r));
         const isFisico = p.ruoli.some(r => ["MED", "DC"].includes(r));
         
         let mod = 0;
-        if (isTecnico) mod = -3; // Tecnici faticano nel fango
+        if (isTecnico) mod = -2; // Tecnici faticano nel fango
         if (isFisico) mod = 2;   // I fisici si esaltano
         
         if (state.coach && state.coach.id === "mazzarri" && mod !== 0) {
-           mod = Math.abs(mod) * 2; // Mazzarri trasforma gli alibi in pura forza!
+           mod = Math.abs(mod) * 2; // Mazzarri trasforma anche il malus dei tecnici in un bonus: pioggia = buff globale
         }
         baseR += mod;
      }
@@ -1120,14 +1299,14 @@ function teamRating() {
   }, 0) / 11; 
   
   const synergyData = getActiveSynergies();
-  R += synergyData.totalBonus;
+  
 
   return (state.diff && state.diff.goal === "retro") ? R * 0.97 : R; 
 }
 function startSeasonFirstHalf() {
   rollWeather("Andata");
   const R = teamRating(); const first = ENGINE.simulateSeason(R, 19); state.firstHalf = first; state.marketDone = false; state.secondHalfMatches = null;
-  state.fixtureOpps = LEAGUE.romaOpponents(); state.firstHalfMatches = LEAGUE.buildRomaHalf({ wdl: first, team: state.team, mds: range(1, 19), opps: state.fixtureOpps });
+  state.fixtureOpps = LEAGUE.napoliOpponents(); state.firstHalfMatches = LEAGUE.buildNapoliHalf({ wdl: first, team: state.team, mds: range(1, 19), opps: state.fixtureOpps });
   return { R, first };
 }
 
@@ -1159,7 +1338,14 @@ function startSeasonWithBreak() {
 function renderMarketBreak(R, first) {
   const ctx = leagueContext(); const halfScud = Math.floor(ctx.scudetto / 2); const halfCL = Math.floor(ctx.champions / 2);
   let posTxt; if (first.pts > halfScud) posTxt = "Primi! Sogniamo!"; else if (first.pts >= halfCL) posTxt = "Zona Champions."; else if (first.pts >= halfCL - 6) posTxt = "A ridosso dell'Europa."; else if (first.pts >= 20) posTxt = "Metà classifica."; else posTxt = "Disastro totale.";
-  const box = $("#break-body"); box.innerHTML = `<div class="break-standings"><div class="bs-item"><span class="bs-label">Dopo 19 giornate</span><span class="bs-big">${first.pts}</span><span class="bs-sub">${vpsLabel(first.w, first.d, first.l)}</span></div><div class="bs-item"><span class="bs-label">Forza squadra</span><span class="bs-big">${R.toFixed(1)}</span><span class="bs-sub">${posTxt}</span></div></div><p class="break-intro">Mercato: pesca un rinforzo o giocatela così.</p><div class="break-actions"><button id="btn-market" class="btn ghost">Apri il mercato</button><button id="btn-skip-market" class="btn primary">Continua</button></div><div id="market-area"></div>`;
+  
+  // NUOVA LOGICA: SFIDA DEL RITORNO
+  let sfidaGoal = Math.floor(R / 3) + 12; // Obiettivo matematico dinamico in base alla tua forza
+  state.sfidaRitorno = sfidaGoal;
+  const challengeHtml = `<div class="break-standings" style="margin-top: 15px; background: rgba(0, 161, 255, 0.1);"><div class="bs-item" style="border-color: #00a1ff;"><span class="bs-label" style="color: #00a1ff;">🎯 SFIDA DEL PRESIDENTE</span><span class="bs-sub" style="color: white; font-size: 0.9rem;">Fai almeno <strong>${sfidaGoal} punti</strong> nel girone di ritorno! Se ci riesci avrai un boost in Carriera.</span></div></div>`;
+  
+  const box = $("#break-body"); 
+  box.innerHTML = `<div class="break-standings"><div class="bs-item"><span class="bs-label">Dopo 19 giornate</span><span class="bs-big">${first.pts}</span><span class="bs-sub">${vpsLabel(first.w, first.d, first.l)}</span></div><div class="bs-item"><span class="bs-label">Forza squadra</span><span class="bs-big">${R.toFixed(1)}</span><span class="bs-sub">${posTxt}</span></div></div>${challengeHtml}<p class="break-intro">Mercato: pesca un rinforzo o giocatela così.</p><div class="break-actions"><button id="btn-market" class="btn ghost">Apri il mercato</button><button id="btn-skip-market" class="btn primary">Continua</button></div><div id="market-area"></div>`;
   $("#btn-skip-market").onclick = () => runSeason(); $("#btn-market").onclick = () => openMarket();
 }
 
@@ -1271,16 +1457,16 @@ function runSeason() {
   }
   
   let season = { w: first.w + second.w, d: first.d + second.d, l: first.l + second.l, pts: first.pts + second.pts };
-  const opps = state.fixtureOpps || (state.fixtureOpps = LEAGUE.romaOpponents());
-  if (!state.firstHalfMatches) state.firstHalfMatches = LEAGUE.buildRomaHalf({ wdl: first, team: state.team, mds: range(1, 19), opps });
-  state.secondHalfMatches = LEAGUE.buildRomaHalf({ wdl: second, team: state.team, mds: range(20, 38), opps });
-  
+  const opps = state.fixtureOpps || (state.fixtureOpps = LEAGUE.napoliOpponents());
+  if (!state.firstHalfMatches) state.firstHalfMatches = LEAGUE.buildNapoliHalf({ wdl: first, team: state.team, mds: range(1, 19), opps });
+  state.secondHalfMatches = LEAGUE.buildNapoliHalf({ wdl: second, team: state.team, mds: range(20, 38), opps });
+ 
   const allMatches = [...(state.firstHalfMatches || []), ...(state.secondHalfMatches || [])];
-  const lg = LEAGUE.simulate({ team: state.team, romaMatches: allMatches }); state.league = lg;
+  const lg = LEAGUE.simulate({ team: state.team, napoliMatches: allMatches }); state.league = lg;
   
-  let champ = null; if (CHAMPIONS.isEligible("classica", lg.romaRank)) { champ = CHAMPIONS.simulate({ R, team: state.team }); } state.champions = champ;
+  let champ = null; if (CHAMPIONS.isEligible("classica", lg.napoliRank)) { champ = CHAMPIONS.simulate({ R, team: state.team }); } state.champions = champ;
   
-  const place = placementFromRank(lg.romaRank, season.pts); const prizes = awards(state.team, R, season.pts);
+  const place = placementFromRank(lg.napoliRank, season.pts); const prizes = awards(state.team, R, season.pts);
   const topScorer = lg.topScorer ? lg.topScorer : prizes.scorer;
   if (topScorer && prizes.mvp.goals < topScorer.goals) prizes.mvp.goals = topScorer.goals;
   
@@ -1289,7 +1475,7 @@ function runSeason() {
   if (perfect) {
       localStorage.setItem("napoli380_hof", JSON.stringify(state.team));
   }
-  state.lastResult = { mode: state.diff.label, board: "classica", pts: season.pts, pos: place.pos, rank: lg.romaRank, rating: R, title: place.title, cls: place.cls, perfect: perfect, win: place.win, record: vpsLabel(season.w, season.d, season.l) };
+  state.lastResult = { mode: state.diff.label, board: "classica", pts: season.pts, pos: place.pos, rank: lg.napoliRank, rating: R, title: place.title, cls: place.cls, perfect: perfect, win: place.win, record: vpsLabel(season.w, season.d, season.l) };
   if (state.career) recordCareerSeasonResult();
   checkAndUnlockAchievements(season.pts, season.w, state.team);
   
@@ -1301,7 +1487,13 @@ function runSeason() {
   const coachLine = state.coach ? `<div class="rec-coach">Allenatore: <strong>${state.coach.nome}</strong></div>` : "";
   const quadrants = [];
   quadrants.push(`<div class="scoreboard ${place.cls}"><div class="sb-rating"><span class="sb-label">Forza squadra</span><span class="sb-big">${R.toFixed(1)}</span></div><div class="sb-points"><span class="sb-label">Punti in campionato</span><span class="sb-big" id="pts-counter">0</span><span class="sb-record">${vpsLabel(season.w, season.d, season.l)}</span></div><div class="sb-place"><span class="sb-label">Piazzamento</span><span class="sb-pos">${place.pos}</span></div></div>`);
-  quadrants.push(`<div class="verdict ${place.cls}"><h3>${place.title}</h3><p>${place.flavor}</p><div class="awards verdict-awards"><div class="award-card"><span class="award-label">Capocannoniere</span><span class="award-name">${topScorer.nome}</span><span class="award-detail">${topScorer.goals} gol</span></div><div class="award-card"><span class="award-label">MVP</span><span class="award-name">${prizes.mvp.nome}</span></div></div></div>`);
+  quadrants.push(`<div class="verdict ${place.cls}"><h3>${place.title}</h3><p>${place.flavor}</p>
+  <div class="awards verdict-awards" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+    <div class="award-card"><span class="award-label">Capocannoniere</span><span class="award-name">${topScorer.nome}</span><span class="award-detail">${topScorer.goals} gol</span></div>
+    <div class="award-card"><span class="award-label">MVP Assoluto</span><span class="award-name">${prizes.mvp.nome}</span></div>
+    <div class="award-card"><span class="award-label">Guanto d'Oro</span><span class="award-name">${prizes.bestGk.nome}</span></div>
+    <div class="award-card"><span class="award-label">Miglior Difensore</span><span class="award-name">${prizes.bestDef.nome}</span></div>
+  </div></div>`);
   quadrants.push(`<details class="lineup-recap recap-toggle" open><summary class="lineup-recap-summary">L'undici schierato</summary>${coachLine}<ul>${slots().map(s => { 
     const p = state.team[s.id]; 
     const eff = effRating(s.id); 
@@ -1314,9 +1506,26 @@ function runSeason() {
     return `<li><span class="lr-role">${s.label}</span><span class="lr-player">${p.nome}${badges}</span><strong class="lr-eff">${eff}</strong></li>`; 
   }).join("")}</ul></details>`);const box = $("#result-body"); box.innerHTML = (banner ? `<div class="quadrant" data-q="0">${banner}</div>` : "") + quadrants.map((q, i) => `<div class="quadrant" data-q="${i + 1}">${q}</div>`).join("");
   
-  const showFinalResult = () => { showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts); };
-  const afterSeason = champ ? () => playChampions(champ, place, showFinalResult) : showFinalResult;
-  playMatchReplay(state.secondHalfMatches, afterSeason, { heading: "Girone di ritorno", skipLabel: "Salta al verdetto ⏭", startPts: first.pts });
+  // Creiamo una funzione che verifica la sfida solo a fine girone di ritorno
+  const checkSfidaAndProceed = () => {
+    if (state.sfidaRitorno) {
+      if (second.pts >= state.sfidaRitorno) {
+        toast(`🎯 SFIDA VINTA! Hai fatto ${second.pts} punti nel ritorno! La squadra ci crede!`);
+        if (state.career) state.career.swapsLeft = (state.career.swapsLeft || 0) + 1; // Cambio extra
+      } else {
+        toast(`❌ Sfida fallita: solo ${second.pts} punti nel ritorno.`);
+      }
+    }
+    
+    // Proceda poi con Champions o schermata finale
+    if (champ) {
+      playChampions(champ, place, () => { showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts); });
+    } else {
+      showScreen("#screen-result"); updateCareerResultUI(); revealQuadrants(box, season.pts);
+    }
+  };
+
+  playMatchReplay(state.secondHalfMatches, checkSfidaAndProceed, { heading: "Girone di ritorno", skipLabel: "Salta al verdetto ⏭", startPts: first.pts });
 }
 
 let replayTimers = [];
@@ -1384,6 +1593,12 @@ function playMatchReplay(matches, done, opts = {}) {
     list.appendChild(row); requestAnimationFrame(() => { row.classList.add("in"); list.scrollTop = list.scrollHeight; });
     
     if (m.isBoss) playSound('fischio');
+    // --- INIZIO BONUS JUVENTUS ---
+        if (m.opp.includes("Juventus") && m.res === "W") {
+            state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1;
+            setTimeout(() => toast("🔥 VITTORIA CON LA JUVE! Tifosi in delirio: +1 a tutta la squadra!"), 1000);
+        }
+        // --- FINE BONUS JUVENTUS --
 // --- MAGIA 2: RIGORI INTERATTIVI ---
     // Funzione che gestisce il proseguimento dell'animazione.
     // IMPORTANTE: va definita PRIMA del blocco rigore qui sotto, perché quel blocco
@@ -1422,7 +1637,10 @@ function playMatchReplay(matches, done, opts = {}) {
       document.getElementById("pen-desc").textContent = isForNapoli ? `${attName} (OVR ${myAttOvr}) è sul dischetto.` : `${gkName} (OVR ${myGkOvr}) è tra i pali.`;
       
       // Mettiamo in pausa il replay
-      setTimeout(() => {
+      // Mettiamo in pausa il replay e salviamo il timeout
+      let penTimeout = setTimeout(() => {
+        if (finished) return; // FIX: Se l'utente ha skippato, annulla l'apparizione del rigore!
+        
         playSound('fischio');
         penModal.classList.add("show");
 
@@ -1526,7 +1744,7 @@ function playMatchReplay(matches, done, opts = {}) {
           });
         });
       }, 500); // Ritardo prima di mostrare il rigore
-      
+      replayTimers.push(penTimeout);
       return; // Blocca il normale proseguimento, sarà finishStep() a riavviarlo
     }
     // Funzione che gestisce il proseguimento dell'animazione (già definita sopra)
@@ -1575,10 +1793,11 @@ const CL_ROUND_PHRASES = { sedicesimi: "ai sedicesimi di finale", ottavi: "agli 
 // Calcola titolo/descrizione in base a come è andata DAVVERO la Champions (non più un testo fisso)
 function championsOutcome(champ) {
   const lp = champ.leaguePhase;
+  const championName = champ.champion ? champ.champion.name : null;
   if (!lp || lp.route === "out") {
     return {
       title: "Eliminati nella fase a gironi",
-      desc: `Il Napoli chiude ${lp ? lp.rank : "?"}° nel girone di Champions e saluta l'Europa senza raggiungere i playoff.`
+      desc: `Il Napoli chiude ${lp ? lp.rank : "?"}° nel girone di Champions e saluta l'Europa senza raggiungere i playoff.${championName ? ` A vincere la coppa è ${championName}.` : ""}`
     };
   }
   if (champ.won) {
@@ -1590,23 +1809,23 @@ function championsOutcome(champ) {
   const phrase = CL_ROUND_PHRASES[champ.lastRound] || "nel percorso europeo";
   return {
     title: `Eliminati ${phrase}`,
-    desc: `Il cammino europeo del Napoli si ferma ${phrase}.`
+    desc: `Il cammino europeo del Napoli si ferma ${phrase}.${championName ? ` Ad alzare la coppa è ${championName}.` : ""}`
   };
 }
 
-// Costruisce le righe del tabellone: girone -> sedicesimi -> ottavi -> quarti -> semifinale -> finale
+// Costruisce le righe del "cammino personale" del Napoli: girone -> sedicesimi -> ottavi -> quarti -> semifinale -> finale
 function championsBracketRows(champ) {
   const lp = champ.leaguePhase;
   if (!lp || lp.route === "out") return [];
   const startIdx = CL_ROUND_ORDER.indexOf(lp.route); // 0 = si parte dai sedicesimi, 1 = bye ai sedicesimi (si parte dagli ottavi)
-  const ties = champ.romaTies || [];
+  const ties = champ.napoliTies || [];
   const tieByRound = {}; ties.forEach(t => { tieByRound[t.round] = t; });
 
   return CL_ROUND_ORDER.map((roundKey, idx) => {
     if (idx < startIdx) return { roundKey, status: "bye", detail: "Qualificazione diretta (miglior piazzamento nel girone)" };
     const tie = tieByRound[roundKey];
     if (tie) {
-      const napoliIsT1 = tie.team1.isRoma;
+      const napoliIsT1 = tie.team1.isNapoli;
       const opp = napoliIsT1 ? tie.team2.name : tie.team1.name;
       const aggGf = napoliIsT1 ? tie.agg.gf : tie.agg.ga;
       const aggGa = napoliIsT1 ? tie.agg.ga : tie.agg.gf;
@@ -1617,11 +1836,53 @@ function championsBracketRows(champ) {
         const oppPens = napoliIsT1 ? tie.pens.t2 : tie.pens.t1;
         scoreLabel += ` (${myPens}-${oppPens} dcr)`;
       }
-      const won = tie.winner.isRoma;
+      const won = tie.winner.isNapoli;
       return { roundKey, status: won ? "win" : "lose", detail: `vs ${opp} · ${scoreLabel}` };
     }
     return { roundKey, status: "not-reached", detail: "—" };
   });
+}
+
+// Costruisce il TABELLONE COMPLETO: tutte le squadre, tutti i turni, con il Napoli
+// evidenziato (bordo azzurro) e una X rossa se è la squadra eliminata in quel turno.
+function buildFullBracketHtml(champ) {
+  const bracket = champ.bracket;
+  if (!bracket || !bracket.sedicesimi || !bracket.sedicesimi.length) return "";
+
+  const scoreLabelFor = (tie) => {
+    let s = `${tie.agg.gf}-${tie.agg.ga}`;
+    if (tie.et) s += " dts";
+    if (tie.pens) s += ` (${tie.pens.t1}-${tie.pens.t2} dcr)`;
+    return s;
+  };
+
+  const roundSection = (roundKey) => {
+    const ties = bracket[roundKey] || [];
+    if (!ties.length) return "";
+    const rowsHtml = ties.map(tie => {
+      const t1 = tie.team1, t2 = tie.team2;
+      const t1Won = tie.winner === t1;
+      const napoliInTie = t1.isNapoli || t2.isNapoli;
+      const napoliWon = napoliInTie && ((t1.isNapoli && t1Won) || (t2.isNapoli && !t1Won));
+      const rowClass = napoliInTie ? (napoliWon ? "cl-tie-napoli cl-tie-win" : "cl-tie-napoli cl-tie-lose") : "";
+      const napoliMark = !napoliInTie ? "" : napoliWon ? `<span class="cl-tie-mark cl-tie-mark-win">✔</span>` : `<span class="cl-tie-mark cl-tie-mark-lose">✕</span>`;
+      return `<div class="cl-tie-row ${rowClass}">
+          <span class="cl-tie-team ${t1Won ? "cl-tie-winner" : ""} ${t1.isNapoli ? "cl-tie-us" : ""}">${t1.name}</span>
+          <span class="cl-tie-score">${scoreLabelFor(tie)}</span>
+          <span class="cl-tie-team ${!t1Won ? "cl-tie-winner" : ""} ${t2.isNapoli ? "cl-tie-us" : ""}">${t2.name}</span>
+          <span class="cl-tie-mark-slot">${napoliMark}</span>
+        </div>`;
+    }).join("");
+    return `<div class="cl-round-section">
+        <div class="cl-round-title">${CL_ROUND_LABELS[roundKey]}</div>
+        <div class="cl-round-ties">${rowsHtml}</div>
+      </div>`;
+  };
+
+  return `<div class="cl-full-bracket">
+      <div class="cl-bracket-title">Tabellone completo</div>
+      ${CL_ROUND_ORDER.map(roundSection).join("")}
+    </div>`;
 }
 
 function playChampions(champ, place, done) {
@@ -1637,15 +1898,17 @@ function playChampions(champ, place, done) {
       const rows = championsBracketRows(champ);
       const statusIcon = { win: "✅", lose: "❌", bye: "➖", "not-reached": "" };
       const bracketHtml = rows.length ? `<div class="cl-bracket">
-          <div class="cl-bracket-title">Il cammino in Champions</div>
+          <div class="cl-bracket-title">Il cammino del Napoli</div>
           ${rows.map(r => `<div class="cl-bracket-row cl-bracket-${r.status}">
               <span class="cl-bracket-round">${CL_ROUND_LABELS[r.roundKey]}</span>
               <span class="cl-bracket-detail">${r.detail}</span>
               <span class="cl-bracket-icon">${statusIcon[r.status] || ""}</span>
             </div>`).join("")}
         </div>` : "";
+      const fullBracketHtml = buildFullBracketHtml(champ);
+      const championName = champ.champion ? champ.champion.name : "-";
 
-      stage.innerHTML = `<div class="cl-card"><div class="cl-tag">Champions League</div><h3>${outcome.title}</h3><p>${outcome.desc}</p><div class="cl-grid"><div class="cl-block"><span class="cl-label">Piazzamento girone</span><strong>${lp ? lp.rank : "-"}°</strong></div><div class="cl-block"><span class="cl-label">Miglior marcatore</span><strong>${champ.stats && champ.stats.topScorer ? champ.stats.topScorer.nome : "-"}</strong></div></div></div>${bracketHtml}`;
+      stage.innerHTML = `<div class="cl-card"><div class="cl-tag">Champions League</div><h3>${outcome.title}</h3><p>${outcome.desc}</p><div class="cl-grid"><div class="cl-block"><span class="cl-label">Piazzamento girone</span><strong>${lp ? lp.rank : "-"}°</strong></div><div class="cl-block"><span class="cl-label">Campione</span><strong>${championName}</strong></div><div class="cl-block"><span class="cl-label">Miglior marcatore</span><strong>${champ.stats && champ.stats.topScorer ? champ.stats.topScorer.nome : "-"}</strong></div></div></div>${bracketHtml}${fullBracketHtml}`;
     }
   }
 
@@ -1703,8 +1966,8 @@ const BIRTH_YEARS = {
   "Marek Hamsik": 1987, "Edinson Cavani": 1987, "Ezequiel Lavezzi": 1985, "Gonzalo Higuain": 1987, "Dries Mertens": 1987, "Lorenzo Insigne": 1991, "Kalidou Koulibaly": 1991, "Josè Callejon": 1987, "Jorginho": 1991, "Allan": 1991, "Faouzi Ghoulam": 1991, "Raul Albiol": 1985, "Pepe Reina": 1982, "Christian Maggio": 1982, "Paolo Cannavaro": 1981, "Walter Gargano": 1984, "Morgan De Sanctis": 1977, "Hugo Campagnaro": 1980, "Gokhan Inler": 1984, "Juan Camilo Zuniga": 1990, "Goran Pandev": 1983,
   "Victor Osimhen": 1998, "Khvicha Kvaratskhelia": 2001, "Piotr Zielinski": 1994, "Stanislav Lobotka": 1994, "Zambo Anguissa": 1995, "Giovanni Di Lorenzo": 1993, "Kim Min-jae": 1996, "Amir Rrahmani": 1994, "Alex Meret": 1997, "Mathias Olivera": 1997, "Giacomo Raspadori": 2000, "Giovanni Simeone": 1995, "Matteo Politano": 1993, "Hirving Lozano": 1995, "Fabian Ruiz": 1996, "Arkadiusz Milik": 1994, "Mario Rui": 1991,
   "Romelu Lukaku": 1993, "Alessandro Buongiorno": 1999, "Scott McTominay": 1996, "Billy Gilmour": 1997, "David Neres": 1997, "Leonardo Spinazzola": 1993, "Pasquale Mazzocchi": 1995, "Jesper Lindström": 2000, "Leo Ostigard": 1999, "Noa Lang": 1999,
-  "Pino Taglialatela": 1969, "Francesco Turrini": 1965, "Stefan Schwoch": 1969, "Claudio Bellucci": 1975, "Francelino Matuzalem": 1980, "Francesco Montervino": 1978, "Marek Jankulovski": 1977, "Roberto Sosa": 1974, "Emanuele Calaiò": 1979, "Mariano Bogliacino": 1980, "Fabiano Santacroce": 1980, "Salvatore Aronica": 1978, "Michele Pazienza": 1984, "Marcelo Zalayeta": 1978, "German Denis": 1981, "Eduardo Vargas": 1989, "Michu": 1986, "Jonathan De Guzman": 1985, "Miguel Britos": 1981, "Valon Behrami": 1985, "Blerim Dzemaili": 1986, "Omar El Kaddouri": 1987, "Nicolas Spolli": 1986,
- "Gianluca Grava": 1977, "Jesus Datolo": 1984, "Luca Cigarini": 1986, 
+  "Pino Taglialatela": 1969, "Francesco Turrini": 1965, "Stefan Schwoch": 1969, "Claudio Bellucci": 1975, "Francelino Matuzalem": 1980, "Francesco Montervino": 1978, "Marek Jankulovski": 1977, "Roberto Sosa": 1974, "Emanuele Calaiò": 1979, "Mariano Bogliacino": 1980, "Fabiano Santacroce": 1980, "Salvatore Aronica": 1978, "Michele Pazienza": 1984, "Marcelo Zalayeta": 1978, "German Denis": 1981, "Eduardo Vargas": 1989, "Michu": 1986, "Jonathan De Guzman": 1985, "Valon Behrami": 1985, "Blerim Dzemaili": 1986, "Omar El Kaddouri": 1987, "Nicolas Spolli": 1986,
+  "Gianluca Grava": 1977, "Jesus Datolo": 1984, "Luca Cigarini": 1986, 
   "Ignacio Fideleff": 1989, "Leandro Rinaudo": 1983, "Leonardo Pavoletti": 1988, 
   "Andrea Petagna": 1995, "Adam Ounas": 1996, "Nikola Maksimovic": 1991, 
   "Sebastiano Luperto": 1996, "Kevin Malcuit": 1991, "Diego Demme": 1991, 
@@ -1713,6 +1976,37 @@ const BIRTH_YEARS = {
   "Amadou Diawara": 1997, "Marko Rog": 1995, "Emanuele Giaccherini": 1985, "Simone Verdi": 1992, "Amin Younes": 1993,
   "Fernando Llorente": 1985, "Juan Jesus": 1991, "Pierluigi Gollini": 1995, "Alessandro Zanoli": 2000,
   "Jens Cajuste": 1999, "Cyril Ngonge": 2000, "Natan": 2001,
+  "Fabio Quagliarella": 1983,
+  "Dino Zoff": 1942,
+  "José Altafini": 1938,
+  "Manolo Gabbiadini": 1991,
+  "David López": 1989,
+  "Gianluca Gaetano": 2000,
+  "Alessio Zerbin": 1999,
+  "Michael Folorunsho": 1998,
+  "Fernando De Napoli": 1964,
+  "Massimo Crippa": 1965,
+  "Giovanni Francini": 1963,
+  "Alessandro Renica": 1962,
+  "Giuliano Giuliani": 1958,
+  "Elia Caprile": 2001,
+  "Gennaro Iezzo": 1973,
+  "Emanuele Blasi": 1980,
+  "Miguel Britos": 1985,
+  "Salvatore Bagni": 1956,
+  "Cané": 1939,
+  "Giuseppe Savoldi": 1947,
+  "Luigi Caffarelli": 1956,
+  "Andrea Dossena": 1981,
+  "Giandomenico Mesto": 1982,
+  "Duván Zapata": 1991,
+  "Mariano Andújar": 1983,
+  "Henrique": 1986,
+  "Pablo Armero": 1986,
+  "Giuseppe Mascara": 1979,
+  "Rafael Cabral": 1990,
+  "Luigi Vitale": 1987,
+  "Antonio Vergara": 2003,
 };
 
 const DB = [
@@ -1856,6 +2150,7 @@ const DB = [
   P("Adam Ounas", "2017/18", ["AD", "AS"], 76),
   
   /* Era recente: comprimari e prestiti */
+  P("Antonio Vergara", "2024/25", ["AD","TRQ"], 79),
   P("Nikola Maksimovic", "2019/20", ["DC"], 78),
   P("Sebastiano Luperto", "2019/20", ["DC", "TS"], 73),
   P("Kevin Malcuit", "2018/19", ["TD", "ED"], 76),
@@ -1882,6 +2177,49 @@ const DB = [
   P("Jens Cajuste", "2023/24", ["CC", "MED"], 76),
   P("Cyril Ngonge", "2023/24", ["AD", "ATT"], 79),
   P("Natan", "2023/24", ["DC", "TS"], 76),
+  /* ---------- Nuove Leggende Iconiche & Eroi Storici ---------- */
+  P("Dino Zoff", "Hall of Fame", ["POR"], 94),
+  P("Dino Zoff", "1970/71", ["POR"], 90),
+  P("José Altafini", "Hall of Fame", ["ATT"], 99),
+  P("José Altafini", "1965/66", ["ATT"], 89),
+  P("Andrea Carnevale", "1989/90", ["ATT"], 84),
+  P("Fernando De Napoli", "1989/90", ["MED","CC"], 85),
+  P("Massimo Crippa", "1989/90", ["CC","MED"], 84),
+  P("Giovanni Francini", "1989/90", ["TS","DC"], 83),
+  P("Alessandro Renica", "1989/90", ["DC"], 82),
+  P("Giuliano Giuliani", "1989/90", ["POR"], 84),
+
+  /* ---------- Giocatori Recenti & Valore di Mercato ---------- */
+  P("Fabio Quagliarella", "2009/10", ["ATT"], 84),
+  P("Manolo Gabbiadini", "2015/16", ["ATT","AD"], 81),
+  P("Valon Behrami", "2012/13", ["MED","CC"], 80),
+  P("Blerim Dzemaili", "2012/13", ["CC","MED"], 79),
+  P("David López", "2014/15", ["CC","MED"], 78),
+  P("Alessio Zerbin", "2023/24", ["AS","AD"], 74),
+  P("Michael Folorunsho", "2024/25", ["CC","TRQ"], 77),
+  P("Elia Caprile", "2024/25", ["POR"], 76),
+  P("Gennaro Iezzo", "2007/08", ["POR"], 79),
+  P("Emanuele Blasi", "2008/09", ["MED","CC"], 78),
+  P("Omar El Kaddouri", "2015/16", ["TRQ","CC"], 75),
+  P("Jonathan De Guzman", "2014/15", ["CC","TRQ"], 78),
+  P("Miguel Britos", "2013/14", ["DC"], 77),
+  /* ---------- Icone Storiche del Passato ---------- */
+  P("Salvatore Bagni", "1986/87", ["CC","MED"], 87),
+  P("Cané", "1967/68", ["ATT","AS"], 85),
+  P("Giuseppe Savoldi", "1975/76", ["ATT"], 86),
+  P("Luigi Caffarelli", "1986/87", ["AD","ATT"], 81),
+
+  /* ---------- Era Moderna e Recente (Dal 2010 in poi) ---------- */
+  P("Andrea Dossena", "2011/12", ["TS","ES"], 79),
+  P("Giandomenico Mesto", "2013/14", ["TD","ED"], 78),
+  P("Duván Zapata", "2014/15", ["ATT"], 82),
+  P("Mariano Andújar", "2014/15", ["POR"], 77),
+  P("Henrique", "2014/15", ["DC","TD"], 77),
+  P("Pablo Armero", "2012/13", ["TS","ES"], 78),
+  P("Giuseppe Mascara", "2010/11", ["ATT","TRQ"], 78),
+  P("Rafael Cabral", "2014/15", ["POR"], 79),
+  P("Luigi Vitale", "2008/09", ["TS"], 74),
+  P("Gianluca Gaetano", "2023/24", ["CC","TRQ"], 76),
 ];
 
 DB.forEach(p => { p.annoNascita = BIRTH_YEARS[p.nome] || null; });
@@ -1950,10 +2288,26 @@ function addMod(slotId, delta) {
 function effRating(slotId) {
   const p = state.team[slotId];
   if (!p) return 0;
+
+  // 1. Calcola i bonus allenatore
   const coachBonus = state.career
     ? (typeof careerCoachBonus === "function" ? careerCoachBonus(slotId) : 0)
     : ((state.coach && state.coach.bonus) || 0);
-  return p.rating + (state.ratingMods[slotId] || 0) + coachBonus + (state.rogueGeneralMod || 0);
+
+  // 2. Calcola se questo specifico giocatore riceve un bonus intesa
+  let synergyBonus = 0;
+  const synergyData = getActiveSynergies();
+  synergyData.active.forEach(syn => {
+     if (syn.giocatori.includes(p.nome)) {
+         synergyBonus += syn.bonus; // Se è nell'intesa, prende il suo bonus personale!
+     }
+  });
+
+  // 3. Calcola il bonus Capitano
+  let capBonus = (state.captainId === slotId) ? 3 : 0; // +3 AL CAPITANO
+
+  // 4. Somma totale (Qui ora c'è aggiunto + capBonus)
+  return p.rating + (state.ratingMods[slotId] || 0) + coachBonus + (state.rogueGeneralMod || 0) + synergyBonus + capBonus;
 }
 function isUnder(p) { return p.rating < 80; }
 
@@ -2379,9 +2733,9 @@ const applyResultMods = ENGINE.applyResultMods;
   function weightedPick(items, wf) { const ws = items.map(wf); const tot = ws.reduce((s, x) => s + x, 0) || 1; let r = _rnd() * tot; for (let i = 0; i < items.length; i++) { r -= ws[i]; if (r <= 0) return items[i]; } return items[items.length - 1]; }
   const W34 = x => ({ 1: 25, 2: 40, 3: 25, 4: 10 }[x] || 1);
 
-  function romaOpponents(rng) { useRng(rng); return shuffle(POOL.map(p => p[0])); }
+  function napoliOpponents(rng) { useRng(rng); return shuffle(POOL.map(p => p[0])); }
 
-  function buildRomaHalf(opts) {
+  function buildNapoliHalf(opts) {
     useRng(opts && opts.rng);
     const { wdl, team, mds, opps } = opts;
     const players = Object.values(team || {});
@@ -2407,15 +2761,15 @@ const applyResultMods = ENGINE.applyResultMods;
       const home = (md % 2) === 1; 
       const [gfR, gaR] = scoreFor(res);
       const events = [];
-      for (let i = 0; i < gfR; i++) events.push({ team: "roma", minute: ri(1, 94) });
+      for (let i = 0; i < gfR; i++) events.push({ team: "napoli", minute: ri(1, 94) });
       for (let i = 0; i < gaR; i++) events.push({ team: "opp", minute: ri(1, 94) });
       events.sort((x, y) => x.minute - y.minute);
       events.forEach(e => {
-        if (e.team !== "roma" || scorerPool.length === 0) return;
+        if (e.team !== "napoli" || scorerPool.length === 0) return;
         const s = weightedPick(scorerPool, o => o.w).p;
         e.nome = s.nome; e.stagione = s.stagione;
       });
-      return { md, opp: oppName, oppName, oppStr, home, gf: gfR, ga: gaR, res, events, isBoss, scorers: events.filter(e => e.team === "roma").map(e => `${e.nome} ${e.minute}'`) };
+      return { md, opp: oppName, oppName, oppStr, home, gf: gfR, ga: gaR, res, events, isBoss, scorers: events.filter(e => e.team === "napoli").map(e => `${e.nome} ${e.minute}'`) };
     });
   }
 
@@ -2430,25 +2784,25 @@ const applyResultMods = ENGINE.applyResultMods;
 
   function simulate(opts) {
     useRng(opts && opts.rng);
-    const romaMatches = opts.romaMatches || [];
+    const napoliMatches = opts.napoliMatches || [];
     const table = Array.from({ length: 20 }, (_, i) => ({
       idx: i, name: i === 0 ? "Napoli" : POOL[i - 1][0],
       str: i === 0 ? 90 : POOL[i - 1][1] + (_rnd() * 5 - 2.5),
-      pts: 0, gf: 0, ga: 0, isRoma: i === 0,
+      pts: 0, gf: 0, ga: 0, isNapoli: i === 0,
     }));
     const nameToIdx = {}; table.forEach(t => { nameToIdx[t.name] = t.idx; });
 
-    const romaGoals = {};
-    romaMatches.forEach(m => {
+    const napoliGoals = {};
+    napoliMatches.forEach(m => {
       const oppIdx = nameToIdx[m.oppName ?? m.opp];
       table[0].gf += m.gf; table[0].ga += m.ga;
       if (oppIdx != null) { table[oppIdx].gf += m.ga; table[oppIdx].ga += m.gf; }
       if (m.res === "W") table[0].pts += 3;
       else if (m.res === "D") { table[0].pts += 1; if (oppIdx != null) table[oppIdx].pts += 1; }
       else if (oppIdx != null) table[oppIdx].pts += 3;
-      m.events.filter(e => e.team === "roma" && e.nome).forEach(e => {
+      m.events.filter(e => e.team === "napoli" && e.nome).forEach(e => {
         const key = e.nome + "|" + e.stagione;
-        (romaGoals[key] = romaGoals[key] || { nome: e.nome, stagione: e.stagione, goals: 0 }).goals++;
+        (napoliGoals[key] = napoliGoals[key] || { nome: e.nome, stagione: e.stagione, goals: 0 }).goals++;
       });
     });
 
@@ -2466,26 +2820,26 @@ const applyResultMods = ENGINE.applyResultMods;
       }
     }
 
-    const finalTable = table.slice().sort(cmp).map((t, i) => ({ pos: i + 1, name: t.name, pts: t.pts, gf: t.gf, ga: t.ga, gd: t.gf - t.ga, isRoma: t.isRoma, }));
-    const romaRank = finalTable.findIndex(t => t.isRoma) + 1;
-    const scorers = Object.values(romaGoals).sort((x, y) => y.goals - x.goals);
-    return { table: finalTable, romaRank, scorers, topScorer: scorers[0] || null, keyMatches: pickKey(romaMatches), matches: romaMatches };
+    const finalTable = table.slice().sort(cmp).map((t, i) => ({ pos: i + 1, name: t.name, pts: t.pts, gf: t.gf, ga: t.ga, gd: t.gf - t.ga, isNapoli: t.isNapoli, }));
+    const napoliRank = finalTable.findIndex(t => t.isNapoli) + 1;
+    const scorers = Object.values(napoliGoals).sort((x, y) => y.goals - x.goals);
+    return { table: finalTable, napoliRank, scorers, topScorer: scorers[0] || null, keyMatches: pickKey(napoliMatches), matches: napoliMatches };
   }
 
   function pickKey(matches) {
     const scored = matches.map(m => {
       let s = 0; const tags = []; const margin = Math.abs(m.gf - m.ga);
-      const lateRoma = m.events.filter(e => e.team === "roma" && e.minute >= 80);
+      const lateNapoli = m.events.filter(e => e.team === "napoli" && e.minute >= 80);
       let run = 0, wasBehind = false;
-      m.events.forEach(e => { run += e.team === "roma" ? 1 : -1; if (run < 0) wasBehind = true; });
+      m.events.forEach(e => { run += e.team === "napoli" ? 1 : -1; if (run < 0) wasBehind = true; });
       const comeback = wasBehind && m.res !== "L";
       if (comeback) { s += 5; tags.push("rimonta"); }
-      if (m.res === "W" && margin === 1 && lateRoma.length) { s += 4; tags.push("extremis"); }
+      if (m.res === "W" && margin === 1 && lateNapoli.length) { s += 4; tags.push("extremis"); }
       if (m.res === "W" && margin >= 3) { s += 2; tags.push("manita"); }
       if (m.oppStr >= 84.5) { s += m.res === "W" ? 3 : m.res === "D" ? 1.5 : 0.4; tags.push("big"); }
       if ((m.swing || 0) >= 2) { s += 2.5; tags.push("sorpasso"); }
       if (m.md >= 33) s += 1.2; s += _rnd() * 0.6;
-      return { m, s, tags, lateRoma, comeback, margin };
+      return { m, s, tags, lateNapoli, comeback, margin };
     });
     scored.sort((a, b) => b.s - a.s); return scored.filter(x => x.s >= 2).slice(0, 4).map(buildKey);
   }
@@ -2493,7 +2847,7 @@ const applyResultMods = ENGINE.applyResultMods;
   function buildKey(x) {
     const m = x.m; const score = m.home ? `${m.gf}-${m.ga}` : `${m.ga}-${m.gf}`;
     const opp = m.oppName + (m.home ? " (casa)" : " (trasferta)");
-    const decisive = x.lateRoma && x.lateRoma.length ? x.lateRoma[x.lateRoma.length - 1] : null;
+    const decisive = x.lateNapoli && x.lateNapoli.length ? x.lateNapoli[x.lateNapoli.length - 1] : null;
     let note;
     if (x.comeback) note = `Rimonta: da sotto a ${m.gf}-${m.ga}, ${m.res === "W" ? "ribaltata" : "riacciuffata"}`;
     else if (x.tags.includes("extremis") && decisive) note = `Decisa nel finale: gol di ${decisive.nome} al ${decisive.minute}'`;
@@ -2501,9 +2855,9 @@ const applyResultMods = ENGINE.applyResultMods;
     else if (x.tags.includes("big")) note = m.res === "W" ? "Colpo grosso contro una big" : m.res === "D" ? "Pari pesante contro una big" : "Sfida da big andata male";
     else note = m.res === "W" ? "Vittoria pesante" : m.res === "D" ? "Pareggio" : "Sconfitta";
     if (x.tags.includes("sorpasso")) note += " · sorpasso in classifica";
-    return { md: m.md, opp, score, res: m.res, note, scorers: m.events.filter(e => e.team === "roma").map(e => `${e.nome} ${e.minute}'`) };
+    return { md: m.md, opp, score, res: m.res, note, scorers: m.events.filter(e => e.team === "napoli").map(e => `${e.nome} ${e.minute}'`) };
   }
-  return { simulate, romaOpponents, buildRomaHalf };
+  return { simulate, napoliOpponents, buildNapoliHalf };
 });
 
 /* ===== champions.js ===== */
@@ -2536,48 +2890,48 @@ const applyResultMods = ENGINE.applyResultMods;
   function lambdas(R, D, home) { const d = clamp(R - D, -30, 30); const hf = home ? HOME_BOOST : -HOME_BOOST; return { atk: clamp(1.30 * Math.exp(0.043 * d) * (1 + hf), 0.18, 6), def: clamp(1.30 * Math.exp(-0.043 * d) * (1 - hf * 0.5), 0.18, 6), }; }
   function goalMinutes(n, maxMin) { maxMin = maxMin || 90; const set = {}; const out = []; let guard = 0; while (out.length < n && guard++ < 200) { const m = ri(1, maxMin); if (!set[m]) { set[m] = 1; out.push(m); } } return out.sort((a, b) => a - b); }
   function assignScorers(goals, team) { if (!team || goals === 0) return []; const outfield = Object.values(team).filter(p => (p.ruoli || [])[0] !== "POR"); if (!outfield.length) return []; const scorers = []; for (let i = 0; i < goals; i++) { const p = weightedPick(outfield, (pl) => (GOAL_W[(pl.ruoli || [])[0]] || 0.05) * Math.pow((pl.rating || 75) / 80, 2)); scorers.push(p.nome); } return scorers; }
-  function playMatch(R, D, home, team) { const lam = lambdas(R, D, home); const gf = poisson(lam.atk); const ga = poisson(lam.def); return { gf, ga, romaMin: goalMinutes(gf), oppMin: goalMinutes(ga), scorers: assignScorers(gf, team), home }; }
-  function T(name, diff, isRoma) { return { name: name, diff: diff, isRoma: !!isRoma }; }
+  function playMatch(R, D, home, team) { const lam = lambdas(R, D, home); const gf = poisson(lam.atk); const ga = poisson(lam.def); return { gf, ga, napoliMin: goalMinutes(gf), oppMin: goalMinutes(ga), scorers: assignScorers(gf, team), home }; }
+  function T(name, diff, isNapoli) { return { name: name, diff: diff, isNapoli: !!isNapoli }; }
   
-  function playFinal(t1, t2, romaTeam) {
-    const r1 = t1.diff, r2 = t2.diff; const hasRoma = t1.isRoma || t2.isRoma;
-    const m = playMatch(r1, r2, false, t1.isRoma ? romaTeam : null);
-    const leg1 = { gf: m.gf, ga: m.ga, romaMin: t1.isRoma ? m.romaMin : m.oppMin, oppMin: t1.isRoma ? m.oppMin : m.romaMin, scorers: t1.isRoma ? m.scorers : assignScorers(m.ga, romaTeam), };
+  function playFinal(t1, t2, napoliTeam) {
+    const r1 = t1.diff, r2 = t2.diff; const hasNapoli = t1.isNapoli || t2.isNapoli;
+    const m = playMatch(r1, r2, false, t1.isNapoli ? napoliTeam : null);
+    const leg1 = { gf: m.gf, ga: m.ga, napoliMin: t1.isNapoli ? m.napoliMin : m.oppMin, oppMin: t1.isNapoli ? m.oppMin : m.napoliMin, scorers: t1.isNapoli ? m.scorers : assignScorers(m.ga, napoliTeam), };
     let winner, et = null, pens = null;
     if (m.gf > m.ga) { winner = t1; } else if (m.gf < m.ga) { winner = t2; } else {
       const etRoll = _rnd(); let etGf, etGa;
       if (etRoll < 0.333) { etGf = ri(1, 2); etGa = 0; } else if (etRoll < 0.666) { etGf = 0; etGa = ri(1, 2); } else { const g = ri(0, 1); etGf = g; etGa = g; }
       const etT1Min = goalMinutes(etGf, 120).map(mn => mn + 90); const etT2Min = goalMinutes(etGa, 120).map(mn => mn + 90);
-      const romaEtGoals = t1.isRoma ? etGf : etGa; const etScorers = assignScorers(romaEtGoals, romaTeam);
-      et = { gf: etGf, ga: etGa, romaMin: t1.isRoma ? etT1Min : etT2Min, oppMin: t1.isRoma ? etT2Min : etT1Min, scorers: etScorers, };
+      const napoliEtGoals = t1.isNapoli ? etGf : etGa; const etScorers = assignScorers(napoliEtGoals, napoliTeam);
+      et = { gf: etGf, ga: etGa, napoliMin: t1.isNapoli ? etT1Min : etT2Min, oppMin: t1.isNapoli ? etT2Min : etT1Min, scorers: etScorers, };
       if (etGf > etGa) { winner = t1; } else if (etGf < etGa) { winner = t2; } else {
         const t1wins = _rnd() < 0.5; winner = t1wins ? t1 : t2; const sc = [[5, 4], [4, 3], [4, 2], [3, 2]][ri(0, 3)];
         pens = t1wins ? { t1: sc[0], t2: sc[1] } : { t1: sc[1], t2: sc[0] };
       }
     }
-    return { round: "finale", team1: t1, team2: t2, singleLeg: true, leg1, leg2: null, agg: { gf: m.gf + (et ? et.gf : 0), ga: m.ga + (et ? et.ga : 0) }, et, pens, winner, hasRoma, };
+    return { round: "finale", team1: t1, team2: t2, singleLeg: true, leg1, leg2: null, agg: { gf: m.gf + (et ? et.gf : 0), ga: m.ga + (et ? et.ga : 0) }, et, pens, winner, hasNapoli, };
   }
 
-  function playTie(t1, t2, round, romaTeam) {
-    const r1 = t1.diff, r2 = t2.diff; const hasRoma = t1.isRoma || t2.isRoma;
-    const leg1Raw = playMatch(r1, r2, true, t1.isRoma ? romaTeam : null);
-    const leg2Raw = playMatch(r2, r1, true, t2.isRoma ? romaTeam : null);
-    const leg1 = { gf: leg1Raw.gf, ga: leg1Raw.ga, romaMin: t1.isRoma ? leg1Raw.romaMin : leg1Raw.oppMin, oppMin: t1.isRoma ? leg1Raw.oppMin : leg1Raw.romaMin, scorers: t1.isRoma ? leg1Raw.scorers : assignScorers(leg1Raw.ga, romaTeam), };
-    const leg2 = { gf: leg2Raw.ga, ga: leg2Raw.gf, romaMin: t1.isRoma ? leg2Raw.oppMin : leg2Raw.romaMin, oppMin: t1.isRoma ? leg2Raw.romaMin : leg2Raw.oppMin, scorers: t1.isRoma ? assignScorers(leg2Raw.ga, romaTeam) : leg2Raw.scorers, home: false, };
+  function playTie(t1, t2, round, napoliTeam) {
+    const r1 = t1.diff, r2 = t2.diff; const hasNapoli = t1.isNapoli || t2.isNapoli;
+    const leg1Raw = playMatch(r1, r2, true, t1.isNapoli ? napoliTeam : null);
+    const leg2Raw = playMatch(r2, r1, true, t2.isNapoli ? napoliTeam : null);
+    const leg1 = { gf: leg1Raw.gf, ga: leg1Raw.ga, napoliMin: t1.isNapoli ? leg1Raw.napoliMin : leg1Raw.oppMin, oppMin: t1.isNapoli ? leg1Raw.oppMin : leg1Raw.napoliMin, scorers: t1.isNapoli ? leg1Raw.scorers : assignScorers(leg1Raw.ga, napoliTeam), };
+    const leg2 = { gf: leg2Raw.ga, ga: leg2Raw.gf, napoliMin: t1.isNapoli ? leg2Raw.oppMin : leg2Raw.napoliMin, oppMin: t1.isNapoli ? leg2Raw.napoliMin : leg2Raw.oppMin, scorers: t1.isNapoli ? assignScorers(leg2Raw.ga, napoliTeam) : leg2Raw.scorers, home: false, };
     const aggGf = leg1.gf + leg2.gf; const aggGa = leg1.ga + leg2.ga;
     let winner, et = null, pens = null;
     if (aggGf > aggGa) { winner = t1; } else if (aggGf < aggGa) { winner = t2; } else {
       const etRoll = _rnd(); let etGf, etGa;
       if (etRoll < 0.333) { etGf = ri(1, 2); etGa = 0; } else if (etRoll < 0.666) { etGf = 0; etGa = ri(1, 2); } else { const g = ri(0, 1); etGf = g; etGa = g; }
       const etT1Min = goalMinutes(etGf, 120).map(m => m + 90); const etT2Min = goalMinutes(etGa, 120).map(m => m + 90);
-      const romaEtGoals = t1.isRoma ? etGf : etGa; const etScorers = assignScorers(romaEtGoals, romaTeam);
-      et = { gf: etGf, ga: etGa, romaMin: t1.isRoma ? etT1Min : etT2Min, oppMin: t1.isRoma ? etT2Min : etT1Min, scorers: etScorers, };
+      const napoliEtGoals = t1.isNapoli ? etGf : etGa; const etScorers = assignScorers(napoliEtGoals, napoliTeam);
+      et = { gf: etGf, ga: etGa, napoliMin: t1.isNapoli ? etT1Min : etT2Min, oppMin: t1.isNapoli ? etT2Min : etT1Min, scorers: etScorers, };
       if (etGf > etGa) { winner = t1; } else if (etGf < etGa) { winner = t2; } else {
         const t1wins = _rnd() < 0.5; winner = t1wins ? t1 : t2; const sc = [[5, 4], [4, 3], [4, 2], [3, 2]][ri(0, 3)];
         pens = t1wins ? { t1: sc[0], t2: sc[1] } : { t1: sc[1], t2: sc[0] };
       }
     }
-    return { round, team1: t1, team2: t2, leg1: { gf: leg1.gf, ga: leg1.ga, romaMin: leg1.romaMin, oppMin: leg1.oppMin, scorers: leg1.scorers }, leg2: { gf: leg2.gf, ga: leg2.ga, romaMin: leg2.romaMin, oppMin: leg2.oppMin, scorers: leg2.scorers }, agg: { gf: aggGf, ga: aggGa }, et, pens, winner, hasRoma, };
+    return { round, team1: t1, team2: t2, leg1: { gf: leg1.gf, ga: leg1.ga, napoliMin: leg1.napoliMin, oppMin: leg1.oppMin, scorers: leg1.scorers }, leg2: { gf: leg2.gf, ga: leg2.ga, napoliMin: leg2.napoliMin, oppMin: leg2.oppMin, scorers: leg2.scorers }, agg: { gf: aggGf, ga: aggGa }, et, pens, winner, hasNapoli, };
   }
 
   const ITALIAN = ["Inter", "Juventus", "Atalanta"];
@@ -2599,7 +2953,7 @@ const applyResultMods = ENGINE.applyResultMods;
       const opp = oppNames[i]; const home = homeFlags[i]; const m = playMatch(R, opp[1], home, team);
       const res = m.gf > m.ga ? "W" : m.gf < m.ga ? "L" : "D";
       pts += res === "W" ? 3 : res === "D" ? 1 : 0; gf += m.gf; ga += m.ga;
-      matches.push({ opp: opp[0], oppDiff: opp[1], gf: m.gf, ga: m.ga, res, romaMin: m.romaMin, oppMin: m.oppMin, scorers: m.scorers, home });
+      matches.push({ opp: opp[0], oppDiff: opp[1], gf: m.gf, ga: m.ga, res, napoliMin: m.napoliMin, oppMin: m.oppMin, scorers: m.scorers, home });
     }
     const allDiffs = POOL.map(t => t[1]).concat([R]);
     const tableOthers = POOL.map(t => {
@@ -2610,29 +2964,27 @@ const applyResultMods = ENGINE.applyResultMods;
       }
       return { name: t[0], diff: t[1], pts: p, gd: d };
     });
-    const roma = { name: "Napoli", diff: R, pts, gd: gf - ga, isRoma: true };
-    const table = tableOthers.concat([roma]).sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.diff - x.diff);
+    const napoli = { name: "Napoli", diff: R, pts, gd: gf - ga, isNapoli: true };
+    const table = tableOthers.concat([napoli]).sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.diff - x.diff);
     for (let i = 0; i < table.length; i++) table[i].pos = i + 1;
-    const rank = table.findIndex(t => t.isRoma) + 1;
+    const rank = table.findIndex(t => t.isNapoli) + 1;
     let route; if (rank <= 8) route = "ottavi"; else if (rank <= 24) route = "sedicesimi"; else route = "out";
 
-    function collectStats(groupMatches, romaTies) {
+    function collectStats(groupMatches, napoliTies) {
       const goals = {}; const addGoals = (scorers) => { (scorers || []).forEach(n => { goals[n] = (goals[n] || 0) + 1; }); };
       groupMatches.forEach(m => addGoals(m.scorers));
-      (romaTies || []).forEach(ko => { if (ko.leg1) addGoals(ko.leg1.scorers); if (ko.leg2) addGoals(ko.leg2.scorers); if (ko.et) addGoals(ko.et.scorers); });
+      (napoliTies || []).forEach(ko => { if (ko.leg1) addGoals(ko.leg1.scorers); if (ko.leg2) addGoals(ko.leg2.scorers); if (ko.et) addGoals(ko.et.scorers); });
       const entries = Object.entries(goals).map(([nome, g]) => ({ nome, goals: g }));
       entries.sort((a, b) => b.goals - a.goals);
       const topScorer = entries[0] || null; const totalGf = entries.reduce((s, e) => s + e.goals, 0);
-      const matchesPlayed = groupMatches.length + (romaTies || []).length * 2;
+      const matchesPlayed = groupMatches.length + (napoliTies || []).length * 2;
       return { topScorer, scorers: entries, totalGf, matchesPlayed };
     }
 
-    if (route === "out") {
-      const stats = collectStats(matches, []);
-      return { qualified: true, leaguePhase: { matches, table, pts, gf, ga, rank, route }, bracket: {}, romaTies: [], stats, won: false, };
-    }
-
-    const qualified = table.slice(0, 24).map(t => T(t.name, t.diff, t.isRoma));
+    // NOTA: anche quando il Napoli è eliminato nella fase a gironi ("out"), simuliamo
+    // comunque l'intero tabellone con le altre 24 squadre, così il tabellone completo
+    // può sempre mostrare chi ha vinto la coppa, non solo il percorso (assente) del Napoli.
+    const qualified = table.slice(0, 24).map(t => T(t.name, t.diff, t.isNapoli));
     const top8 = qualified.slice(0, 8); const mid16 = qualified.slice(8, 24);
     const sedicesimi = []; for (let i = 0; i < 8; i++) { sedicesimi.push(playTie(mid16[i], mid16[15 - i], "sedicesimi", team)); }
     const ottavi = []; for (let i = 0; i < 8; i++) { ottavi.push(playTie(top8[i], sedicesimi[7 - i].winner, "ottavi", team)); }
@@ -2641,12 +2993,12 @@ const applyResultMods = ENGINE.applyResultMods;
     const finale = [playFinal(semifinale[0].winner, semifinale[1].winner, team)];
     const champion = finale[0].winner;
 
-    const romaTies = [];
-    for (const arr of [sedicesimi, ottavi, quarti, semifinale, finale]) { const t = arr.find(x => x.hasRoma); if (t) romaTies.push(t); }
-    const stats = collectStats(matches, romaTies);
-    const lastRound = romaTies.length ? romaTies[romaTies.length - 1].round : (route === "out" ? null : route);
+    const napoliTies = [];
+    for (const arr of [sedicesimi, ottavi, quarti, semifinale, finale]) { const t = arr.find(x => x.hasNapoli); if (t) napoliTies.push(t); }
+    const stats = collectStats(matches, napoliTies);
+    const lastRound = napoliTies.length ? napoliTies[napoliTies.length - 1].round : (route === "out" ? null : route);
 
-    return { qualified: true, leaguePhase: { matches, table, pts, gf, ga, rank, route }, bracket: { sedicesimi, ottavi, quarti, semifinale, finale }, romaTies, champion, stats, lastRound, won: champion.isRoma, };
+    return { qualified: true, leaguePhase: { matches, table, pts, gf, ga, rank, route }, bracket: { sedicesimi, ottavi, quarti, semifinale, finale }, napoliTies, champion, stats, lastRound, won: champion.isNapoli, };
   }
   function isEligible(board, rank) { return (board === "classica" || board === "rogue" || board === "carriera") && rank != null && rank <= 4; }
   return { simulate, isEligible, POOL };
