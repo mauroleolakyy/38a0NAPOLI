@@ -186,6 +186,12 @@ body[data-live="on"] .scorebug__live { display: inline-flex; }
 .hud-pill.diff-impossibile { border-color: rgba(212,68,68,0.4); border-left-color: var(--doom); color: #f3a3a3; }
 .hud-pill.diff-serieb      { border-color: rgba(122,92,255,0.4); border-left-color: var(--serieb); color: var(--serieb-luce); }
 .hud-pill.diff-custom      { border-color: rgba(0,161,255,0.4); border-left-color: var(--celeste); color: var(--celeste-chiaro); }
+.hud-pill.diff-dreamteam { 
+  border-color: rgba(255,210,74,0.4); 
+  border-left-color: #ffd24a; 
+  color: #ffd24a; 
+  background: linear-gradient(180deg, rgba(60,40,10,0.9), rgba(0,11,26,0.9));
+}
 .hud-pill.diff-rogue       { border-color: rgba(47,214,195,0.4); border-left-color: var(--rogue); color: var(--rogue-luce); }
 .hud-pill.diff-sesto       { border-color: rgba(217,138,61,0.4); border-left-color: var(--sesto); color: var(--sesto-luce); }
 .hud-pill.hidden-pill      { border-left-color: var(--celeste); color: var(--celeste-chiaro); }
@@ -1277,6 +1283,39 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
 .sm-back { display:inline-flex; align-items:center; gap:6px; background:transparent; border:1px solid rgba(0,161,255,.4); color: var(--celeste); font-family: var(--font-cond); font-weight:600; letter-spacing:.08em; text-transform:uppercase; font-size:.78rem; border-radius:8px; padding:7px 14px; cursor:pointer; transition: background .15s; }
 .sm-back:hover { background: rgba(0,161,255,.14); }
 .sm-modes { display:flex; flex-direction:column; gap:12px; }
+
+/* ---------- CLASSIFICA GLOBALE ---------- */
+.lb-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.lb-tab {
+  font-family: var(--font-cond); font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  font-size:.78rem; color: var(--testo-dim); background: rgba(255,255,255,0.04);
+  border:1px solid rgba(0,161,255,.25); border-radius:999px; padding:7px 14px; cursor:pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.lb-tab:hover { color: var(--celeste-chiaro); border-color: rgba(0,161,255,.5); }
+.lb-tab.is-active { background: var(--celeste); border-color: var(--celeste); color: var(--blu-notte); }
+.lb-list { display:flex; flex-direction:column; gap:8px; }
+.lb-row {
+  display:grid; grid-template-columns: 32px minmax(0,1fr) auto auto auto; align-items:center; gap:12px;
+  padding:10px 14px; border-radius:12px; background: var(--card); border:1px solid rgba(0,161,255,.12);
+}
+.lb-row--me { border-color: var(--rar-elite); background: rgba(255,210,74,0.08); }
+.lb-pos { font-family: var(--font-display); font-size:1rem; color: var(--celeste-chiaro); text-align:center; }
+.lb-name { font-family: var(--font-body); font-weight:600; color: var(--testo); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lb-row--me .lb-name::after { content:" (tu)"; color: var(--rar-elite); font-weight:400; font-size:.8em; }
+.lb-stat { display:flex; flex-direction:column; align-items:center; min-width:64px; }
+.lb-stat strong { font-family: var(--font-display); font-size:1rem; color: var(--celeste-chiaro); line-height:1; }
+.lb-stat small { font-family: var(--font-cond); font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color: var(--testo-mute); }
+.lb-stat--total strong { color: var(--rar-elite); }
+.lb-empty { text-align:center; color: var(--testo-dim); font-family: var(--font-body); padding: 20px 10px; }
+@media (max-width: 520px) {
+  .lb-row { display:flex; flex-wrap:wrap; align-items:center; row-gap:8px; }
+  .lb-pos { width:24px; }
+  .lb-name { flex: 1 1 100%; order:1; }
+  .lb-pos { order:0; }
+  .lb-stat { flex-direction:row; gap:4px; min-width:auto; order:2; }
+  .lb-stat small { font-size:.55rem; }
+}
 .mode-row {
   position: relative;
   display: grid;
@@ -1532,20 +1571,21 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
 }
 
 .player-card.tcg .tc-season {
-  position: static;
-  grid-column: 2;
-  grid-row: 3;
-  justify-self: center;
-  font-family: var(--font-cond);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--celeste-chiaro);
-  letter-spacing: 0.08em;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 3px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 161, 255, 0.2);
-  margin-top: 4px;
+  position: static !important;
+  grid-column: 2 !important;
+  grid-row: 3 !important;
+  justify-self: center !important;
+  font-family: var(--font-cond) !important;
+  font-size: 0.75rem !important; /* Dimensione fissa di sicurezza, niente esplosioni */
+  font-weight: 700 !important;
+  color: var(--celeste-chiaro) !important;
+  letter-spacing: 0.08em !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(0, 161, 255, 0.2) !important;
+  margin-top: 4px !important;
+  white-space: nowrap !important;
 }
 /* Nelle cards standard e nel campo usiamo i nuovi colori */
 .pitch {
@@ -2568,19 +2608,26 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   z-index: 5;
 }
 
-/* Effetto Olografico per i Campioni (OVR >= 90) */
+/* Effetto Olografico per i Campioni (OVR >= 90)
+   Nota performance: animiamo transform (compositor-only) invece di
+   background-position, che forzava un repaint ad ogni frame per
+   ogni carta legend visibile (collezione, spacchettamento, campo). */
+.tcg-legend {
+  overflow: hidden;
+}
 .tcg-legend::before {
-  content: ""; position: absolute; inset: 0;
+  content: ""; position: absolute; top: 0; bottom: 0; left: -50%;
+  width: 200%;
   background: linear-gradient(125deg, transparent 20%, rgba(255, 210, 74, 0.4) 40%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 210, 74, 0.4) 60%, transparent 80%);
-  background-size: 200% 200%;
   mix-blend-mode: color-dodge;
   pointer-events: none;
+  will-change: transform;
   animation: holoShine 3s infinite linear;
   z-index: 10;
 }
 @keyframes holoShine {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% { transform: translateX(-25%); }
+  100% { transform: translateX(25%); }
 }
 /* ============================================================
    CARTE ICON (HALL OF FAME) - STILE BIANCO/ORO
@@ -2647,3 +2694,704 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
 }
 .slot-growth.up { background: #00ff88; color: #00112b; border: 1px solid #00112b; }
 .slot-growth.down { background: #ff5c5c; color: #ffffff; border: 1px solid #00112b; }
+/* ============================================================
+   BAGLIORE PER GIOCATORI LEGGENDARI (OVR >= 90) IN CAMPO
+   ============================================================ */
+.slot.filled.slot-legend {
+  background:
+    linear-gradient(160deg, var(--card-3), var(--blu-notte)) padding-box,
+    linear-gradient(145deg, #ffd24a, #ff9e2c 45%, #ffd24a 75%, #ff9e2c) border-box;
+  box-shadow: 0 0 18px rgba(255, 210, 74, 0.5), var(--shadow-token);
+}
+.slot.filled.slot-legend .slot-rating {
+  color: #ffd24a;
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(255, 210, 74, 0.7);
+}
+/* ============================================================
+   ECONOMIA E NEGOZIO
+   ============================================================ */
+.wallet-display {
+  background: linear-gradient(135deg, rgba(0, 161, 255, 0.15), rgba(0, 11, 26, 0.8));
+  border: 1px solid var(--celeste);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 161, 255, 0.3);
+}
+
+.wallet-display span {
+  color: var(--celeste-chiaro);
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 14px 0 22px 0;
+}
+
+.shop-collection-btn {
+  width: 100%;
+  margin-top: 22px;
+}
+
+.shop-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.pack-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  border: 2px solid var(--rar-comune);
+  background: linear-gradient(160deg, rgba(0,17,43,0.95), rgba(159,176,192,0.12));
+  border-radius: 18px;
+  padding: 26px 16px 20px;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.2,0.8,0.3,1), box-shadow 0.25s ease, border-color 0.25s ease;
+  min-height: 240px;
+}
+
+/* Barra accento superiore per rarità */
+.pack-card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: var(--rar-comune);
+  opacity: 0.8;
+}
+
+/* Sweep di luce al passaggio del mouse (transform-only, leggero) */
+.pack-card::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.10) 48%, transparent 66%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.pack-card:hover::after { transform: translateX(120%); transition: transform 0.7s ease; }
+
+.pack-card:hover {
+  transform: translateY(-6px) scale(1.02);
+}
+.pack-card:active { transform: translateY(-2px) scale(0.99); }
+
+.pack-card__icon {
+  font-size: 1.9rem;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+
+.pack-card__badge {
+  position: absolute;
+  top: 12px; right: -30px;
+  background: var(--celeste);
+  color: #00112b;
+  font-family: var(--font-cond);
+  font-weight: 800;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 3px 34px;
+  transform: rotate(35deg);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+.pack-card__badge--elite {
+  background: linear-gradient(90deg, #ffd24a, #ff9e2c);
+  color: #00112b;
+}
+
+.pack-card h3 {
+  font-family: var(--font-display); 
+  font-size: 1.9rem; 
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pack-card p {
+  color: var(--testo-dim); 
+  font-size: 0.85rem; 
+  margin-bottom: 18px;
+  line-height: 1.4;
+  font-family: var(--font-body);
+  flex: 1;
+}
+
+.pack-price {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  border: 1px solid var(--rar-comune);
+  color: var(--rar-comune);
+}
+
+.pack-card.azzurro-pack {
+  border-color: var(--celeste);
+  background: linear-gradient(160deg, rgba(0,17,43,0.95), rgba(0,161,255,0.13));
+  box-shadow: 0 0 15px rgba(0,161,255,0.15);
+}
+.pack-card.azzurro-pack::before { background: var(--celeste); }
+.pack-card.azzurro-pack:hover { box-shadow: 0 8px 30px rgba(0,161,255,0.35); }
+.pack-card.azzurro-pack .pack-price {
+  background: linear-gradient(180deg, var(--azzurro-vivo), var(--azzurro) 55%, var(--azzurro-scuro)); 
+  color: #fff; border: none;
+}
+
+.pack-card.d10s-pack {
+  border-color: var(--rar-elite);
+  background: linear-gradient(160deg, rgba(0,17,43,0.95), rgba(255,210,74,0.13));
+  box-shadow: 0 0 20px rgba(255,210,74,0.2);
+}
+.pack-card.d10s-pack::before { background: linear-gradient(90deg, #ffd24a, #ff9e2c); }
+.pack-card.d10s-pack:hover { box-shadow: 0 8px 35px rgba(255,210,74,0.45); }
+.pack-card.d10s-pack .pack-price {
+  background: linear-gradient(90deg, #ffd24a, #ff9e2c); 
+  color: #00112b; border: none; font-weight: 900;
+}
+
+/* ============================================================
+   COLLEZIONE
+   ============================================================ */
+.collection-count-line { text-align: center; margin-bottom: 14px; }
+
+.collection-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+.coll-chip {
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--testo-dim);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+.coll-chip:hover { transform: translateY(-1px); color: var(--testo); }
+.coll-chip.is-active {
+  background: linear-gradient(90deg, var(--azzurro-vivo), var(--celeste));
+  border-color: var(--celeste);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0,161,255,0.35);
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+.collection-grid > .player-card.tcg {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.collection-grid > .player-card.tcg:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card), 0 12px 24px rgba(0,0,0,0.4);
+}
+.collection-empty {
+  grid-column: 1/-1;
+  text-align: center;
+  color: var(--testo-dim);
+  padding: 50px 20px;
+  font-family: var(--font-cond);
+}
+.collection-empty__icon { font-size: 2.4rem; display: block; margin-bottom: 10px; opacity: 0.6; }
+
+
+/* ============================================================
+   ANIMAZIONI WALKOUT E PACCHETTI (ANTI-LAG & ANTI-BUG)
+   ============================================================ */
+#pack-cards {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  min-height: 350px;
+}
+
+.pack-item-container {
+  position: relative;
+  width: 200px; /* DIMENSIONE FISSA! Risolve il bug delle carte giganti */
+  aspect-ratio: 3 / 4.3;
+  perspective: 1000px;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.pack-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.pack-item-container.flipped .pack-card-inner {
+  transform: rotateY(180deg);
+}
+
+.pack-card-front, .pack-card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden; /* Fondamentale per non laggare su iOS */
+  border-radius: 16px;
+}
+
+.pack-card-front {
+  transform: rotateY(180deg);
+}
+
+.pack-card-back {
+  background: linear-gradient(135deg, var(--azzurro-scuro), var(--azzurro-vivo));
+  border: 2px solid var(--celeste);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pack-card-back::after {
+  content: '38-0-0';
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: rgba(255,255,255,0.2);
+  transform: rotate(-45deg);
+}
+
+/* ============================================================
+   FIX GLOW WALKOUT (Senza conflitti di transform 3D)
+   ============================================================ */
+.walkout-glow {
+  border-color: #ffd24a !important;
+  animation: pulseLight 1.5s infinite alternate;
+}
+
+@keyframes pulseLight {
+  0% { 
+    box-shadow: 0 0 15px rgba(255, 210, 74, 0.4), inset 0 0 10px rgba(255, 210, 74, 0.2); 
+    filter: brightness(1);
+  }
+  100% { 
+    box-shadow: 0 0 35px rgba(255, 210, 74, 0.9), inset 0 0 20px rgba(255, 210, 74, 0.5); 
+    filter: brightness(1.12);
+  }
+}
+
+@media (max-width: 760px) {
+  #pack-cards {
+    flex-wrap: wrap; /* Su mobile va a capo in automatico */
+  }
+  .pack-item-container {
+    width: 115px; /* Su telefono diventano piccole per non uscire fuori schermo */
+  }
+  .pack-title { font-size: 1.8rem; }
+}
+/* ============================================================
+   FIX LAG CARTE OLOGRAFICHE (Rimozione mix-blend-mode)
+   ============================================================ */
+.tcg-legend {
+  overflow: hidden;
+}
+.tcg-legend::before {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -50%;
+  width: 200%;
+  background: linear-gradient(125deg, transparent 20%, rgba(255, 210, 74, 0.35) 40%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 210, 74, 0.35) 60%, transparent 80%);
+  /* mix-blend-mode RIMOSSO per garantire i 60fps su smartphone */
+  pointer-events: none;
+  will-change: transform;
+  animation: holoShine 3s infinite linear;
+  z-index: 10;
+}
+
+/* ============================================================
+   BANNERS CARTE (NUOVO / DOPPIONE) 
+   Sostituisce gli stili in linea per non "sbordare" su mobile
+   ============================================================ */
+.card-banner {
+  position: absolute !important;
+  top: 0 !important; 
+  left: 0 !important; /* Spostato da right a left */
+  right: auto !important;
+  font-family: var(--font-cond);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  border-radius: 16px 0 12px 0 !important; /* Arrotondamento adattato all'angolo in alto a sinistra */
+  z-index: 20;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+  border-bottom: 1px solid rgba(0,0,0,0.3);
+  border-right: 1px solid rgba(0,0,0,0.3);
+  border-left: none !important;
+}
+.banner-new { background: #00ff88; color: #00112b; }
+.banner-dupe { background: #ff5c5c; color: #ffffff; }
+#pack-overlay {
+    display: none; /* FONDAMENTALE: lo nasconde quando non serve! */
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 5, 15, 0.95);
+    z-index: 999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+#pack-overlay.show {
+    display: flex; /* Lo fa apparire solo quando apri il pacchetto */
+}
+/* FORZA IL NOME NELLE CARTE A RESTARE ORIZZONTALE */
+.player-card.tcg .tc-ln {
+  writing-mode: horizontal-tb !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  white-space: nowrap !important;
+  max-width: 100% !important;
+}
+
+.player-card.tcg {
+  grid-template-columns: minmax(0, 1fr) auto !important; /* Rimuove forzature rigide che schiacciavano il layout */
+}
+/* ============================================================
+   GRIGLIA DATABASE CARTE (4 per riga, centrata)
+   ============================================================ */
+.card-db-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 260px));
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Carta non posseduta: leggermente in trasparenza e in scala di grigi */
+.db-card-unowned {
+  opacity: 0.45;
+  filter: grayscale(85%);
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.db-card-unowned:hover {
+  opacity: 0.85;
+  filter: grayscale(20%);
+}
+
+/* Adattamento responsive per schermi più piccoli */
+@media (max-width: 1100px) {
+  .card-db-grid {
+    grid-template-columns: repeat(2, minmax(0, 260px));
+  }
+}
+@media (max-width: 600px) {
+  .card-db-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* =schermata intera per il Database Carte (hof) */
+#screen-home[data-panel="hof"] {
+  grid-template-columns: 1fr !important;
+}
+#screen-home[data-panel="hof"] .startmenu__left {
+  display: none !important;
+}
+#screen-home[data-panel="hof"] .startmenu__right {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 1450px !important;
+  margin: 0 auto !important;
+  padding: 40px 20px !important;
+  background: transparent !important;
+}
+#screen-home[data-panel="hof"] .startmenu__right::before {
+  display: none !important;
+}
+.player-card.tcg .tc-ln {
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem) !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+/* ============================================================
+   OTTIMIZZAZIONE NEGOZIO & PACCHETTI (No Lag)
+   ============================================================ */
+
+/* Restyling griglia negozio con effetto profondità */
+/* ============================================================
+   GRIGLIA NEGOZIO (Fissa a 3 in riga)
+   ============================================================ */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* Forza 3 colonne esatte in linea */
+  gap: 20px;
+  perspective: 1000px;
+  width: 100%;
+}
+
+/* Adattamento responsive per schermi più piccoli o tablet */
+@media (max-width: 900px) {
+  .shop-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 550px) {
+  .shop-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Schede pacchetti più rifinite e fluide al passaggio del mouse */
+.pack-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  padding: 30px 20px 22px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(0, 25, 55, 0.9), rgba(0, 11, 26, 0.95));
+  border: 2px solid rgba(0, 161, 255, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+  cursor: pointer;
+  overflow: hidden;
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.pack-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  border-color: var(--celeste);
+  box-shadow: 0 16px 40px -10px rgba(0, 161, 255, 0.35);
+}
+
+.pack-card:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+/* Effetto luce radiale di sottofondo per l'overlay di spacchettamento */
+#pack-overlay {
+  background: radial-gradient(circle at center, rgba(0, 35, 75, 0.85) 0%, rgba(0, 5, 15, 0.98) 80%) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Animazione di comparsa fluida per le carte durante il walkout */
+.pack-item-container {
+  will-change: transform, opacity;
+  transform: translateZ(0); /* Attiva l'accelerazione hardware nativa */
+}
+
+/* Restyling contatore crediti (Wallet) nel negozio */
+.wallet-display {
+  background: linear-gradient(135deg, rgba(0, 161, 255, 0.2), rgba(0, 11, 26, 0.9));
+  border: 1px solid var(--celeste);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0, 161, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* ============================================================
+   INGRANDISCI LE CARTE NELL'APERTURA PACCHETTI
+   ============================================================ */
+#pack-overlay .player-card.tcg {
+  width: 270px !important;
+  min-width: 270px !important;
+  min-height: 150px !important;
+  padding: 20px 24px !important;
+}
+
+/* Allarga il contenitore dei pacchetti per accogliere le carte più grandi */
+#pack-overlay .pack-reveal-container,
+#pack-overlay [style*="display: flex"] {
+  gap: 24px !important;
+  max-width: 100% !important;
+}
+/* ============================================================
+   FIX DEFINITIVO SOVRAPPOSIZIONE CARTE NEI PACCHETTI
+   ============================================================ */
+#pack-overlay {
+  overflow-y: auto !important;
+  padding: 20px !important;
+}
+
+/* Dimensione ideale per far stare i nomi lunghi su una riga senza sovrapporsi */
+#pack-overlay .player-card.tcg {
+  width: 240px !important;
+  min-width: 230px !important;
+  max-width: 250px !important;
+  min-height: 145px !important;
+  padding: 16px 18px !important;
+  flex: 0 0 auto !important;
+}
+
+/* Contenitore flessibile con chiusura di sicurezza (wrap) per evitare sovrapposizioni */
+#pack-overlay div[style*="display: flex"],
+#pack-overlay .pack-reveal-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 16px !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+}
+/* ============================================================
+   FIX DEFINITIVO: STOP SCHIACCIAMENTO CARTE NEI PACCHETTI
+   ============================================================ */
+
+/* 1. Allarghiamo la "gabbia" 3D generata dal JavaScript */
+.pack-item-container {
+  width: 260px !important;         /* Più spazio per i nomi lunghi */
+  min-width: 260px !important;
+  height: 155px !important;        /* Altezza rigida calibrata sulla carta orizzontale */
+  min-height: 155px !important;
+  aspect-ratio: auto !important;   /* SPEGNE la vecchia forzatura verticale 3/4.3 */
+  flex: 0 0 auto !important;       /* DIVIETO ASSOLUTO a flexbox di rimpicciolirle */
+  margin: 10px !important;
+}
+
+/* 2. Assicuriamo che la carta riempia la nuova gabbia alla perfezione */
+.pack-item-container .player-card.tcg {
+  width: 100% !important;
+  min-width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  margin: 0 !important;
+  padding: 16px 20px !important;
+  box-sizing: border-box !important;
+  position: absolute !important;   /* Necessario per il Flip 3D */
+  inset: 0 !important;
+}
+
+/* 3. Disattiviamo la vecchia regola che le stritolava a 115px sui telefoni! */
+@media (max-width: 760px) {
+  #pack-cards {
+    flex-direction: column !important; /* Le mette in colonna sui telefoni */
+    gap: 15px !important;
+  }
+  .pack-item-container {
+    width: 100% !important;        /* Prendono tutta la larghezza dello schermo */
+    max-width: 320px !important;
+    height: 140px !important;
+    min-height: 140px !important;
+  }
+}
+/* ============================================================
+   FORZA GRIGLIA COLLEZIONE A 3 COLONNE (3x3)
+   ============================================================ */
+#collection-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+}
+
+/* Regola per schermi più piccoli e smartphone (mette in colonna singola per non schiacciare) */
+@media (max-width: 860px) {
+  #collection-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  
+  /* I bottoni in mobile si rimpiccioliscono leggermente */
+  #collection-pagination {
+    flex-wrap: wrap;
+  }
+}
+/* ============================================================
+   INGRANDIMENTO MASSIMO CARTE PACCHETTI (PER NOMI LUNGHI)
+   ============================================================ */
+
+/* 1. Allarghiamo la gabbia a 300px per accogliere nomi infiniti */
+.pack-item-container {
+  width: 300px !important;         /* Aumentato da 260px a 300px */
+  min-width: 300px !important;
+  height: 170px !important;        /* Aumentato in proporzione */
+  min-height: 170px !important;
+}
+
+/* 2. Ridimensionamento fluido: se il nome è enorme, si stringe un po' da solo */
+.pack-item-container .player-card.tcg .tc-ln {
+  font-size: clamp(1.05rem, 4.5vw, 1.45rem) !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* 3. Su smartphone diamo il massimo dello spazio orizzontale consentito */
+@media (max-width: 760px) {
+  .pack-item-container {
+    width: 100% !important;
+    max-width: 350px !important;
+    height: 160px !important;
+    min-height: 160px !important;
+  }
+}
+/* ============================================================
+   WIDGET LOGIN POCO INVADENTE
+   ============================================================ */
+.auth-widget {
+  margin-bottom: 25px; /* Spazio prima del titolo "Il manageriale azzurro" */
+  font-family: var(--font-cond);
+  z-index: 10;
+}
+
+.auth-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.auth-input {
+  background: rgba(0, 11, 26, 0.4);
+  border: 1px solid rgba(0, 161, 255, 0.3);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  width: 140px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.auth-input:focus {
+  border-color: var(--celeste);
+  background: rgba(0, 11, 26, 0.8);
+}
+
+.auth-btn {
+  padding: 6px 16px;
+  min-height: 0;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+.auth-greeting {
+  color: var(--celeste-chiaro);
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+}
