@@ -1308,6 +1308,19 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
 .lb-stat small { font-family: var(--font-cond); font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color: var(--testo-mute); }
 .lb-stat--total strong { color: var(--rar-elite); }
 .lb-empty { text-align:center; color: var(--testo-dim); font-family: var(--font-body); padding: 20px 10px; }
+
+/* ---------- BONUS GIORNALIERO: barra streak ---------- */
+.daily-streak-track { display:flex; justify-content:center; gap:6px; flex-wrap:wrap; }
+.daily-streak-dot {
+  width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family: var(--font-cond); font-weight:700; font-size:.72rem; color: var(--testo-mute);
+  background: rgba(255,255,255,0.06); border:1px solid rgba(255,210,74,.25);
+}
+.daily-streak-dot.is-done { background: rgba(255,210,74,.25); border-color:#ffd24a; color:#ffd24a; }
+.daily-streak-dot.is-today {
+  background: linear-gradient(135deg, #ffd24a, #ff9e2c); border-color:#ffd24a; color:#1a1200;
+  box-shadow: 0 0 14px rgba(255,210,74,.6); transform: scale(1.15);
+}
 @media (max-width: 520px) {
   .lb-row { display:flex; flex-wrap:wrap; align-items:center; row-gap:8px; }
   .lb-pos { width:24px; }
@@ -3022,6 +3035,9 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   z-index: 10;
 }
 
+
+
+
 /* ============================================================
    BANNERS CARTE (NUOVO / DOPPIONE) 
    Sostituisce gli stili in linea per non "sbordare" su mobile
@@ -3099,11 +3115,7 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
     grid-template-columns: repeat(2, minmax(0, 260px));
   }
 }
-@media (max-width: 600px) {
-  .card-db-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
+
 /* =schermata intera per il Database Carte (hof) */
 #screen-home[data-panel="hof"] {
   grid-template-columns: 1fr !important;
@@ -3394,4 +3406,490 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   color: var(--celeste-chiaro);
   font-size: 1.2rem;
   letter-spacing: 0.04em;
+}
+/* ============================================================
+   BLOCCO DEFINITIVO — OTTIMIZZAZIONE MOBILE
+   1) Apertura pacchetti leggibile (carte impilate, non schiacciate)
+   2) Griglia 3x3 fissa per Database e Collezione anche da mobile,
+      con paginazione (bottoni + swipe)
+   Questo blocco vince sempre sulle regole precedenti in conflitto
+   perché più specifico e posizionato in fondo al foglio di stile.
+   ============================================================ */
+
+/* ---------- 1) APERTURA PACCHETTO: layout pulito su mobile ---------- */
+#pack-overlay {
+  overflow-y: auto !important;
+  padding: 24px 16px !important;
+}
+#pack-cards {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 18px !important;
+  width: 100% !important;
+  max-width: 900px !important;
+  margin: 0 auto !important;
+  min-height: 0 !important;
+}
+.pack-item-container {
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  height: 140px !important;
+  min-height: 140px !important;
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+}
+.pack-item-container .player-card.tcg {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  flex-direction: unset !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  padding: 14px 16px !important;
+  box-sizing: border-box !important;
+  position: absolute !important;
+  inset: 0 !important;
+  text-align: left !important;
+  gap: 4px 12px !important;
+}
+.pack-item-container .player-card.tcg .tc-player {
+  align-items: flex-start !important;
+  text-align: left !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.pack-item-container .player-card.tcg .tc-ln {
+  font-size: 1.2rem !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+.pack-item-container .player-card.tcg .tc-positions,
+.pack-item-container .player-card.tcg .tc-season {
+  position: static !important;
+  top: auto !important; right: auto !important; bottom: auto !important; left: auto !important;
+  margin: 0 !important;
+  display: inline-block;
+}
+
+@media (max-width: 760px) {
+  #pack-title { font-size: 1.6rem !important; }
+  #pack-hint { margin-bottom: 24px !important; }
+  #pack-cards {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 14px !important;
+  }
+  .pack-item-container {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 340px !important;
+    height: 120px !important;
+    min-height: 120px !important;
+  }
+  .pack-item-container .player-card.tcg {
+    padding: 12px 14px !important;
+  }
+  .pack-item-container .player-card.tcg .tc-ln {
+    font-size: 1.05rem !important;
+  }
+  .pack-item-container .player-card.tcg .tc-overall span {
+    font-size: 1.6rem !important;
+    padding: 3px 12px !important;
+  }
+}
+
+/* ---------- 2) GRIGLIA 3x3 FISSA — DATABASE E COLLEZIONE ---------- */
+@media (max-width: 720px) {
+  #collection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .card-db-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  /* Carta compatta pensata per stare in 1/3 di riga su telefono */
+  #collection-grid .player-card.tcg,
+  .card-db-grid .player-card.tcg {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 8px 4px !important;
+    gap: 3px !important;
+    min-height: 96px !important;
+    border-radius: 10px !important;
+  }
+  #collection-grid .player-card.tcg .tc-player,
+  .card-db-grid .player-card.tcg .tc-player {
+    align-items: center !important;
+    text-align: center !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+  }
+  #collection-grid .player-card.tcg .tc-fn,
+  .card-db-grid .player-card.tcg .tc-fn {
+    font-size: 0.48rem !important;
+    letter-spacing: 0.04em !important;
+  }
+  #collection-grid .player-card.tcg .tc-ln,
+  .card-db-grid .player-card.tcg .tc-ln {
+    font-size: 0.68rem !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  #collection-grid .player-card.tcg .tc-overall,
+  .card-db-grid .player-card.tcg .tc-overall {
+    margin: 2px 0 !important;
+  }
+  #collection-grid .player-card.tcg .tc-overall span,
+  .card-db-grid .player-card.tcg .tc-overall span {
+    font-size: 0.95rem !important;
+    padding: 2px 8px !important;
+    border-radius: 8px !important;
+  }
+  #collection-grid .player-card.tcg .tc-positions,
+  .card-db-grid .player-card.tcg .tc-positions,
+  #collection-grid .player-card.tcg .tc-season,
+  .card-db-grid .player-card.tcg .tc-season {
+    position: static !important;
+    font-size: 0.5rem !important;
+    padding: 1px 5px !important;
+    margin: 0 !important;
+  }
+  #collection-grid .card-banner,
+  .card-db-grid .card-banner {
+    font-size: 0.45rem !important;
+    padding: 2px 6px !important;
+  }
+  #collection-grid .player-card.tcg .player-cost,
+  .card-db-grid .player-card.tcg .player-cost {
+    font-size: 0.48rem !important;
+  }
+
+  /* Bottoni pagina più compatti su telefono */
+  #collection-pagination,
+  #hof-content [style*="Precedente"] { flex-wrap: wrap; }
+  #collection-pagination span,
+  #hof-content span {
+    font-size: 0.78rem !important;
+  }
+}
+
+/* Suggerimento visivo che si può scorrere per cambiare pagina */
+.swipe-hint {
+  text-align: center;
+  color: var(--testo-dim);
+  font-family: var(--font-cond);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  margin: -6px 0 14px 0;
+  display: none;
+}
+@media (max-width: 720px) {
+  .swipe-hint { display: block; }
+}
+/* ============================================================
+   CENTRATURA PERFETTA NELL'APERTURA PACCHETTI
+   ============================================================ */
+#pack-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0, 35, 75, 0.9) 0%, rgba(0, 5, 15, 0.98) 80%) !important;
+  z-index: 999;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+#pack-overlay.show {
+  display: flex !important;
+}
+
+#pack-cards {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 1000px !important;
+  margin: 0 auto !important;
+}
+/* ============================================================
+   GRIGLIA 3x3 PER COLLEZIONE E DATABASE DA MOBILE
+   ============================================================ */
+@media (max-width: 720px) {
+  #collection-grid,
+  .card-db-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  /* Stile comune in 3x3 per le carte di entrambe le sezioni */
+  #collection-grid .player-card.tcg,
+  .card-db-grid .player-card.tcg {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 10px 4px !important;
+    gap: 4px !important;
+    min-height: 105px !important;
+    border-radius: 10px !important;
+  }
+
+  #collection-grid .player-card.tcg .tc-player,
+  .card-db-grid .player-card.tcg .tc-player {
+    align-items: center !important;
+    text-align: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #collection-grid .player-card.tcg .tc-fn,
+  .card-db-grid .player-card.tcg .tc-fn {
+    font-size: 0.5rem !important;
+  }
+
+  #collection-grid .player-card.tcg .tc-ln,
+  .card-db-grid .player-card.tcg .tc-ln {
+    font-size: 0.72rem !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  #collection-grid .player-card.tcg .tc-overall span,
+  .card-db-grid .player-card.tcg .tc-overall span {
+    font-size: 1.1rem !important;
+    padding: 2px 8px !important;
+    border-radius: 8px !important;
+  }
+
+  #collection-grid .player-card.tcg .tc-positions,
+  .card-db-grid .player-card.tcg .tc-positions,
+  #collection-grid .player-card.tcg .tc-season,
+  .card-db-grid .player-card.tcg .tc-season {
+    position: static !important;
+    font-size: 0.52rem !important;
+    padding: 1px 4px !important;
+    margin: 0 !important;
+  }
+}
+/* ============================================================
+   1. CENTRATURA PERFETTA APERTURA PACCHETTI (FIX DEFINITIVO)
+   ============================================================ */
+#pack-overlay {
+  display: none !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: radial-gradient(circle at center, rgba(0, 35, 75, 0.95) 0%, rgba(0, 5, 15, 0.99) 85%) !important;
+  z-index: 9999 !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  overflow-y: auto !important;
+  padding: 20px !important;
+  text-align: center !important;
+}
+
+#pack-overlay.show {
+  display: flex !important;
+}
+
+#pack-cards {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* ============================================================
+   2. ELEMENTI DISPARI CENTRATI (Pacchetti, Formazioni, ecc.)
+   ============================================================ */
+.shop-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 800px !important;
+  margin: 0 auto !important;
+}
+
+/* Fa in modo che l'ultimo pacchetto (se dispari) si sposti al centro della riga sotto */
+.shop-grid > .pack-card:last-child:nth-child(odd),
+.formation-grid > *:last-child:nth-child(odd) {
+  grid-column: 1 / -1 !important;
+  justify-self: center !important;
+  width: 100% !important;
+  max-width: 275px !important;
+}
+
+/* ============================================================
+   LAYOUT 2 E 1 PER APERTURA PACCHETTI (Esattamente come il negozio)
+   ============================================================ */
+#pack-cards {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 260px)) !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 580px !important; /* Forza lo spazio esatto per 2 colonne */
+  margin: 0 auto !important;
+}
+
+/* La terza carta (essendo un numero dispari) si posiziona al centro della riga sotto */
+#pack-cards > .pack-item-container:last-child:nth-child(odd) {
+  grid-column: 1 / -1 !important;
+  justify-self: center !important;
+}
+
+.pack-item-container {
+  position: relative !important;
+  width: 260px !important;
+  min-width: 260px !important;
+  height: 150px !important;
+  min-height: 150px !important;
+  perspective: 1000px !important;
+  transition: transform 0.4s ease, opacity 0.4s ease !important;
+}
+
+@media (max-width: 760px) {
+  #pack-cards {
+    grid-template-columns: 1fr !important;
+    max-width: 320px !important;
+  }
+  
+  #pack-cards > .pack-item-container:last-child:nth-child(odd) {
+    grid-column: auto !important;
+    justify-self: stretch !important;
+  }
+
+  .pack-item-container {
+    width: 100% !important;
+    max-width: 320px !important;
+    height: 140px !important;
+    min-height: 140px !important;
+  }
+}
+/* ============================================================
+   FIX DEFINITIVO E PULITO — APERTURA PACCHETTI (2 SOPRA, 1 SOTTO)
+   ============================================================ */
+#pack-overlay {
+  display: none !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: radial-gradient(circle at center, rgba(0, 35, 75, 0.96) 0%, rgba(0, 5, 15, 0.99) 85%) !important;
+  z-index: 9999 !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  overflow-y: auto !important;
+  padding: 24px 16px !important;
+  text-align: center !important;
+}
+
+#pack-overlay.show {
+  display: flex !important;
+}
+
+#pack-cards {
+  display: grid !important;
+  grid-template-columns: repeat(2, 260px) !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 560px !important;
+  margin: 0 auto !important;
+}
+
+/* La terza carta (dispari) occupa l'intera riga inferiore e si centra da sola */
+#pack-cards > .pack-item-container:last-child:nth-child(odd) {
+  grid-column: 1 / -1 !important;
+  justify-self: center !important;
+}
+
+.pack-item-container {
+  position: relative !important;
+  width: 260px !important;
+  min-width: 260px !important;
+  height: 150px !important;
+  min-height: 150px !important;
+  perspective: 1000px !important;
+  margin: 0 !important;
+  transition: transform 0.4s ease, opacity 0.4s ease !important;
+}
+
+.pack-card-inner {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  transform-style: preserve-3d !important;
+}
+
+.pack-item-container.flipped .pack-card-inner {
+  transform: rotateY(180deg) !important;
+}
+
+.pack-card-front, .pack-card-back {
+  position: absolute !important;
+  inset: 0 !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  border-radius: 16px !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.pack-card-front {
+  transform: rotateY(180deg) !important;
+  box-sizing: border-box !important;
+}
+
+/* Adattamento pulito per smartphone */
+@media (max-width: 600px) {
+  #pack-cards {
+    grid-template-columns: 240px !important; /* Passa a singola colonna centrata su mobile */
+    max-width: 280px !important;
+    gap: 14px !important;
+  }
+  
+  #pack-cards > .pack-item-container:last-child:nth-child(odd) {
+    grid-column: auto !important;
+    justify-self: stretch !important;
+  }
+
+  .pack-item-container {
+    width: 240px !important;
+    min-width: 240px !important;
+    height: 135px !important;
+    min-height: 135px !important;
+  }
 }
