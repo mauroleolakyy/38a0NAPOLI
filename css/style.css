@@ -131,6 +131,8 @@
    RESET / BASE
    ============================================================ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* Forza la scomparsa degli elementi nascosti */
+[hidden] { display: none !important; }
 *, *::before, *::after { min-width: 0; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -1232,7 +1234,23 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
    BOTTONI, CARDS, DRAFT E RESTO
    (Stili generici riadattati ai colori azzurri)
    ============================================================ */
-.btn { font-family: var(--font-display); font-size: 1rem; letter-spacing: 0.06em; border-radius: var(--radius); padding: 13px 24px; min-height: var(--tap-min); cursor: pointer; border: none; text-transform: uppercase; transition: transform var(--dur-1) ease, box-shadow var(--dur-2) ease, opacity var(--dur-1) ease; }
+   .btn { 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
+  font-family: var(--font-display); 
+  font-size: 1rem; 
+  letter-spacing: 0.06em; 
+  border-radius: var(--radius); 
+  padding: 13px 24px; 
+  min-height: var(--tap-min); 
+  cursor: pointer; 
+  border: none; 
+  text-transform: uppercase; 
+  transition: transform var(--dur-1) ease, box-shadow var(--dur-2) ease, opacity var(--dur-1) ease; 
+}
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn.primary { background: linear-gradient(180deg, var(--rosso-vivo), var(--rosso) 55%, var(--rosso-scuro)); color: var(--testo); flex: 1; box-shadow: var(--bevel-top), var(--shadow-card); }
 .btn.primary:not(:disabled):hover { box-shadow: var(--bevel-top), var(--shadow-lift), 0 0 26px -4px var(--glow-rosso); }
@@ -2118,4 +2136,120 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   0% { box-shadow: 0 0 5px rgba(255, 50, 50, 0.2); }
   50% { box-shadow: 0 0 15px rgba(255, 50, 50, 0.6); }
   100% { box-shadow: 0 0 5px rgba(255, 50, 50, 0.2); }
+}
+/* ============================================================
+   PARTITE BOSS & BACHECA TROFEI
+   ============================================================ */
+
+/* Animazione e Stile Partite Boss nel Replay */
+.replay-row.rr-boss {
+  border: 1px solid var(--doom);
+  background: linear-gradient(180deg, rgba(212, 68, 68, 0.2), rgba(0, 11, 26, 0.9));
+  box-shadow: 0 0 15px rgba(212, 68, 68, 0.4);
+  animation: bossPulse 2s infinite alternate;
+}
+.rr-boss .rr-opp {
+  color: #ff5c5c;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(212, 68, 68, 0.6);
+}
+@keyframes bossPulse {
+  0% { box-shadow: 0 0 5px rgba(212, 68, 68, 0.3); }
+  100% { box-shadow: 0 0 20px rgba(212, 68, 68, 0.7); border-color: #ff7777; }
+}
+
+/* Stili Bacheca Trofei */
+.ach-locked {
+  opacity: 0.5;
+  filter: grayscale(100%);
+  background: rgba(0,0,0,0.4);
+}
+.ach-unlocked {
+  background: linear-gradient(90deg, rgba(255,210,74,0.1), rgba(0, 14, 31, 0.75));
+  border-left: 3px solid var(--giallo);
+  box-shadow: 0 0 20px rgba(255,210,74,0.15);
+}
+@keyframes pulseUlt {
+  0% { box-shadow: 0 0 5px rgba(255, 138, 0, 0.4); transform: scale(1); }
+  50% { box-shadow: 0 0 20px rgba(229, 46, 113, 0.9); transform: scale(1.02); }
+  100% { box-shadow: 0 0 5px rgba(255, 138, 0, 0.4); transform: scale(1); }
+}
+.player-cost {
+  display: inline-block;
+  margin-top: 4px;
+  background: rgba(0, 20, 10, 0.9);
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-cond);
+  font-weight: 800;
+  font-size: 0.75rem;
+  width: fit-content;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+/* ============================================================
+   EFFETTI SPECIALI: BOSS MATCH E CRONACA GOL
+   ============================================================ */
+.rr-boss {
+  border: 2px solid #ff5c5c !important;
+  box-shadow: 0 0 15px rgba(255, 92, 92, 0.4);
+  background: linear-gradient(180deg, rgba(70, 18, 18, 0.88), rgba(20, 5, 5, 0.72)) !important;
+  animation: bossPulse 1.5s infinite;
+}
+
+@keyframes bossPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 92, 92, 0.3); }
+  50% { box-shadow: 0 0 25px rgba(255, 92, 92, 0.8); }
+}
+
+.rr-scorers {
+  grid-column: 1 / -1; /* Occupa tutta la larghezza della riga */
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--testo-dim);
+  padding-top: 6px;
+  margin-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  line-height: 1.4;
+}
+/* ============================================================
+   STILE CRONACA DELLA RUN (EVENT LOG)
+   ============================================================ */
+.event-log {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.el-item {
+  background: linear-gradient(135deg, rgba(0, 17, 43, 0.6), rgba(0, 11, 26, 0.8));
+  border: 1px solid rgba(0, 161, 255, 0.2);
+  border-left: 3px solid var(--giallo);
+  border-radius: 8px;
+  padding: 12px 14px;
+  text-align: left !important; /* Forza l'allineamento a sinistra per leggibilità */
+}
+
+.el-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px; /* Spazio netto tra il Titolo e la Descrizione */
+}
+
+.el-name {
+  font-family: var(--font-cond);
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--giallo-chiaro);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.el-text {
+  font-size: 0.88rem;
+  color: var(--testo);
+  line-height: 1.45;
 }
