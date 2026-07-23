@@ -332,8 +332,66 @@ function checkAndUnlockAchievements(seasonPts, seasonW, team) {
 
 function renderBacheca() {
   const container = document.getElementById("achievements-list");
+  const palmaresBox = document.getElementById("palmares-stats");
   if (!container) return;
-  let unlocked = JSON.parse(localStorage.getItem("napoli380_ach") || "[]");
+
+  // Renderizza il Palmarès (CON FIX ANTI-BLOCCO)
+  if (palmaresBox) {
+    let stats;
+    try {
+        stats = JSON.parse(localStorage.getItem('napoli380_stats'));
+        if (!stats || typeof stats !== "object") throw new Error();
+        // Assicuriamoci che i numeri non diano "NaN" (Not a Number)
+        stats.matches = stats.matches || 0;
+        stats.wins = stats.wins || 0;
+        stats.pts = stats.pts || 0;
+        stats.runs = stats.runs || 0;
+        stats.scudetti = stats.scudetti || 0;
+        stats.champions = stats.champions || 0;
+    } catch(e) {
+        stats = {scudetti:0, champions:0, wins:0, matches:0, pts:0, runs:0};
+    }
+
+   // NOVITÀ: Calcolo del miglior marcatore assoluto
+    let allTimeScorers = JSON.parse(localStorage.getItem('napoli380_allTimeScorers') || '{}');
+    let bestScorerName = "Nessuno";
+    let bestScorerGoals = 0;
+    
+    // Scorre tutto l'elenco per trovare chi ha il numero più alto
+    for (const [name, goals] of Object.entries(allTimeScorers)) {
+        if (goals > bestScorerGoals) {
+            bestScorerGoals = goals;
+            bestScorerName = name;
+        }
+    }
+
+    let winRate = stats.matches > 0 ? Math.round((stats.wins / stats.matches) * 100) : 0;
+    let avgPts = stats.runs > 0 ? Math.round(stats.pts / stats.runs) : 0;
+    
+    palmaresBox.innerHTML = `
+        <div class="cl-block" style="text-align: center;"><span class="cl-label">Scudetti Vinti</span><strong style="color:var(--celeste);">${stats.scudetti}</strong></div>
+        <div class="cl-block" style="text-align: center;"><span class="cl-label">Champions Vinte</span><strong style="color:var(--rar-elite);">${stats.champions}</strong></div>
+        <div class="cl-block" style="text-align: center;"><span class="cl-label">% Vittorie</span><strong>${winRate}%</strong></div>
+        
+        
+        <!-- Blocco Largo per il Capocannoniere -->
+        <div class="cl-block" style="text-align: center; grid-column: 1 / -1; background: linear-gradient(135deg, rgba(0,161,255,0.1), rgba(0,11,26,0.8)); border-color: var(--celeste);">
+            <span class="cl-label">Miglior Marcatore All-Time</span>
+            <strong style="color: #fff; font-size: 1.5rem; letter-spacing: 0.03em; margin-top: 4px;">
+                ${bestScorerName} 
+                <span style="color: var(--celeste-chiaro); font-size: 1.1rem; margin-left: 6px;">(${bestScorerGoals} gol)</span>
+            </strong>
+        </div>
+    `;
+  }
+
+  // Renderizza i Trofei in modo sicuro
+  let unlocked = [];
+  try {
+      unlocked = JSON.parse(localStorage.getItem("napoli380_ach") || "[]");
+  } catch(e) { 
+      unlocked = []; 
+  }
   
   container.innerHTML = ACHIEVEMENTS.map(ach => {
     const isUnlocked = unlocked.includes(ach.id);
@@ -500,6 +558,7 @@ function init() {
       const panels = home ? home.querySelectorAll(".subpanel") : [];
 if (name === "bacheca") renderBacheca(); // Aggiorna la bacheca quando la apri
 if (name === "leaderboard") renderLeaderboard(); // Aggiorna la classifica globale quando la apri
+if (name === "stadium") renderStadium();
 if (name === "hof") {
     const hofContent = document.getElementById("hof-content");
     const dbCounter = document.getElementById("db-counter");
@@ -532,6 +591,7 @@ if (name === "hof") {
                     let cls = "player-card tcg " + (isOwned ? "db-card-owned" : "db-card-unowned");
                     if (p.rating >= 90) cls += " tcg-legend";
                     if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+                    if (p.stagione === "Centenario") cls += " tcg-centenario";
                     let styleAttr = tcgGoldStyle(p.rating);
                     
                     const statusBadge = isOwned 
@@ -598,6 +658,10 @@ if (name === "hof") {
           renderCollection();
       }
       if (home) home.setAttribute("data-panel", name);
+      
+      // Scorri in alto in modo fluido (utile per i cellulari)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
       return;
     }
 
@@ -616,6 +680,10 @@ if (name === "hof") {
         panel.style.display = "none";
       });
       if (home) home.setAttribute("data-panel", "root");
+      
+      // Scorri in alto in modo fluido quando si torna alla home
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
       return;
     }
 
@@ -688,6 +756,7 @@ if (name === "hof") {
   }
 
   // ------------------------------------------------------------------
+  updateDupesBadge();
 // --- INIZIALIZZA ECONOMIA, NEGOZIO E COLLEZIONE ---
   updateWalletUI();
 
@@ -731,6 +800,27 @@ if (name === "hof") {
   });
   document.body.dataset.screen = "screen-home";
   document.body.dataset.live = "off";
+// --- BONUS LOGIN GIORNALIERO ---
+  function checkDailyLogin() {
+    const today = new Date().toLocaleDateString('it-IT');
+    let lastLogin = localStorage.getItem('napoli380_lastLogin');
+    let streak = parseInt(localStorage.getItem('napoli380_streak') || "0");
+
+    if (lastLogin !== today) {
+        streak++; // Incrementa i giorni consecutivi
+        localStorage.setItem('napoli380_lastLogin', today);
+        localStorage.setItem('napoli380_streak', streak.toString());
+
+        let reward = 50 + (streak * 20); // +20 crediti per ogni giorno consecutivo
+        if (reward > 300) reward = 300;  // Tetto massimo di 300 crediti al giorno
+
+        // Aspettiamo 2 secondi così il giocatore ha tempo di caricare la home e vede la notifica
+        setTimeout(() => {
+            addCredits(reward, `Premio Giornaliero: Giorno ${streak} 🔥`);
+        }, 2000); 
+    }
+  }
+  checkDailyLogin();
 }
 
 // Fai partire tutto ignorando i caricamenti bloccati
@@ -844,6 +934,7 @@ function renderReplacementCards(container, slotId, opts, onPick, onCancel) {
     let cls = "player-card tcg", styleAttr = ""; 
     if (p.rating >= 90) cls += " tcg-legend";
     if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+    if (p.stagione === "Centenario") cls += " tcg-centenario";
     if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating); 
     return `<div class="${cls}" style="${styleAttr}" data-i="${i}">${tcgCardInner(p, state.hiddenRating, slot.accepts[0])}</div>`; 
   }).join("")}</div><button type="button" class="btn ghost market-cancel-btn">Annulla</button>`;
@@ -1388,6 +1479,7 @@ function renderOptionsPanel() {
     let cls = "player-card tcg card-reveal";
     if (p.rating >= 90) cls += " tcg-legend"; 
     if (p.stagione === "Hall of Fame") cls += " tcg-icon"; 
+    if (p.stagione === "Centenario") cls += " tcg-centenario";
     
     let styleAttr = ""; 
     if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating);
@@ -1517,6 +1609,7 @@ function markFilledSlot(slot, p) {
   node.classList.add("filled"); 
   
   if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
+  if (p.stagione === "Centenario") node.classList.add("slot-centenario"); else node.classList.remove("slot-centenario");
   
   const eff = effRating(slot.id); 
   // ATTIVO SOLO SE NON È UNA ICONA (Hall of Fame)
@@ -1536,6 +1629,7 @@ function refreshSlotRating(slotId) {
   if (!node || !p) return; 
   
   if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
+  if (p.stagione === "Centenario") node.classList.add("slot-centenario"); else node.classList.remove("slot-centenario");
   
   const eff = effRating(slotId); 
   // ATTIVO SOLO SE NON È UNA ICONA (Hall of Fame)
@@ -1888,9 +1982,37 @@ function runSeason() {
   };
   
   if (state.career) recordCareerSeasonResult();
-  checkAndUnlockAchievements(season.pts, season.w, state.team);
-  updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.leaguePhase.pts : 0);
-  
+ checkAndUnlockAchievements(season.pts, season.w, state.team);
+updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.leaguePhase.pts : 0);
+// --- INIZIO: STATISTICHE GLOBALI E MARCATORI ALL-TIME ---
+  let palmares;
+  try {
+      palmares = JSON.parse(localStorage.getItem('napoli380_stats'));
+      if (!palmares || typeof palmares !== "object") throw new Error();
+  } catch (e) {
+      palmares = { scudetti: 0, champions: 0, wins: 0, matches: 0, pts: 0, runs: 0 };
+  }
+
+  if (lg && lg.napoliRank === 1) palmares.scudetti++;
+  if (typeof champ !== 'undefined' && champ && champ.won) palmares.champions++;
+  if (typeof season !== 'undefined' && season) {
+      palmares.wins += (season.w || 0);
+      palmares.matches += 38;
+      palmares.pts += (season.pts || 0);
+  }
+  palmares.runs++;
+  localStorage.setItem('napoli380_stats', JSON.stringify(palmares));
+
+  // NOVITÀ: Salvataggio Gol per il Capocannoniere All-Time
+  let allTimeScorers = JSON.parse(localStorage.getItem('napoli380_allTimeScorers') || '{}');
+  if (lg && lg.scorers) {
+      lg.scorers.forEach(s => {
+          // Aggiunge i gol di questa stagione al totale storico del giocatore
+          allTimeScorers[s.nome] = (allTimeScorers[s.nome] || 0) + s.goals;
+      });
+  }
+  localStorage.setItem('napoli380_allTimeScorers', JSON.stringify(allTimeScorers));
+  // --- FINE STATISTICHE ---
   let banner = "";
   if (state.diff.goal === "retro") { 
       banner = place.win ? '<div class="mission-banner ok">MISSIONE COMPIUTA · Amm fatt\' schif\'.</div>' : '<div class="mission-banner fail">MISSIONE FALLITA · Troppo forti.</div>'; 
@@ -2077,11 +2199,14 @@ function playMatchReplay(matches, done, opts = {}) {
       }
       scheduleNext();
     };
-    // C'è un 8% di probabilità a partita che ci sia un rigore, e NON deve capitare insieme a un imprevisto di ADL
-    const isPenalty = state.replayMode !== "auto" || Math.random() < 0.08; 
+    let penChance = 0.08;
+    // Se ha comprato la Curva, aumentiamo il drop rate dei rigori!
+    if (typeof hasUpgrade === "function" && hasUpgrade('curva')) penChance += 0.05;
+    
+    const isPenalty = state.replayMode !== "auto" || Math.random() < penChance; 
     let penaltyResolved = false;
 
-    if (!penaltyResolved && Math.random() < 0.08 && (!state.scheduledEvents || !state.scheduledEvents[m.md])) {
+    if (!penaltyResolved && Math.random() < penChance && (!state.scheduledEvents || !state.scheduledEvents[m.md])) {
       const isForNapoli = Math.random() > 0.5;
       
       // Calcolo OVR in campo
@@ -2506,6 +2631,12 @@ const BIRTH_YEARS = {
 
 const DB = [
   /* ---------- Hall of Fame & Leggende (Rating estremi) ---------- */
+  P("Diego Armando Maradona", "Centenario", ["TRQ","ATT"], 100),
+  P("Marek Hamsik", "Centenario", ["CC","TRQ"], 100),
+  P("Giovanni Di Lorenzo", "Centenario", ["DC","TD"], 100),
+  P("Lorenzo Insigne", "Centenario", ["AS","TRQ"], 100),
+  P("Khvicha Kvaratskhelia", "Centenario", ["AS","TRQ"], 100),
+  P("Kalidou Koulibaly", "Centenario", ["DC"], 100),
   P("Diego Armando Maradona", "Hall of Fame", ["TRQ","ATT"], 99),
   P("Diego Armando Maradona", "1986/87", ["TRQ","ATT"], 97),
   P("Careca", "Hall of Fame", ["ATT"], 99),
@@ -2968,8 +3099,15 @@ function nm(slotId) {
 
 const PICK_EVENTS = [
   { id: "crociato", w: 10, kind: "single-", injury: true, nome: "Crociato rotto",
-    text: p => `${p.nome} salta metà stagione: -3 al rating. Che mazzata.`,
-    apply: id => addMod(id, -3) },
+    text: p => {
+        const malus = (typeof hasUpgrade === "function" && hasUpgrade('medico')) ? -2 : -3;
+        return `${p.nome} salta metà stagione: ${malus} al rating. Che mazzata.`;
+    },
+    apply: id => {
+        const malus = (typeof hasUpgrade === "function" && hasUpgrade('medico')) ? -2 : -3;
+        return addMod(id, malus);
+    } 
+  },
   { id: "giovane", w: 8, kind: "single+", nome: "Esplosione del giovane",
     text: p => `${p.nome} si prende la maglia da titolare: +4 al rating.`,
     cond: id => isUnder(state.team[id]),
@@ -3589,7 +3727,60 @@ const applyResultMods = ENGINE.applyResultMods;
     show() { const l = PATCH_NOTES[0]; if (l) open(l, true); },
   };
 })(); /* <--- ECCO LA PARENTESI CHE CHIUDE LE PATCH NOTES! DEVE STARE QUI! */
+/* ============================================================
+   GESTIONE STADIO E POTENZIAMENTI PERMANENTI
+   ============================================================ */
+function getUpgrades() { return JSON.parse(localStorage.getItem('napoli380_upgrades') || "[]"); }
+window.hasUpgrade = function(id) { return getUpgrades().includes(id); };
 
+const STADIUM_UPGRADES = [
+  { id: "curva", nome: "Curva Infuocata", desc: "La pressione del tifo aumenta del +5% la probabilità di ricevere un rigore a favore.", cost: 500, icon: "🔥" },
+  { id: "medico", nome: "Centro Medico Avanzato", desc: "Fisioterapisti top: gli infortuni gravi (Crociato) tolgono -2 OVR invece di -3.", cost: 1000, icon: "🏥" },
+  { id: "scout", nome: "Scout Internazionale", desc: "+2% di probabilità di trovare carte Walkout (OVR 88+) e Leggende nei pacchetti.", cost: 1500, icon: "🌍" }
+];
+
+function renderStadium() {
+  const list = document.getElementById("stadium-upgrades-list");
+  const wallet = document.getElementById("stadium-wallet");
+  if(!list) return;
+  
+  wallet.textContent = getCredits();
+  const owned = getUpgrades();
+  
+  list.innerHTML = STADIUM_UPGRADES.map(u => {
+      const isOwned = owned.includes(u.id);
+      return `
+      <div class="pack-card ${isOwned ? 'azzurro-pack' : ''}" style="min-height: 230px; ${isOwned ? 'border-color: #00ff88; box-shadow: 0 0 15px rgba(0,255,136,0.2);' : ''}">
+          <div class="pack-card__icon">${u.icon}</div>
+          <h3 style="font-size: 1.4rem;">${u.nome}</h3>
+          <p style="font-size: 0.8rem; margin-bottom: 12px; font-family: var(--font-body);">${u.desc}</p>
+          ${isOwned 
+              ? `<div class="pack-price" style="background: #00ff88; color: #00112b; border: none; font-weight: bold;">ACQUISTATO ✓</div>` 
+              : `<button class="pack-price primary btn-buy-upgrade" data-id="${u.id}" data-cost="${u.cost}" style="cursor:pointer; background: linear-gradient(180deg, var(--azzurro-vivo), var(--azzurro)); color: #fff; border:none; font-weight: bold;">💰 ${u.cost} Crediti</button>`
+          }
+      </div>
+      `;
+  }).join("");
+  
+  document.querySelectorAll(".btn-buy-upgrade").forEach(btn => {
+      btn.onclick = function() {
+          playSound('click');
+          const id = this.getAttribute("data-id");
+          const cost = parseInt(this.getAttribute("data-cost"));
+          
+          if (getCredits() >= cost) {
+              addCredits(-cost, `Miglioramento Stadio`);
+              const owned = getUpgrades();
+              owned.push(id);
+              localStorage.setItem('napoli380_upgrades', JSON.stringify(owned));
+              toast("🏟️ Potenziamento sbloccato permanentemente!");
+              renderStadium();
+          } else {
+              toast("❌ Crediti insufficienti! Devi giocare per guadagnarne.");
+          }
+      };
+  });
+}
 /* ============================================================
    SISTEMA PACCHETTI E COLLEZIONE (FUT AZZURRO)
    ============================================================ */
@@ -3601,12 +3792,13 @@ function openPack(type) {
     const getByRating = (min, max) => DB.filter(p => p.rating >= min && p.rating <= max);
     const randItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
     let cards = [];
-    
+    // BONUS SCOUT (+2% drop rate)
+    const walkoutBoost = (typeof hasUpgrade === "function" && hasUpgrade('scout')) ? 0.02 : 0;
     // Probabilità basate sul tipo di pacchetto
     if (type === 'scugnizzo') {
         for(let i=0; i<3; i++) {
             let roll = Math.random();
-            if(roll < 0.02) cards.push(randItem(getByRating(88, 99)));      // 2% Walkout
+            if(roll < (0.02 + walkoutBoost)) cards.push(randItem(getByRating(88, 99)));      // 2% Walkout
             else if(roll < 0.15) cards.push(randItem(getByRating(80, 87))); // 13% Oro
             else cards.push(randItem(getByRating(1, 79)));                  // 85% Base
         }
@@ -3614,7 +3806,7 @@ function openPack(type) {
         cards.push(randItem(getByRating(80, 99))); // 1 garantito 80+
         for(let i=0; i<2; i++) {
             let roll = Math.random();
-            if(roll < 0.10) cards.push(randItem(getByRating(88, 99)));      // 10% Walkout
+            if(roll < (0.10 + walkoutBoost)) cards.push(randItem(getByRating(88, 99)));      // 10% Walkout
             else if(roll < 0.35) cards.push(randItem(getByRating(80, 87))); // 25% Oro
             else cards.push(randItem(getByRating(1, 79)));
         }
@@ -3622,7 +3814,7 @@ function openPack(type) {
         cards.push(randItem(getByRating(88, 99))); // 1 garantito 88+ (Walkout!)
         for(let i=0; i<2; i++) {
             let roll = Math.random();
-            if(roll < 0.30) cards.push(randItem(getByRating(88, 99)));      // 30% ulteriore Walkout
+            if(roll < (0.30 + walkoutBoost)) cards.push(randItem(getByRating(88, 99)));      // 30% ulteriore Walkout
             else if(roll < 0.70) cards.push(randItem(getByRating(80, 87))); // 40% Oro
             else cards.push(randItem(getByRating(1, 79)));
         }
@@ -3655,7 +3847,9 @@ function triggerWalkoutAnimation(cards) {
         p.isWalkout = p.rating >= 88 || p.stagione === 'Hall of Fame';
         
         if (isDupe) {
-            earnedFromDupes += (getPlayerCost(p.rating) * 3); 
+            // Invece di venderli, li aggiungiamo alla lista dei doppioni da salvare
+            if (!p.isWalkout) newCardsToSave.push({ ...p, isDupeFlag: true }); 
+            else newCardsToSave.push({ ...p, isDupeFlag: true });
         } else {
             newCardsToSave.push(p);
         }
@@ -3670,6 +3864,7 @@ function triggerWalkoutAnimation(cards) {
         let cls = "player-card tcg pack-card-front";
         if (p.rating >= 90) cls += " tcg-legend";
         if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+        if (p.stagione === "Centenario") cls += " tcg-centenario";
         let styleAttr = tcgGoldStyle(p.rating);
         
         const bannerHtml = isDupe 
@@ -3743,7 +3938,7 @@ function triggerWalkoutAnimation(cards) {
     setTimeout(() => {
         summary.style.display = "block";
         if (earnedFromDupes > 0) {
-            dupesText.innerHTML = `Hai trovato dei Doppioni!<br>Vendita rapida: 💰 +${earnedFromDupes} Crediti`;
+            
         } else {
             dupesText.innerHTML = `Tutte carte nuove!`;
             dupesText.style.color = "var(--celeste-chiaro)";
@@ -3753,17 +3948,32 @@ function triggerWalkoutAnimation(cards) {
     // Salva e chiudi
     btnClose.onclick = () => {
         playSound('click');
+        let doppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+
         if (newCardsToSave.length > 0) {
-            coll.push(...newCardsToSave);
-            coll.sort((a, b) => b.rating - a.rating); // Ordina la collezione
+            newCardsToSave.forEach(c => {
+                if (c.isDupeFlag) {
+                    delete c.isDupeFlag;
+                    doppioni.push(c); // Salva nel magazzino doppioni
+                } else {
+                    coll.push(c); // Salva nella collezione normale
+                }
+            });
+            coll.sort((a, b) => b.rating - a.rating);
+            doppioni.sort((a, b) => b.rating - a.rating);
             localStorage.setItem('napoli380_collection', JSON.stringify(coll));
-        }
-        if (earnedFromDupes > 0) {
-            addCredits(earnedFromDupes, "Vendita Doppioni");
+            localStorage.setItem('napoli380_doppioni', JSON.stringify(doppioni));
         }
         
         overlay.classList.remove("show");
-        renderCollection(); 
+        updateDupesBadge();
+        // Controlliamo dove eravamo per aggiornare la UI corretta
+        const activePanel = document.querySelector('.subpanel[style*="display: block"]');
+        if (activePanel && activePanel.dataset.panel === "collection") {
+            renderCollection(); 
+        } else if (activePanel && activePanel.dataset.panel === "sbc-hub") {
+            renderSBCHub();
+        }
     };
 }
 
@@ -3807,6 +4017,7 @@ function renderCollection() {
         let cls = "player-card tcg";
         if (p.rating >= 90) cls += " tcg-legend";
         if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+        if (p.stagione === "Centenario") cls += " tcg-centenario";
         let styleAttr = tcgGoldStyle(p.rating);
         
         const card = document.createElement("div");
@@ -4174,7 +4385,226 @@ if (typeof auth !== "undefined") {
       });
     };
   }
+/* ============================================================
+   LOGICA CALCIOMERCATO (SBC DA DOPPIONI) - VERSIONE GLOBALE
+   ============================================================ */
+const SBC_CHALLENGES = {
+    scugnizzo: { id: "scugnizzo", nome: "Scambio Base", desc: "Scambia <strong>5 doppioni qualsiasi</strong> per ottenere un Pacchetto Scugnizzo.", reqCount: 5, minOvr: 1, rewardPack: "scugnizzo", color: "var(--rar-comune)" },
+    azzurro: { id: "azzurro", nome: "Scambio Azzurro", desc: "Scambia <strong>4 doppioni con OVR 80+</strong> per ottenere un Pacchetto Azzurro.", reqCount: 4, minOvr: 80, rewardPack: "azzurro", color: "var(--celeste)" },
+    d10s: { id: "d10s", nome: "Scambio Leggenda", desc: "Scambia <strong>5 doppioni con OVR 85+</strong> per ottenere un Pacchetto D10S.", reqCount: 5, minOvr: 85, rewardPack: "d10s", color: "var(--rar-elite)" }
+};
 
+let currentSBC = null;
+let sbcSelectedIndices = [];
+
+window.renderSBCHub = function() {
+    if(typeof playSound === 'function') playSound('click');
+    const home = document.getElementById("screen-home");
+    const nav = home ? home.querySelector(".smenu") : null;
+    const panels = home ? home.querySelectorAll(".subpanel") : [];
+    
+    if (nav) nav.style.display = "none";
+    panels.forEach(panel => {
+        const show = panel.dataset.panel === "sbc-hub";
+        panel.hidden = !show;
+        panel.style.display = show ? "block" : "none";
+    });
+    if (home) home.setAttribute("data-panel", "sbc-hub");
+    
+    const list = document.getElementById("sbc-challenges-list");
+    let doppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+    
+    if (list) {
+        list.innerHTML = Object.values(SBC_CHALLENGES).map(sbc => {
+            const validDoppioni = doppioni.filter(d => d.rating >= sbc.minOvr).length;
+            const canDo = validDoppioni >= sbc.reqCount;
+            
+            return `
+            <button type="button" class="mode-row" onclick="openSBCChallenge('${sbc.id}')" style="${!canDo ? 'opacity: 0.6; filter: grayscale(80%);' : ''}">
+              <span class="mode-row__idx" style="font-size:1.5rem; color: ${sbc.color};">🔄</span>
+              <span class="mode-row__body">
+                <span class="mode-row__lab" style="color: ${sbc.color};">${sbc.nome}</span>
+                <span class="mode-row__desc">${sbc.desc} <br><em>Doppioni validi posseduti: ${validDoppioni}</em></span>
+              </span>
+              <span class="mode-row__arr">▶</span>
+            </button>`;
+        }).join("");
+    }
+};
+
+window.openShopPanel = function() {
+    if(typeof playSound === 'function') playSound('click');
+    updateDupesBadge();
+    const home = document.getElementById("screen-home");
+    const nav = home ? home.querySelector(".smenu") : null;
+    const panels = home ? home.querySelectorAll(".subpanel") : [];
+    
+    if (nav) nav.style.display = "none";
+    panels.forEach(panel => {
+        const show = panel.dataset.panel === "shop";
+        panel.hidden = !show;
+        panel.style.display = show ? "block" : "none";
+    });
+    if (home) home.setAttribute("data-panel", "shop");
+};
+
+window.openSBCChallenge = function(challengeId) {
+    if(typeof playSound === 'function') playSound('click');
+    currentSBC = SBC_CHALLENGES[challengeId];
+    sbcSelectedIndices = [];
+    
+    const home = document.getElementById("screen-home");
+    const nav = home ? home.querySelector(".smenu") : null;
+    const panels = home ? home.querySelectorAll(".subpanel") : [];
+    
+    if (nav) nav.style.display = "none";
+    panels.forEach(panel => {
+        const show = panel.dataset.panel === "sbc-trade";
+        panel.hidden = !show;
+        panel.style.display = show ? "block" : "none";
+    });
+    if (home) home.setAttribute("data-panel", "sbc-trade");
+    
+    document.getElementById("sbc-trade-title").textContent = currentSBC.nome;
+    document.getElementById("sbc-trade-desc").innerHTML = currentSBC.desc;
+    
+    const grid = document.getElementById("sbc-grid");
+    let doppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+    
+    let validDoppioni = doppioni.map((p, idx) => ({ ...p, originalIndex: idx })).filter(p => p.rating >= currentSBC.minOvr);
+    validDoppioni.sort((a, b) => a.rating - b.rating);
+
+    if (validDoppioni.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Non hai doppioni validi per questa sfida (controlla i requisiti di Overall).</p>`;
+        updateSBCUI();
+        return;
+    }
+
+    grid.innerHTML = "";
+    validDoppioni.forEach(p => {
+        let cls = "player-card tcg sbc-card";
+        if (p.rating >= 90) cls += " tcg-legend";
+        if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+        let styleAttr = tcgGoldStyle(p.rating);
+
+        const card = document.createElement("div");
+        card.className = cls;
+        if (styleAttr) card.style.cssText = styleAttr;
+        card.innerHTML = tcgCardInner(p, false, p.ruoli[0]);
+        card.innerHTML += `<div class="sbc-overlay">✔</div>`;
+
+        card.onclick = () => {
+            if(typeof playSound === 'function') playSound('click');
+            const pos = sbcSelectedIndices.indexOf(p.originalIndex);
+            if (pos > -1) {
+                sbcSelectedIndices.splice(pos, 1);
+                card.classList.remove("sbc-selected");
+            } else {
+                if (sbcSelectedIndices.length < currentSBC.reqCount) {
+                    sbcSelectedIndices.push(p.originalIndex);
+                    card.classList.add("sbc-selected");
+                } else {
+                    toast(`Hai già selezionato le ${currentSBC.reqCount} carte richieste!`);
+                }
+            }
+            updateSBCUI();
+        };
+        grid.appendChild(card);
+    });
+    
+    updateSBCUI();
+    
+    const btnConfirm = document.getElementById("btn-sbc-confirm");
+    if (btnConfirm) {
+        btnConfirm.onclick = () => {
+            if (sbcSelectedIndices.length !== currentSBC.reqCount) return;
+            if(typeof playSound === 'function') playSound('vittoria');
+            
+            let allDoppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+            
+            sbcSelectedIndices.sort((a, b) => b - a);
+            sbcSelectedIndices.forEach(idx => {
+                allDoppioni.splice(idx, 1);
+            });
+            updateDupesBadge();
+            localStorage.setItem('napoli380_doppioni', JSON.stringify(allDoppioni));
+            toast("✨ Scambio completato! Apertura pacchetto in corso...");
+            updateDupesBadge();
+            window.renderSBCHub(); 
+            setTimeout(() => {
+                openPack(currentSBC.rewardPack);
+            }, 600);
+        };
+    }
+};
+
+function updateSBCUI() {
+    const btnTrade = document.getElementById("btn-sbc-confirm");
+    const counter = document.getElementById("sbc-counter");
+    if (counter && currentSBC) counter.textContent = `${sbcSelectedIndices.length} / ${currentSBC.reqCount}`;
+    if (btnTrade && currentSBC) btnTrade.disabled = sbcSelectedIndices.length !== currentSBC.reqCount;
+}
+/* ============================================================
+   VISUALIZZAZIONE MAGAZZINO DOPPIONI
+   ============================================================ */
+window.renderDuplicates = function() {
+    if(typeof playSound === 'function') playSound('click');
+    const home = document.getElementById("screen-home");
+    const nav = home ? home.querySelector(".smenu") : null;
+    const panels = home ? home.querySelectorAll(".subpanel") : [];
+    
+    if (nav) nav.style.display = "none";
+    panels.forEach(panel => {
+        const show = panel.dataset.panel === "duplicates";
+        panel.hidden = !show;
+        panel.style.display = show ? "block" : "none";
+    });
+    if (home) home.setAttribute("data-panel", "duplicates");
+
+    let doppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+    const grid = document.getElementById("duplicates-grid");
+    const countEl = document.getElementById("dupes-count");
+    
+    if (countEl) countEl.textContent = doppioni.length;
+    
+    // Aggiorna il contatore nel badge del negozio
+    const badgeEl = document.getElementById("dupes-badge-count");
+    if (badgeEl) badgeEl.textContent = doppioni.length;
+
+    if (!grid) return;
+
+    if (doppioni.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Il magazzino dei doppioni è vuoto. Apri i pacchetti nel Negozio per trovare copie extra!</p>`;
+        return;
+    }
+
+    // Ordina dal più forte al più debole
+    doppioni.sort((a, b) => b.rating - a.rating);
+
+    grid.innerHTML = "";
+    doppioni.forEach(p => {
+        let cls = "player-card tcg";
+        if (p.rating >= 90) cls += " tcg-legend";
+        if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+        if (p.stagione === "Centenario") cls += " tcg-centenario";
+        let styleAttr = tcgGoldStyle(p.rating);
+
+        const card = document.createElement("div");
+        card.className = cls;
+        if (styleAttr) card.style.cssText = styleAttr;
+        card.innerHTML = tcgCardInner(p, false, p.ruoli[0]);
+        grid.appendChild(card);
+    });
+};
+/* ============================================================
+   AGGIORNAMENTO AUTOMATICO CONTEGGIO DOPPIONI
+   ============================================================ */
+window.updateDupesBadge = function() {
+    let doppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+    document.querySelectorAll("#dupes-badge-count, #dupes-count").forEach(el => {
+        el.textContent = doppioni.length;
+    });
+};
   // Tasto ESCI
   if(btnLogout) {
     btnLogout.onclick = () => {
