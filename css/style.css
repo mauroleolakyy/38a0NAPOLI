@@ -4000,3 +4000,156 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
     font-size: 1.1rem !important;
   }
 }
+/* ============================================================
+   CARTE EDIZIONE LIMITATA (CENTENARIO 1926-2026 AZZURRO E ORO)
+   ============================================================ */
+
+/* 1. Sfondo azzurro maglia ed effetto metallo pesante sui bordi */
+.tcg-centenario {
+  background: radial-gradient(circle at top left, #29b5f6 0%, #005bbb 100%) !important; /* Azzurro Napoli */
+  border: 2px solid #b88a44 !important; /* Oro Antico / Bronzo */
+  box-shadow: 
+    0 10px 25px rgba(0,0,0,0.5), 
+    inset 0 0 0 2px #ffffff, /* Contorno interno bianco per richiamare lo stemma */
+    inset 0 0 20px rgba(184, 138, 68, 0.4) !important; /* Riflesso oro interno */
+}
+
+/* 2. Dettagli di testo: Cognome e Overall in Oro Antico goffrato */
+.tcg-centenario .tc-ln, 
+.tcg-centenario .tc-overall span {
+  color: #b88a44 !important;
+  text-shadow: 1px 1px 0px #ffffff, -1px -1px 2px rgba(0,0,0,0.4) !important; /* Effetto 3D rilievo */
+}
+
+/* Sfondo della targhetta dell'Overall (Bianco perla) */
+.tcg-centenario .tc-overall span {
+  background: linear-gradient(135deg, #ffffff, #f4f6f9) !important;
+  border: 1px solid #b88a44 !important;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.2), inset 1px 1px 3px #ffffff !important;
+}
+
+/* 3. Dettagli secondari (Nome, Ruolo) in bianco per staccare sull'azzurro */
+.tcg-centenario .tc-fn,
+.tcg-centenario .tc-positions {
+  color: #ffffff !important; 
+  font-weight: 900 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+}
+
+/* 4. Etichetta della Stagione ("Centenario") */
+.tcg-centenario .tc-season {
+  background: linear-gradient(90deg, #b88a44, #d4af37) !important;
+  color: #ffffff !important;
+  border: 1px solid #8c6222 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3) !important;
+}
+
+/* 5. Bagliore olografico (Luce bianca e oro che passa sulla carta) */
+.tcg-centenario::before {
+  content: ""; position: absolute; inset: 0; left: -50%; width: 200%;
+  background: linear-gradient(125deg, transparent 20%, rgba(255, 255, 255, 0.4) 40%, rgba(212, 175, 55, 0.3) 50%, transparent 80%);
+  mix-blend-mode: overlay;
+  animation: holoShine 3s infinite linear;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 6. Stile della maglietta della carta sul campo (Azzurra con bordi oro) */
+.slot.filled.slot-centenario {
+  background: 
+    linear-gradient(160deg, #29b5f6, #005bbb) padding-box, 
+    linear-gradient(145deg, #d4af37, #8c6222) border-box !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4), 0 0 15px rgba(184, 138, 68, 0.4), var(--shadow-token) !important;
+}
+.slot.filled.slot-centenario .slot-rating {
+  color: #b88a44 !important; 
+  text-shadow: 1px 1px 0px #ffffff, -1px -1px 1px rgba(0,0,0,0.3) !important;
+}
+.slot.filled.slot-centenario .slot-name,
+.slot.filled.slot-centenario .slot-season,
+.slot.filled.slot-centenario .slot-age {
+  color: #ffffff !important; /* Testi bianchi per massima leggibilità sull'azzurro */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5) !important;
+}
+/* ============================================================
+   FIX: DATABASE 3x3 SU PC E TESTI AUTO-RIDIMENSIONANTI
+   ============================================================ */
+
+/* 1. Forza la griglia del Database a 3 colonne esatte anche da PC */
+.card-db-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  max-width: 1000px !important; /* Evita che su PC enormi le carte si dilatino troppo */
+  margin: 0 auto !important;
+}
+
+/* 2. CONTAINER QUERIES: Diciamo al contenitore del nome di calcolare la sua larghezza */
+.player-card.tcg .tc-player {
+  container-type: inline-size !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* 3. Magia: Il cognome resta su 1 riga e diminuisce la grandezza se è troppo lungo */
+.player-card.tcg .tc-ln {
+  white-space: nowrap !important;       /* VIETA assolutamente di andare a capo */
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  font-size: 1.3rem !important;         /* Fallback per browser antichissimi */
+  font-size: min(1.45rem, 12cqi) !important; /* Se lo spazio scarseggia, scala fino al 12% della carta! */
+  letter-spacing: -0.02em !important;
+}
+
+/* 4. Stessa cosa per il nome di battesimo, se presente */
+.player-card.tcg .tc-fn {
+  white-space: nowrap !important;
+  font-size: 0.85rem !important;
+  font-size: min(0.95rem, 8cqi) !important; 
+}
+/* ============================================================
+   FIX: FORMAZIONI CENTRATE SU PC (3 SOPRA E 2 SOTTO)
+   ============================================================ */
+@media (min-width: 881px) {
+  /* Trasformiamo la griglia in un contenitore flessibile */
+  #formation-cards, 
+  .formation-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important; /* Centra automaticamente le carte "orfane" */
+    gap: 20px !important;
+    max-width: 850px !important; /* Misura esatta per forzare l'andata a capo dopo 3 carte */
+    margin: 0 auto !important;   /* Centra l'intero blocco nello schermo */
+  }
+  
+  /* Fissiamo la larghezza delle singole carte */
+  .formation-card {
+    width: 250px !important;
+    flex: 0 0 250px !important;
+    margin: 0 !important;
+  }
+  
+  /* Annulliamo eventuali vecchie regole che forzavano le carte dispari */
+  .formation-grid > *:last-child:nth-child(odd) {
+    grid-column: auto !important;
+    justify-self: auto !important;
+    max-width: none !important;
+  }
+}
+/* ============================================================
+   STILI CARTE SELEZIONATE NEL CALCIOMERCATO
+   ============================================================ */
+.sbc-card { transition: transform 0.2s ease, box-shadow 0.2s ease !important; }
+.sbc-overlay {
+  position: absolute; inset: 0; background: rgba(0, 255, 136, 0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; color: #fff; opacity: 0; transition: opacity 0.2s ease;
+  z-index: 20; border-radius: 16px; backdrop-filter: blur(1px);
+}
+.sbc-card.sbc-selected {
+  transform: scale(0.95) !important;
+  box-shadow: 0 0 25px rgba(0, 255, 136, 0.7) !important;
+  border-color: #00ff88 !important;
+}
+.sbc-card.sbc-selected .sbc-overlay { opacity: 1; }
