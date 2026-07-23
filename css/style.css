@@ -3893,3 +3893,110 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
     min-height: 135px !important;
   }
 }
+/* ============================================================
+   PATCH MOBILE — badge "38-0-0 + tagline" in alto a destra
+   e correzioni generali anti-sovrapposizione su mobile
+   ============================================================ */
+.sm-top__mobile { display: none; }
+
+@media (max-width: 880px) {
+  .sm-top { flex-wrap: nowrap; gap: 10px; align-items: flex-start; }
+  .sm-top > span:first-child { max-width: 42%; }
+  .sm-top__ver { display: none; }
+  .sm-top__mobile {
+    display: flex; flex-direction: column; align-items: flex-end; text-align: right;
+    gap: 3px; max-width: 56%; flex-shrink: 0;
+  }
+  .sm-top__mobile-num {
+    font-family: var(--font-display); font-weight: 400; letter-spacing: .03em;
+    font-size: clamp(1rem, 4.2vw, 1.3rem); color: var(--celeste);
+    text-shadow: 0 0 10px rgba(0,161,255,.28); line-height: 1;
+  }
+  .sm-top__mobile-num b { color: var(--azzurro-vivo); font-weight: 400; }
+  .sm-top__mobile-tag {
+    font-family: var(--font-body); text-transform: none; letter-spacing: .01em;
+    font-size: clamp(.56rem, 2.1vw, .68rem); line-height: 1.3; color: var(--testo-mute);
+    white-space: normal; word-break: break-word;
+  }
+  /* più spazio in alto per non far toccare il titolo con il badge */
+  .startmenu__left { padding-top: clamp(78px, 20vh, 130px) !important; }
+}
+
+/* --- Fix generali di sovrapposizione / overflow su mobile --- */
+@media (max-width: 860px) {
+  html, body { overflow-x: hidden; max-width: 100%; }
+  .topbar { row-gap: 6px; }
+  .scorebug__brand, .scorebug__meta, #hud { min-width: 0; }
+  .brand, .brand-sub { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .pick-modal .pm-card, #adl-modal .pm-card, #penalty-modal .pm-card {
+    width: 92vw !important; max-width: 92vw !important;
+    max-height: 88dvh; overflow-y: auto;
+  }
+  #pack-cards { gap: 12px; }
+  #pack-title { font-size: 1.6rem !important; }
+  .auth-widget, .auth-box { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .sm-top > span:first-child { font-size: .62rem; letter-spacing: .18em; max-width: 40%; }
+  .sm-top__mobile { max-width: 58%; }
+  .startmenu__left { padding-top: clamp(84px, 22vh, 130px) !important; }
+}
+/* ============================================================
+   FIX: FORMAZIONI A 2 COLONNE SU MOBILE E TITOLO AFFIANCATO
+   ============================================================ */
+
+/* 1. Nascondiamo definitivamente il 38-0-0 piccolo e il testo in alto a destra */
+.sm-top__mobile {
+  display: none !important; 
+}
+
+/* 2. Regole per affiancare il Titolo gigante e la sua descrizione */
+.hero-title-wrapper {
+  display: flex;
+  align-items: center; /* Allinea il testo verticalmente al centro rispetto al titolo */
+  gap: 20px;
+}
+.hero-title-wrapper .sm-lock {
+  flex-shrink: 0; /* Impedisce al titolo di schiacciarsi */
+}
+.hero-title-wrapper .sm-tag {
+  margin-top: 0 !important; /* Rimuove lo spazio vuoto in alto originale */
+  max-width: 350px;
+}
+
+/* 3. Comportamento specifico per Smartphone */
+@media (max-width: 880px) {
+  /* Facciamo riapparire il testo (che l'autore originale nascondeva su mobile) */
+  .sm-tag {
+    display: block !important;
+    font-size: 0.75rem !important; /* Più piccolo per stare di fianco al titolo su schermi stretti */
+    line-height: 1.3 !important;
+  }
+  
+  .hero-title-wrapper {
+    align-items: flex-end; /* Su mobile sta meglio allineato in basso */
+    gap: 12px;
+  }
+
+  /* 4. FORMAZIONI: Forziamo la visualizzazione a 2 a 2 (2 colonne) e le rimpiccioliamo */
+  #formation-cards, 
+  .formation-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  .formation-card {
+    min-height: 140px !important;
+    padding: 12px !important;
+  }
+  
+  .formation-card .mini-pitch {
+    min-height: 110px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .formation-card .formation-name {
+    font-size: 1.1rem !important;
+  }
+}
