@@ -4322,3 +4322,212 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   pointer-events: none;
   z-index: 10;
 }
+/* ============================================================
+   CARRIERA GIOCATORE - DASHBOARD & SCHEDA PERSONAGGIO
+   ============================================================ */
+.player-profile-card {
+  background: linear-gradient(145deg, rgba(0, 33, 71, 0.95), rgba(0, 11, 26, 0.98));
+  border: 2px solid var(--celeste);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 161, 255, 0.2);
+  display: grid;
+  gap: 15px;
+}
+
+.player-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  text-align: center;
+}
+
+.player-stat-box {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 161, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.player-stat-box strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: #fff;
+}
+
+.player-stat-box span {
+  font-family: var(--font-cond);
+  font-size: 0.72rem;
+  color: var(--celeste-chiaro);
+  text-transform: uppercase;
+}
+
+.energy-bar-bg {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.energy-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88, #00a1ff);
+  transition: width 0.3s ease;
+}
+/* ============================================================
+   MAGLIA GIOCATORE (FIX MANICHE E GLITCH NOME)
+   ============================================================ */
+.jersey-preview-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  z-index: 1; /* Isola la maglia */
+}
+
+/* Le maniche ora sono un rettangolo semplice e netto, senza bordi trasparenti */
+
+
+.jersey-preview {
+  position: relative;
+  width: 140px; 
+  height: 150px;
+  background: linear-gradient(135deg, #00a1ff, #005bbb);
+  border-radius: 15px 15px 30px 30px;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.15);
+  border-top: 5px solid #ffffff;
+  z-index: 2;
+}
+
+/* Rimuove le vecchie maniche buggate che si sovrapponevano al nome */
+.jersey-preview::before { display: none !important; }
+
+.jersey-name { 
+  width: 90%;
+  text-align: center;
+  font-family: var(--font-cond); 
+  font-size: clamp(0.7rem, 5vw, 1.1rem) !important; /* Non deborda più */
+  color: #fff; 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  margin-bottom: -5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.jersey-num { 
+  font-family: var(--font-display); 
+  font-size: 4.5rem; 
+  color: #fff; 
+  line-height: 1; 
+  text-shadow: 0 3px 6px rgba(0,0,0,0.6); 
+}
+
+/* Griglia Trofei Individuali */
+.player-trophies-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.player-trophy-box {
+  background: linear-gradient(180deg, rgba(255,210,74,0.1), rgba(0,0,0,0.4));
+  border: 1px solid rgba(255, 210, 74, 0.4);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.player-trophy-box strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: #ffd24a;
+}
+
+.player-trophy-box span {
+  font-family: var(--font-cond);
+  font-size: 0.65rem;
+  color: #fff;
+  text-transform: uppercase;
+}
+/* ============================================================
+   FIX CARRIERA: MAGLIETTA, RUOLI E INPUT NUMERICO
+   ============================================================ */
+/* Rimpicciolisce il testo della maglietta senza glitch visivi */
+.jersey-name {
+  width: 90%;
+  text-align: center;
+  /* Usiamo una misura fissa ma piccola, scalabile su mobile, per non rompere il rendering del browser */
+  font-size: clamp(0.7rem, 4vw, 1.1rem) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: transparent !important; /* Forza la rimozione di eventuali sfondi blu di sistema */
+  color: #fff !important;
+  display: block; /* Rimuove lo schiacciamento del flexbox */
+}
+
+/* Sfondo scuro per leggere bene i ruoli non selezionati sul campo */
+.role-selector.empty {
+  background: rgba(0, 11, 26, 0.85) !important;
+  border: 1px solid rgba(0, 161, 255, 0.4) !important;
+  border-radius: 6px;
+}
+.role-selector.empty .slot-role {
+  color: #fff !important;
+  text-shadow: 0 1px 3px #000;
+}
+
+/* Nasconde le freccette di sistema nei campi numerici */
+.no-spinners::-webkit-outer-spin-button,
+.no-spinners::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinners[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* Stile per i nuovi bottoni - e + personalizzati */
+.custom-number-wrap {
+  display: flex;
+  align-items: stretch;
+  background: rgba(0, 11, 26, 0.4);
+  border: 1px solid rgba(0, 161, 255, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.custom-number-btn {
+  background: rgba(0, 161, 255, 0.15);
+  color: var(--celeste);
+  border: none;
+  padding: 0 15px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.custom-number-btn:hover { background: rgba(0, 161, 255, 0.35); color: #fff; }
+.custom-number-wrap input {
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  text-align: center;
+  width: 50px;
+  font-weight: 800;
+  color: #fff;
+}
+.custom-number-wrap input:focus { box-shadow: none; outline: none; }
