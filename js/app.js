@@ -93,7 +93,7 @@ const FORMATIONS = {
   "3-4-2-1": [ { id: "POR", label: "POR", accepts: ["POR"], x: 50, y: 91 }, { id: "DC1", label: "DC", accepts: ["DC"], x: 50, y: 73 }, { id: "DC2", label: "DC", accepts: ["DC"], x: 75, y: 75 }, { id: "DC3", label: "DC", accepts: ["DC"], x: 25, y: 75 }, { id: "QD", label: "ED", accepts: ["ED"], x: 87, y: 53 }, { id: "CC1", label: "CC", accepts: ["CC"], x: 62, y: 56 }, { id: "CC2", label: "CC", accepts: ["CC"], x: 38, y: 56 }, { id: "QS", label: "ES", accepts: ["ES"], x: 13, y: 53 }, { id: "TRQ1", label: "TRQ", accepts: ["TRQ"], x: 66, y: 28 }, { id: "TRQ2", label: "TRQ", accepts: ["TRQ"], x: 34, y: 28 }, { id: "ATT", label: "ATT", accepts: ["ATT"], x: 50, y: 11 } ],
 };
 
-const state = { diff: null, formationKey: null, rerolls: 0, optionsCount: 3, hiddenRating: false, rogue: false, rogueBonus: null, rogueEvents: [], ratingMods: {}, rogueGeneralMod: 0, resultMods: 0, flags: {}, team: {}, usedNames: new Set(), activeSlot: null, options: [], fixtureOpps: null, firstHalfMatches: null, secondHalfMatches: null, replayMode: "auto", replaySpeed: 260 };
+const state = { diff: null, formationKey: null, rerolls: 0, optionsCount: 3, hiddenRating: false, rogue: false, rogueBonus: null, rogueEvents: [], ratingMods: {}, rogueGeneralMod: 0, resultMods: 0, flags: {}, team: {}, usedNames: new Set(), activeSlot: null, options: [], fixtureOpps: null, firstHalfMatches: null, secondHalfMatches: null, replayMode: "auto", replaySpeed: 480 };
 
 function range(a, b) { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; }
 function vpsLabel(w, d, l) { return `${w} ${w === 1 ? "Vittoria" : "Vittorie"} · ${d} ${d === 1 ? "Pareggio" : "Pareggi"} · ${l} ${l === 1 ? "Sconfitta" : "Sconfitte"}`; }
@@ -540,70 +540,58 @@ function awards(team, teamRating, totalPts) {
   return { players, scorer, serieATop, mvp, bestGk, bestDef };
 }
 
-function init() {
-  if (document.body.dataset.initDone === "1") return;
-  document.body.dataset.initDone = "1";
-
-  // Unico listener infallibile su tutta la pagina per intercettare i click
-  document.body.addEventListener("click", function(e) {
-    
-    // 1. Click su "Jamm' a jucà" e menu principali
-    const menuBtn = e.target.closest("[data-menu]");
-    if (menuBtn) {
-       playSound('click');
-      e.preventDefault();
-      const name = menuBtn.getAttribute("data-menu");
-      const home = document.getElementById("screen-home");
-      const nav = home ? home.querySelector(".smenu") : null;
-      const panels = home ? home.querySelectorAll(".subpanel") : [];
-if (name === "bacheca") renderBacheca(); // Aggiorna la bacheca quando la apri
-if (name === "leaderboard") renderLeaderboard(); // Aggiorna la classifica globale quando la apri
-if (name === "stadium") renderStadium();
-if (name === "hof") {
+function renderDbGrid() {
     const hofContent = document.getElementById("hof-content");
     const dbCounter = document.getElementById("db-counter");
-    
+
     if (hofContent) {
         const coll = getCollection();
-        const allCards = DB.slice().sort((a, b) => b.rating - a.rating);
-        
+        const dbSearchTerm = (state.dbSearch || "").trim().toLowerCase();
+        const fullDB = DB.slice().sort((a, b) => b.rating - a.rating);
+        const allCards = fullDB.filter(p => !dbSearchTerm || p.nome.toLowerCase().includes(dbSearchTerm) || (p.stagione || "").toLowerCase().includes(dbSearchTerm) || (p.tipo || "").toLowerCase().includes(dbSearchTerm));
+
         // Inizializza la pagina del database se non esiste
         if (state.dbPage == null) state.dbPage = 0;
         const pageSize = 9; // 9 carte per pagina (Griglia 3x3 perfetta!)
-        const totalPages = Math.ceil(allCards.length / pageSize);
-            
+        const totalPages = Math.max(1, Math.ceil(allCards.length / pageSize));
+
             if (state.dbPage >= totalPages) state.dbPage = 0;
-            
+
             const renderDbPage = () => {
                 let ownedCount = 0;
-                // Calcola quante carte possiede in totale (su tutto il DB)
-                allCards.forEach(p => {
+                // Calcola quante carte possiede in totale (su tutto il DB, non sul filtro ricerca)
+                fullDB.forEach(p => {
                     if (coll.some(x => x.nome === p.nome && x.stagione === p.stagione)) ownedCount++;
                 });
 
                 const pageStart = state.dbPage * pageSize;
                 const pageCards = allCards.slice(pageStart, pageStart + pageSize);
-                
+
                 let html = "";
+                if (pageCards.length === 0) {
+                    html = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Nessuna carta trovata per "${dbSearchTerm}".</p>`;
+                }
                 pageCards.forEach(p => {
                     const isOwned = coll.some(x => x.nome === p.nome && x.stagione === p.stagione);
-                    
+
                     let cls = "player-card tcg " + (isOwned ? "db-card-owned" : "db-card-unowned");
                     if (p.rating >= 90) cls += " tcg-legend";
                     if (p.stagione === "Hall of Fame") cls += " tcg-icon";
                     if (p.stagione === "Centenario") cls += " tcg-centenario";
-                    let styleAttr = tcgGoldStyle(p.rating);
-                    
-                    const statusBadge = isOwned 
-                        ? '<div class="card-banner" style="background:#00ff88; color:#00112b;">✓ POSSEDUTA</div>' 
+                    if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
+                    let styleAttr = tcgGoldStyle(p.rating, p.tipo);
+
+                    const statusBadge = isOwned
+                        ? '<div class="card-banner" style="background:#00ff88; color:#00112b;">✓ POSSEDUTA</div>'
                         : '<div class="card-banner" style="background:rgba(255,255,255,0.1); color:var(--testo-mute);">NON POSSEDUTA</div>';
-                    
-                    html += `<div class="${cls}" style="${styleAttr}">
+                    const titleAttr = p.evento ? ` title="${p.evento.replace(/"/g, "&quot;")}"` : "";
+
+                    html += `<div class="${cls}" style="${styleAttr}"${titleAttr}>
                         ${tcgCardInner(p, false, p.ruoli[0])}
                         ${statusBadge}
                     </div>`;
                 });
-                
+
                 // Aggiunge i controlli di paginazione in fondo alla griglia
                 let paginationHtml = "";
                 if (totalPages > 1) {
@@ -618,15 +606,15 @@ if (name === "hof") {
 
                 hofContent.className = "card-db-grid";
                 hofContent.innerHTML = html + paginationHtml;
-                
+
                 if (dbCounter) {
-                    dbCounter.textContent = `${ownedCount} / ${allCards.length}`;
+                    dbCounter.textContent = `${ownedCount} / ${fullDB.length}`;
                 }
 
                 // Collegamento dei bottoni pagina precedente / successiva
                 const btnPrev = document.getElementById("db-prev");
                 const btnNext = document.getElementById("db-next");
-                
+
                 if (btnPrev) {
                     btnPrev.onclick = () => {
                         playSound('click');
@@ -647,7 +635,42 @@ if (name === "hof") {
 
             renderDbPage();
         }
-      }
+}
+
+function init() {
+  if (document.body.dataset.initDone === "1") return;
+  document.body.dataset.initDone = "1";
+
+  // Listener per le barre di ricerca carte (Database e Collezione)
+  document.body.addEventListener("input", function(e) {
+    if (e.target && e.target.id === "db-search") {
+      state.dbSearch = e.target.value;
+      state.dbPage = 0;
+      renderDbGrid();
+    }
+    if (e.target && e.target.id === "collection-search") {
+      state.collectionSearch = e.target.value;
+      state.collectionPage = 0;
+      renderCollection();
+    }
+  });
+
+  // Unico listener infallibile su tutta la pagina per intercettare i click
+  document.body.addEventListener("click", function(e) {
+    
+    // 1. Click su "Jamm' a jucà" e menu principali
+    const menuBtn = e.target.closest("[data-menu]");
+    if (menuBtn) {
+       playSound('click');
+      e.preventDefault();
+      const name = menuBtn.getAttribute("data-menu");
+      const home = document.getElementById("screen-home");
+      const nav = home ? home.querySelector(".smenu") : null;
+      const panels = home ? home.querySelectorAll(".subpanel") : [];
+if (name === "bacheca") renderBacheca(); // Aggiorna la bacheca quando la apri
+if (name === "leaderboard") renderLeaderboard(); // Aggiorna la classifica globale quando la apri
+if (name === "stadium") renderStadium();
+if (name === "hof") { renderDbGrid(); }
       if (nav) nav.style.display = name === "root" ? "flex" : "none";
       panels.forEach(panel => {
         const show = panel.dataset.panel === name;
@@ -788,7 +811,8 @@ if (name === "hof") {
      btn.onclick = function() {
          playSound('click');
          const packType = this.getAttribute("data-pack");
-         const cost = packType === 'scugnizzo' ? 100 : (packType === 'azzurro' ? 300 : 800);
+         const PACK_COSTS = { scugnizzo: 100, azzurro: 300, d10s: 1000, centurion: 2000, icona: 5000 };
+         const cost = PACK_COSTS[packType] ?? 800;
          
          if (getCredits() >= cost) {
              addCredits(-cost, `Acquisto Pacchetto ${packType.toUpperCase()}`);
@@ -935,7 +959,8 @@ function renderReplacementCards(container, slotId, opts, onPick, onCancel) {
     if (p.rating >= 90) cls += " tcg-legend";
     if (p.stagione === "Hall of Fame") cls += " tcg-icon";
     if (p.stagione === "Centenario") cls += " tcg-centenario";
-    if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating); 
+    if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
+    if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating, p.tipo); 
     return `<div class="${cls}" style="${styleAttr}" data-i="${i}">${tcgCardInner(p, state.hiddenRating, slot.accepts[0])}</div>`; 
   }).join("")}</div><button type="button" class="btn ghost market-cancel-btn">Annulla</button>`;
   container.querySelectorAll(".player-card").forEach(card => { card.onclick = () => onPick(+card.dataset.i); }); container.querySelector(".market-cancel-btn").onclick = onCancel;
@@ -944,12 +969,18 @@ function renderReplacementCards(container, slotId, opts, onPick, onCancel) {
 const CAREER_EVENTS = [
   { id: "ce_godmode", nome: "God Mode", kind: "pos", apply: id => addMod(id, 3) },
   { id: "ce_lite", nome: "Lite furibonda, chiede la cessione", kind: "ripick" },
-  { id: "ce_polveriera", nome: "Caos spogliatoio", kind: "spread", apply: id => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) - 1; addMod(id, 4); } }
+  { id: "ce_polveriera", nome: "Caos spogliatoio", kind: "spread", apply: id => { state.rogueGeneralMod = (state.rogueGeneralMod || 0) - 1; addMod(id, -4); } },
+  { id: "ce_infortunio", nome: "Infortunio grave", kind: "neg", apply: id => addMod(id, -5) },
+  { id: "ce_fuoriforma", nome: "Fuori forma", kind: "neg", apply: id => addMod(id, -3) },
+  { id: "ce_pressione", nome: "Pressione mediatica", kind: "neg", apply: id => addMod(id, -2) },
+  { id: "ce_infortunio_lieve", nome: "Acciacco fisico", kind: "neg", apply: id => addMod(id, -2) },
+  { id: "ce_scandalo", nome: "Scandalo extra-campo", kind: "ripick" },
+  { id: "ce_crescita", nome: "Ottima stagione con la Primavera", kind: "pos", apply: id => addMod(id, 2) }
 ];
 
 function careerRandomSlot(excludeImmuneNegative) { let k = teamSlots().filter(id => state.team[id] && state.team[id].stagione !== "Hall of Fame"); if (excludeImmuneNegative) k = k.filter(id => !isPrimeCard(state.team[id])); return k.length ? _dPick(k) : null; }
 function checkCareerRetirements() { const report = []; slots().forEach(slot => { const age = state.career.ages[slot.id]; if (age == null || age < 40) return; const p = state.team[slot.id]; if (!p) return; const opts = marketOptions(slot.id); const np = opts[0]; if (!np) return; const oldTxt = `${p.nome} (${p.stagione})`; applyMarketReplacement(slot.id, 0, opts, { log: false }); report.push({ slotId: slot.id, role: slot.label, kind: "ripick", nome: "Ritiro", text: `${oldTxt} si ritira a ${age} anni, entra ${np.nome} (${np.stagione})` }); }); return report; }
-function applyCareerEvents(excludeSlots) { const n = 1 + Math.floor(_dRand() * 3); const pool = shuffle(CAREER_EVENTS.slice()); const report = []; const usedSlots = new Set(excludeSlots || []); for (const ev of pool) { if (report.length >= n) break; const excludeImmune = ev.kind === "neg" || ev.kind === "ripick" || ev.kind === "mystery"; let slotId = ev.pick ? ev.pick() : careerRandomSlot(excludeImmune); if (!slotId || usedSlots.has(slotId)) continue; usedSlots.add(slotId); const p = state.team[slotId]; const slot = slots().find(s => s.id === slotId); if (ev.kind === "ripick") { const opts = marketOptions(slotId); const np = opts[0]; if (!np) continue; const oldTxt = `${p.nome} (${p.stagione})`; applyMarketReplacement(slotId, 0, opts, { log: false }); report.push({ slotId, role: slot.label, kind: "ripick", nome: ev.nome, text: `esce ${oldTxt}, entra ${np.nome} (${np.stagione})` }); } else { const d = ev.apply(slotId); const delta = typeof d === "number" ? d : (ev.kind === "pos" ? 3 : ev.kind === "neg" ? -3 : null); report.push({ slotId, role: slot.label, kind: ev.kind, nome: ev.nome, text: `${p.nome} (${p.stagione})`, delta }); } } return report; }
+function applyCareerEvents(excludeSlots) { const n = 2 + Math.floor(_dRand() * 3); const pool = shuffle(CAREER_EVENTS.slice()); const report = []; const usedSlots = new Set(excludeSlots || []); for (const ev of pool) { if (report.length >= n) break; const excludeImmune = ev.kind === "neg" || ev.kind === "ripick" || ev.kind === "mystery"; let slotId = ev.pick ? ev.pick() : careerRandomSlot(excludeImmune); if (!slotId || usedSlots.has(slotId)) continue; usedSlots.add(slotId); const p = state.team[slotId]; const slot = slots().find(s => s.id === slotId); if (ev.kind === "ripick") { const opts = marketOptions(slotId); const np = opts[0]; if (!np) continue; const oldTxt = `${p.nome} (${p.stagione})`; applyMarketReplacement(slotId, 0, opts, { log: false }); report.push({ slotId, role: slot.label, kind: "ripick", nome: ev.nome, text: `esce ${oldTxt}, entra ${np.nome} (${np.stagione})` }); } else { const d = ev.apply(slotId); const delta = typeof d === "number" ? d : (ev.kind === "pos" ? 3 : ev.kind === "neg" ? -3 : null); report.push({ slotId, role: slot.label, kind: ev.kind, nome: ev.nome, text: `${p.nome} (${p.stagione})`, delta }); } } return report; }
 function renderCareerEventsReport(report) { 
   const box = $("#career-events-report"); 
   if (!box) return; 
@@ -973,15 +1004,17 @@ function applyCareerAging() {
     
     let applied = ageGrowthRoll(newAge); 
     
-    if (newAge >= 33 && !isHof) {
-        applied = -1; // Declino over 33
+    if (newAge >= 36 && !isHof) {
+        applied = -2; // Declino marcato oltre i 36
+    } else if (newAge >= 31 && !isHof) {
+        applied = -1; // Declino a partire dai 31
     } else if (applied < 0 && isHof) {
         applied = 0; 
     }
     
-    // NUOVA LOGICA EVOLUZIONE CARTE
-    if (newAge <= 24 && applied > 0 && Math.random() > 0.65 && !isHof) {
-        applied += 4; // Super boost evolutivo
+    // NUOVA LOGICA EVOLUZIONE CARTE (più rara e più contenuta)
+    if (newAge <= 23 && applied > 0 && Math.random() > 0.85 && !isHof) {
+        applied += 2; // Boost evolutivo ridotto
         state.team[s.id].nome = "🌟 " + state.team[s.id].nome; // Aggiunge la stellina
         setTimeout(() => toast("EVOLUZIONE! " + state.team[s.id].nome + " è diventato un fenomeno!"), 1000);
     }
@@ -1288,8 +1321,8 @@ function highlightSlots() {
   }); 
 }
 
-const AGE_GROWTH_VALUES = [3, 2, 1, 0, -1];
-const AGE_GROWTH_TABLE = [ { max: 20, weights: [1, 1, 1, 0, 0] }, { max: 24, weights: [1, 2, 4, 1, 0] }, { max: 28, weights: [0, 1, 6, 1, 0] }, { max: 33, weights: [0, 0, 1, 1, 1] }, { max: Infinity, weights: [0, 0, 0, 1, 3] } ];
+const AGE_GROWTH_VALUES = [3, 2, 1, 0, -1, -2];
+const AGE_GROWTH_TABLE = [ { max: 20, weights: [1, 1, 2, 2, 1, 0] }, { max: 24, weights: [1, 2, 3, 2, 1, 0] }, { max: 28, weights: [0, 1, 4, 2, 2, 0] }, { max: 31, weights: [0, 0, 1, 2, 2, 1] }, { max: Infinity, weights: [0, 0, 0, 1, 2, 4] } ];
 function ageGrowthRoll(age) { if (age == null) return 0; const band = AGE_GROWTH_TABLE.find(b => age <= b.max); const weights = band.weights; const total = weights.reduce((a, b) => a + b, 0); let r = Math.random() * total; for (let i = 0; i < weights.length; i++) { r -= weights[i]; if (r < 0) return AGE_GROWTH_VALUES[i]; } return 0; }
 function seasonStartYear(stagione) { const m = /^(\d{4})\//.exec(stagione || ""); return m ? parseInt(m[1], 10) : null; }
 function careerInitialAge(p) { if (!p.annoNascita) return null; const y = seasonStartYear(p.stagione); return y == null ? null : y - p.annoNascita; }
@@ -1310,7 +1343,12 @@ function careerCoachBonus(slotId) { if (!state.coach) return 0; const p = state.
 
 function tcgSplitName(nome) { const i = String(nome).indexOf(" "); return i < 0 ? { fn: "", ln: nome } : { fn: nome.slice(0, i), ln: nome.slice(i + 1) }; }
 function tcgHexLerp(a, b, t) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16); const ch = (sh) => { const va = (pa >> sh) & 255, vb = (pb >> sh) & 255; return Math.round(va + (vb - va) * t); }; return "#" + [16, 8, 0].map(ch).map(v => v.toString(16).padStart(2, "0")).join(""); }
-function tcgGoldStyle(rating) { return `--gold-100:#e6f5ff;--gold-200:#b3e0ff;--gold-300:#66c6ff;--gold-500:#005bbb;--gold-line:#00a1ff;--tc-glow:rgba(0,161,255,.5);--tc-glass-dur:3s;--tc-rating-glow-o:0.6;--tc-rating-glow-c:0,161,255;--tc-rating-color:#ffffff;`; }
+function tcgGoldStyle(rating, tipo) {
+  if (tipo === "IF") return `--gold-100:#fff8e1;--gold-200:#ffd24a;--gold-300:#000000;--gold-500:#000000;--gold-line:#ffd24a;--tc-glow:rgba(255,210,74,.6);--tc-glass-dur:2.4s;--tc-rating-glow-o:0.7;--tc-rating-glow-c:255,210,74;--tc-rating-color:#ffd24a;`;
+  if (tipo === "MOTM") return `--gold-100:#fff3e6;--gold-200:#ffb347;--gold-300:#ff7a00;--gold-500:#7a3d00;--gold-line:#ff8c1a;--tc-glow:rgba(255,140,26,.6);--tc-glass-dur:2.4s;--tc-rating-glow-o:0.7;--tc-rating-glow-c:255,140,26;--tc-rating-color:#ffffff;`;
+  if (tipo === "TOTS") return `--gold-100:#e8f2ff;--gold-200:#4a9dff;--gold-300:#003a8c;--gold-500:#00194a;--gold-line:#ffd24a;--tc-glow:rgba(74,157,255,.6);--tc-glass-dur:2.6s;--tc-rating-glow-o:0.75;--tc-rating-glow-c:255,210,74;--tc-rating-color:#ffd24a;`;
+  return `--gold-100:#e6f5ff;--gold-200:#b3e0ff;--gold-300:#66c6ff;--gold-500:#005bbb;--gold-line:#00a1ff;--tc-glow:rgba(0,161,255,.5);--tc-glass-dur:3s;--tc-rating-glow-o:0.6;--tc-rating-glow-c:0,161,255;--tc-rating-color:#ffffff;`;
+}
 function tcgCardInner(p, hideR, tabRole) {
   const n = tcgSplitName(p.nome); 
   const rating = hideR ? "?" : p.rating; 
@@ -1480,9 +1518,10 @@ function renderOptionsPanel() {
     if (p.rating >= 90) cls += " tcg-legend"; 
     if (p.stagione === "Hall of Fame") cls += " tcg-icon"; 
     if (p.stagione === "Centenario") cls += " tcg-centenario";
+    if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
     
     let styleAttr = ""; 
-    if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating);
+    if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating, p.tipo);
     const inner = tcgCardInner(p, state.hiddenRating, state.activeSlot.accepts[0]); 
     const card = el("div", cls); if (styleAttr) card.style.cssText = styleAttr;
     card.innerHTML = inner; 
@@ -1806,8 +1845,8 @@ function renderMarketBreak(R, first) {
   $("#btn-skip-market").onclick = () => runSeason(); $("#btn-market").onclick = () => openMarket();
 }
 
-function openMarket() { state.marketSwapsLeft = 1; renderJanuaryMarketPitch(); }
-function renderJanuaryMarketPitch() { const area = $("#market-area"); const left = state.marketSwapsLeft; renderMarketPitch(area, { left, hint: left > 0 ? "Tocca un titolare per sostituirlo." : "Cambio consumato.", onOpen: slotId => offerReplacements(slotId), continueBtn: null, }); }
+function openMarket() { state.marketSwapsLeft = 1; state.marketOfferShown = false; renderJanuaryMarketPitch(); }
+function renderJanuaryMarketPitch() { const area = $("#market-area"); const left = state.marketSwapsLeft; renderMarketPitch(area, { left, hint: left > 0 ? "Tocca un titolare per sostituirlo. Attenzione: puoi scegliere un solo giocatore!" : "Cambio consumato.", onOpen: slotId => offerReplacements(slotId), continueBtn: null, }); }
 /* --- MOTORE DI RARITÀ E PESCAGGIO --- */
 function drawPlayersWithRarity(pool, count, excludeNamesAndSeasons = []) {
   const options = [];
@@ -1918,8 +1957,20 @@ function applyMarketReplacement(slotId, choiceIndex, opts, meta) {
 }
 
 function offerReplacements(slotId) {
+  // Puoi cliccare su un solo giocatore: una volta mostrata l'offerta, il resto del campo si blocca.
+  if (state.marketOfferShown) return;
+  state.marketOfferShown = true;
+
   const opts = marketOptions(slotId); const pickArea = document.querySelector("#market-area .market-pick-area");
-  renderReplacementCards(pickArea, slotId, opts, (idx) => { const res = applyMarketReplacement(slotId, idx, opts, { phase: "market" }); if (!res) { runSeason(); return; } state.marketSwapsLeft--; toast(`${res.np.nome} prende il posto di ${res.oldP.nome}.`); runSeason(); }, () => runSeason());
+  renderReplacementCards(pickArea, slotId, opts, (idx) => { const res = applyMarketReplacement(slotId, idx, opts, { phase: "market" }); if (!res) { runSeason(); return; } state.marketSwapsLeft--; toast(`${res.np.nome} prende il posto di ${res.oldP.nome}.`); runSeason(); }, () => { toast("Nessun cambio effettuato: i sostituti non ti convincevano."); runSeason(); });
+
+  // Blocca visivamente tutti gli altri slot: niente più reroll cliccando altrove.
+  document.querySelectorAll("#market-area .market-pitch .slot").forEach(el => {
+    el.classList.add("locked-out");
+    el.style.pointerEvents = "none";
+  });
+  const hintEl = document.querySelector("#market-area .market-hint");
+  if (hintEl) hintEl.textContent = "Scegli un sostituto qui sotto oppure annulla: non potrai più cambiare giocatore.";
 }
 
 function runSeason() {
@@ -2137,13 +2188,13 @@ function playMatchReplay(matches, done, opts = {}) {
   let finished = false; const finish = () => { if (finished) return; finished = true; clearReplayTimers(); if (skipBtn) skipBtn.onclick = null; if (stepBtn) stepBtn.onclick = null; done(); };
   if (skipBtn) skipBtn.onclick = finish;
   if (modeSelect) modeSelect.onchange = () => { state.replayMode = modeSelect.value; clearReplayTimers(); if (modeSelect.value === "manual") { if (stepBtn) stepBtn.disabled = false; } else { if (stepBtn) stepBtn.disabled = true; scheduleNext(); } };
-  if (speedSelect) speedSelect.onchange = () => { state.replaySpeed = Number(speedSelect.value) || 260; clearReplayTimers(); if (state.replayMode === "auto") scheduleNext(); };
+  if (speedSelect) speedSelect.onchange = () => { state.replaySpeed = Number(speedSelect.value) || 480; clearReplayTimers(); if (state.replayMode === "auto") scheduleNext(); };
   if (stepBtn) {
     stepBtn.disabled = state.replayMode === "auto";
     stepBtn.onclick = () => { if (state.replayMode === "manual" && !finished) { step(); } };
   }
   const mdEl = $("#scorebug-matchday"); let i = 0, pts = opts.startPts || 0;
-  const delayMs = () => Number(speedSelect && speedSelect.value ? speedSelect.value : state.replaySpeed) || 260;
+  const delayMs = () => Number(speedSelect && speedSelect.value ? speedSelect.value : state.replaySpeed) || 480;
   const scheduleNext = () => {
     if (finished) return;
     if (state.replayMode !== "auto") { if (stepBtn) stepBtn.disabled = false; return; }
@@ -2579,14 +2630,14 @@ const ROLE_NAMES = {
   AD: "Ala destra", AS: "Ala sinistra", ATT: "Attaccante"
 };
 
-const P = (nome, stagione, ruoli, rating) => ({ nome, stagione, ruoli, rating });
+const P = (nome, stagione, ruoli, rating, extra) => ({ nome, stagione, ruoli, rating, ...(extra || {}) });
 
 const BIRTH_YEARS = {
   "Diego Armando Maradona": 1960, "Careca": 1960, "Bruno Giordano": 1956, "Alemão": 1961, "Gianfranco Zola": 1966, "Ciro Ferrara": 1967, "Giuseppe Bruscolotti": 1951, "Ruud Krol": 1949, "Luciano Castellini": 1945, "Antonio Juliano": 1942, "Andrea Carnevale": 1961, "Laurent Blanc": 1965, "Daniel Fonseca": 1969, "Fabio Cannavaro": 1973, "Roberto Ayala": 1973, "Fabio Pecchia": 1973,
-  "Marek Hamsik": 1987, "Edinson Cavani": 1987, "Ezequiel Lavezzi": 1985, "Gonzalo Higuain": 1987, "Dries Mertens": 1987, "Lorenzo Insigne": 1991, "Kalidou Koulibaly": 1991, "Josè Callejon": 1987, "Jorginho": 1991, "Marques Allan": 1991, "Faouzi Ghoulam": 1991, "Raul Albiol": 1985, "Pepe Reina": 1982, "Christian Maggio": 1982, "Paolo Cannavaro": 1981, "Walter Gargano": 1984, "Morgan De Sanctis": 1977, "Hugo Campagnaro": 1980, "Gokhan Inler": 1984, "Juan Camilo Zuniga": 1990, "Goran Pandev": 1983,
+  "Marek Hamsik": 1987, "Edinson Cavani": 1987, "Ezequiel Lavezzi": 1985, "Gonzalo Higuain": 1987, "Dries Mertens": 1987, "Lorenzo Insigne": 1991, "Kalidou Koulibaly": 1991, "Josè Callejon": 1987, "Jorginho": 1991, "Marques Allan": 1991, "Faouzi Ghoulam": 1991, "Raul Albiol": 1985, "Pepe Reina": 1982, "Christian Maggio": 1982, "Paolo Cannavaro": 1981, "Walter Gargano": 1984, "Morgan De Sanctis": 1977, "Hugo Campagnaro": 1980, "Gokhan Inler": 1984, "Juan Camilo Zuniga": 1985, "Goran Pandev": 1983,
   "Victor Osimhen": 1998, "Khvicha Kvaratskhelia": 2001, "Piotr Zielinski": 1994, "Stanislav Lobotka": 1994, "Zambo Anguissa": 1995, "Giovanni Di Lorenzo": 1993, "Kim Min-jae": 1996, "Amir Rrahmani": 1994, "Alex Meret": 1997, "Mathias Olivera": 1997, "Giacomo Raspadori": 2000, "Giovanni Simeone": 1995, "Matteo Politano": 1993, "Hirving Lozano": 1995, "Fabian Ruiz": 1996, "Arkadiusz Milik": 1994, "Mario Rui": 1991,
-  "Romelu Lukaku": 1993, "Alessandro Buongiorno": 1999, "Scott McTominay": 1996, "Billy Gilmour": 1997, "David Neres": 1997, "Leonardo Spinazzola": 1993, "Pasquale Mazzocchi": 1995, "Jesper Lindström": 2000, "Leo Ostigard": 1999, "Noa Lang": 1999,
-  "Pino Taglialatela": 1969, "Francesco Turrini": 1965, "Stefan Schwoch": 1969, "Claudio Bellucci": 1975, "Francelino Matuzalem": 1980, "Francesco Montervino": 1978, "Marek Jankulovski": 1977, "Roberto Sosa": 1974, "Emanuele Calaiò": 1979, "Mariano Bogliacino": 1980, "Fabiano Santacroce": 1980, "Salvatore Aronica": 1978, "Michele Pazienza": 1984, "Marcelo Zalayeta": 1978, "German Denis": 1981, "Eduardo Vargas": 1989, "Michu": 1986, "Jonathan De Guzman": 1985, "Valon Behrami": 1985, "Blerim Dzemaili": 1986, "Omar El Kaddouri": 1987, "Nicolas Spolli": 1986,
+  "Romelu Lukaku": 1993, "Alessandro Buongiorno": 1999, "Scott McTominay": 1996, "Billy Gilmour": 2001, "David Neres": 1997, "Leonardo Spinazzola": 1993, "Pasquale Mazzocchi": 1995, "Jesper Lindström": 2000, "Leo Ostigard": 1999, "Noa Lang": 1999,
+  "Pino Taglialatela": 1969, "Francesco Turrini": 1965, "Stefan Schwoch": 1969, "Claudio Bellucci": 1975, "Francelino Matuzalem": 1980, "Francesco Montervino": 1978, "Marek Jankulovski": 1977, "Roberto Sosa": 1974, "Emanuele Calaiò": 1979, "Mariano Bogliacino": 1980, "Fabiano Santacroce": 1980, "Salvatore Aronica": 1978, "Michele Pazienza": 1984, "Marcelo Zalayeta": 1978, "German Denis": 1981, "Eduardo Vargas": 1989, "Jonathan De Guzman": 1987, "Valon Behrami": 1985, "Blerim Dzemaili": 1986, "Omar El Kaddouri": 1990, "Nicolas Spolli": 1983,
   "Gianluca Grava": 1977, "Jesus Datolo": 1984, "Luca Cigarini": 1986, 
   "Ignacio Fideleff": 1989, "Leandro Rinaudo": 1983, "Leonardo Pavoletti": 1988, 
   "Andrea Petagna": 1995, "Adam Ounas": 1996, "Nikola Maksimovic": 1991, 
@@ -2627,6 +2678,14 @@ const BIRTH_YEARS = {
   "Rafael Cabral": 1990,
   "Luigi Vitale": 1987,
   "Antonio Vergara": 2003,
+  "Kostas Manolas": 1991,
+  "Kevin De Bruyne": 1991,
+  "Sam Beukema": 1998,
+  "Miguel Gutierrez": 2001,
+  "Luca Marianucci": 2004,
+  "Rasmus Hojlund": 2003,
+  "Vanja Milinkovic-Savic": 1997,
+  "Lorenzo Lucca": 2000,
 };
 
 const DB = [
@@ -2777,6 +2836,31 @@ const DB = [
   
   /* Era recente: comprimari e prestiti */
   P("Antonio Vergara", "2024/25", ["AD","TRQ"], 79),
+
+  /* ---------- Stagione 2023/24: l'anno post-scudetto ---------- */
+  P("Victor Osimhen", "2023/24", ["ATT"], 93),
+  P("Khvicha Kvaratskhelia", "2023/24", ["AS","TRQ"], 89),
+  P("Piotr Zielinski", "2023/24", ["CC","TRQ"], 87),
+  P("Zambo Anguissa", "2023/24", ["CC","MED"], 86),
+  P("Giovanni Di Lorenzo", "2023/24", ["TD"], 87),
+  P("Stanislav Lobotka", "2023/24", ["MED","CC"], 87),
+  P("Matteo Politano", "2023/24", ["AD"], 82),
+  P("Alex Meret", "2023/24", ["POR"], 84),
+  P("Giovanni Simeone", "2023/24", ["ATT"], 80),
+  P("Mario Rui", "2023/24", ["TS"], 82),
+
+  /* ---------- Calciomercato 2025/26: la rivoluzione di Conte ---------- */
+  P("Kevin De Bruyne", "2025/26", ["TRQ","CC"], 90),
+  P("Rasmus Hojlund", "2025/26", ["ATT"], 85),
+  P("Sam Beukema", "2025/26", ["DC"], 82),
+  P("Miguel Gutierrez", "2025/26", ["TS","ES"], 81),
+  P("Vanja Milinkovic-Savic", "2025/26", ["POR"], 82),
+  P("Lorenzo Lucca", "2025/26", ["ATT"], 80),
+  P("Luca Marianucci", "2025/26", ["DC"], 76),
+  P("Noa Lang", "2025/26", ["AD","AS"], 79),
+
+  /* ---------- Bidoni e comprimari dimenticati ---------- */
+  P("Eduardo Vargas", "2013/14", ["ATT"], 73),
   P("Nikola Maksimovic", "2019/20", ["DC"], 78),
   P("Sebastiano Luperto", "2019/20", ["DC", "TS"], 73),
   P("Kevin Malcuit", "2018/19", ["TD", "ED"], 76),
@@ -2846,6 +2930,38 @@ const DB = [
   P("Rafael Cabral", "2014/15", ["POR"], 79),
   P("Luigi Vitale", "2008/09", ["TS"], 74),
   P("Gianluca Gaetano", "2023/24", ["CC","TRQ"], 76),
+
+  /* ---------- CARTE SPECIALI: MOTM, IN FORM (IF) & TEAM OF THE SEASON (TOTS) ---------- */
+  /* Motm: prestazione straordinaria in una singola, storica partita */
+  P("Khvicha Kvaratskhelia", "MOTM", ["AS","TRQ"], 96, { tipo: "MOTM", evento: "Doppietta al debutto Champions vs Liverpool, Anfield 2022" }),
+  P("Victor Osimhen", "MOTM", ["ATT"], 97, { tipo: "MOTM", evento: "Tripletta al Verona che lancia la corsa scudetto, marzo 2023" }),
+  P("Diego Armando Maradona", "MOTM", ["TRQ","ATT"], 99, { tipo: "MOTM", evento: "Gol e assist decisivi nel Napoli-Juventus del 3 novembre 1985" }),
+  P("Dries Mertens", "MOTM", ["ATT","AS"], 95, { tipo: "MOTM", evento: "Tripletta al Genk che lo consacra bomber, dicembre 2016" }),
+  P("Marek Hamsik", "MOTM", ["CC","TRQ"], 94, { tipo: "MOTM", evento: "Gol del record che supera Maradona, 2 dicembre 2017" }),
+  P("Giovanni Simeone", "MOTM", ["ATT"], 90, { tipo: "MOTM", evento: "Doppietta subentrando al Maradona, campionato 2022/23" }),
+  P("Romelu Lukaku", "MOTM", ["ATT"], 92, { tipo: "MOTM", evento: "Doppietta al debutto contro il Bologna, agosto 2024" }),
+  P("Scott McTominay", "MOTM", ["CC","TRQ"], 93, { tipo: "MOTM", evento: "Doppietta decisiva nel derby scudetto vs Inter, gennaio 2025" }),
+
+  /* In Form (IF): striscia di forma straordinaria in un mese/periodo preciso */
+  P("Khvicha Kvaratskhelia", "IF", ["AS","TRQ"], 95, { tipo: "IF", evento: "5 gol in 4 giornate, gennaio 2023" }),
+  P("Victor Osimhen", "IF", ["ATT"], 96, { tipo: "IF", evento: "Capocannoniere di marzo, 6 gol in 5 partite, 2022/23" }),
+  P("Lorenzo Insigne", "IF", ["AS","TRQ"], 92, { tipo: "IF", evento: "Trascinatore nella striscia di 11 vittorie consecutive, 2017/18" }),
+  P("Piotr Zielinski", "IF", ["CC","TRQ"], 90, { tipo: "IF", evento: "Protagonista assoluto nel tris di vittorie su Milan, Roma e Atalanta, 2022/23" }),
+  P("Stanislav Lobotka", "IF", ["MED","CC"], 91, { tipo: "IF", evento: "Regista intoccabile nel record di imbattibilità, autunno 2022" }),
+  P("Kevin De Bruyne", "IF", ["TRQ","CC"], 93, { tipo: "IF", evento: "Show di assist nel primo mese in azzurro, settembre 2025" }),
+  P("Amir Rrahmani", "IF", ["DC"], 88, { tipo: "IF", evento: "Muro invalicabile nella difesa scudetto, febbraio 2023" }),
+  P("Zambo Anguissa", "IF", ["CC","MED"], 91, { tipo: "IF", evento: "Miglior centrocampista del girone d'andata, 2022/23" }),
+
+  /* Team of the Season (TOTS): l'undici simbolo della stagione dello scudetto */
+  P("Alex Meret", "TOTS", ["POR"], 89, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: miglior portiere della Serie A" }),
+  P("Giovanni Di Lorenzo", "TOTS", ["TD"], 93, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: capitano e miglior terzino destro" }),
+  P("Kim Min-jae", "TOTS", ["DC"], 95, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: miglior difensore centrale della Serie A" }),
+  P("Mario Rui", "TOTS", ["TS"], 87, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: rivelazione sulla fascia sinistra" }),
+  P("Zambo Anguissa", "TOTS", ["CC","MED"], 92, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: box-to-box più incisivo del campionato" }),
+  P("Stanislav Lobotka", "TOTS", ["MED","CC"], 93, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: miglior regista della Serie A" }),
+  P("Piotr Zielinski", "TOTS", ["CC","TRQ"], 91, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: miglior rendimento realizzativo da centrocampista" }),
+  P("Khvicha Kvaratskhelia", "TOTS", ["AS"], 97, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: rivelazione internazionale dell'anno" }),
+  P("Victor Osimhen", "TOTS", ["ATT"], 98, { tipo: "TOTS", evento: "TOTS Scudetto 2022/23: capocannoniere e MVP del campionato" }),
 ];
 
 DB.forEach(p => { p.annoNascita = BIRTH_YEARS[p.nome] || null; });
@@ -3357,6 +3473,13 @@ const applyResultMods = ENGINE.applyResultMods;
     ["Udinese", 77], ["Genoa", 76], ["Parma", 75], ["Sassuolo", 75], ["Cagliari", 74],
     ["Hellas Verona", 73], ["Lecce", 72], ["Pisa", 71], ["Cremonese", 71],
   ];
+  // Pool esteso: più squadre disponibili, ogni nuova carriera/partita ne pesca 19 a sorte
+  const EXTENDED_POOL = POOL.concat([
+    ["Empoli", 74], ["Venezia", 73], ["Monza", 75], ["Sampdoria", 73], ["Frosinone", 72],
+    ["Salernitana", 72], ["Spezia", 71], ["Bari", 70], ["Palermo", 70], ["Cesena", 70],
+    ["Reggina", 69], ["Catania", 70], ["Ternana", 68], ["Perugia", 68],
+  ]);
+  let _lastPool = POOL; // squadre effettivamente in campionato in questa run
   const GOAL_W = { ATT: 0.60, AS: 0.34, AD: 0.34, TRQ: 0.30, CC: 0.12, MED: 0.06, ED: 0.07, ES: 0.07, TD: 0.04, TS: 0.04, DC: 0.05, POR: 0 };
   let _rnd = Math.random;
   function useRng(rng) { _rnd = rng && typeof rng.next === "function" ? () => rng.next() : Math.random; }
@@ -3366,8 +3489,22 @@ const applyResultMods = ENGINE.applyResultMods;
   function weightedPick(items, wf) { const ws = items.map(wf); const tot = ws.reduce((s, x) => s + x, 0) || 1; let r = _rnd() * tot; for (let i = 0; i < items.length; i++) { r -= ws[i]; if (r <= 0) return items[i]; } return items[items.length - 1]; }
   const W34 = x => ({ 1: 25, 2: 40, 3: 25, 4: 10 }[x] || 1);
 
-  function napoliOpponents(rng) { useRng(rng); return shuffle(POOL.map(p => p[0])); }
+  function napoliOpponents(rng) { useRng(rng); _lastPool = shuffle(EXTENDED_POOL).slice(0, POOL.length); return shuffle(_lastPool.map(p => p[0])); }
 
+  const BOSS_TEAMS = [
+    { name: "Milan '88 (Boss)", str: 98 },
+    { name: "Juventus '17 (Boss)", str: 99 },
+    { name: "Inter '10 (Boss)", str: 98 },
+    { name: "Roma '83 (Boss)", str: 96 },
+    { name: "Lazio '00 (Boss)", str: 96 },
+  ];
+  let _lastBossName = null;
+  function pickBoss() {
+    const pool = _lastBossName ? BOSS_TEAMS.filter(b => b.name !== _lastBossName) : BOSS_TEAMS;
+    const chosen = pool[Math.floor(_rnd() * pool.length)];
+    _lastBossName = chosen.name;
+    return chosen;
+  }
   function buildNapoliHalf(opts) {
     useRng(opts && opts.rng);
     const { wdl, team, mds, opps, tactic } = opts; // <-- AGGIUNTO 'tactic'
@@ -3377,17 +3514,14 @@ const applyResultMods = ENGINE.applyResultMods;
     return mds.map((md, k) => {
       const res = results[k] || "D";
       let oppName = opps[(md - 1) % opps.length];
-      let oppStr = (POOL.find(p => p[0] === oppName) || [oppName, 78])[1];
+      let oppStr = (_lastPool.find(p => p[0] === oppName) || [oppName, 78])[1];
       let isBoss = false;
 
-      // --- INIEZIONE BOSS MATCH ---
-      if (md === 19) {
-          oppName = "Milan '88 (Boss)";
-          oppStr = 98; // Diventa una partita durissima
-          isBoss = true;
-      } else if (md === 38) {
-          oppName = "Juve '17 (Boss)";
-          oppStr = 99; // Praticamente imbattibili
+      // --- INIEZIONE BOSS MATCH (ora casuale tra più big) ---
+      if (md === 19 || md === 38) {
+          const boss = pickBoss();
+          oppName = boss.name;
+          oppStr = boss.str;
           isBoss = true;
       }
 
@@ -3445,9 +3579,10 @@ const applyResultMods = ENGINE.applyResultMods;
   function simulate(opts) {
     useRng(opts && opts.rng);
     const napoliMatches = opts.napoliMatches || [];
+    const pool = _lastPool;
     const table = Array.from({ length: 20 }, (_, i) => ({
-      idx: i, name: i === 0 ? "Napoli" : POOL[i - 1][0],
-      str: i === 0 ? 90 : POOL[i - 1][1] + (_rnd() * 5 - 2.5),
+      idx: i, name: i === 0 ? "Napoli" : pool[i - 1][0],
+      str: i === 0 ? 90 : pool[i - 1][1] + (_rnd() * 5 - 2.5),
       pts: 0, gf: 0, ga: 0, isNapoli: i === 0,
     }));
     const nameToIdx = {}; table.forEach(t => { nameToIdx[t.name] = t.idx; });
@@ -3734,9 +3869,9 @@ function getUpgrades() { return JSON.parse(localStorage.getItem('napoli380_upgra
 window.hasUpgrade = function(id) { return getUpgrades().includes(id); };
 
 const STADIUM_UPGRADES = [
-  { id: "curva", nome: "Curva Infuocata", desc: "La pressione del tifo aumenta del +5% la probabilità di ricevere un rigore a favore.", cost: 500, icon: "🔥" },
-  { id: "medico", nome: "Centro Medico Avanzato", desc: "Fisioterapisti top: gli infortuni gravi (Crociato) tolgono -2 OVR invece di -3.", cost: 1000, icon: "🏥" },
-  { id: "scout", nome: "Scout Internazionale", desc: "+2% di probabilità di trovare carte Walkout (OVR 88+) e Leggende nei pacchetti.", cost: 1500, icon: "🌍" }
+  { id: "curva", nome: "Curva Infuocata", desc: "La pressione del tifo aumenta del +5% la probabilità di ricevere un rigore a favore.", cost: 2000, icon: "🔥" },
+  { id: "medico", nome: "Centro Medico Avanzato", desc: "Fisioterapisti top: gli infortuni gravi (Crociato) tolgono -2 OVR invece di -3.", cost: 3500, icon: "🏥" },
+  { id: "scout", nome: "Scout Internazionale", desc: "+2% di probabilità di trovare carte Walkout (OVR 88+) e Leggende nei pacchetti.", cost: 10000, icon: "🌍" }
 ];
 
 function renderStadium() {
@@ -3818,6 +3953,25 @@ function openPack(type) {
             else if(roll < 0.70) cards.push(randItem(getByRating(80, 87))); // 40% Oro
             else cards.push(randItem(getByRating(1, 79)));
         }
+    } else if (type === 'centurion') {
+        // Pacchetto CENTURION: garantita almeno 1 carta speciale (IF / MOTM / TOTS)
+        const specialPool = DB.filter(p => p.tipo);
+        cards.push(randItem(specialPool.length ? specialPool : getByRating(85, 99)));
+        for(let i=0; i<2; i++) {
+            let roll = Math.random();
+            if(roll < (0.20 + walkoutBoost)) cards.push(randItem(getByRating(88, 99))); // 20% Walkout
+            else if(roll < 0.60) cards.push(randItem(getByRating(80, 87)));             // 40% Oro
+            else cards.push(randItem(getByRating(1, 79)));
+        }
+    } else if (type === 'icona') {
+        // Pacchetto ICONA: garantita una Leggenda Hall of Fame o Centenario
+        const iconPool = DB.filter(p => p.stagione === "Hall of Fame" || p.stagione === "Centenario");
+        cards.push(randItem(iconPool.length ? iconPool : getByRating(90, 99)));
+        for(let i=0; i<2; i++) {
+            let roll = Math.random();
+            if(roll < (0.45 + walkoutBoost)) cards.push(randItem(getByRating(88, 99))); // 45% Walkout
+            else cards.push(randItem(getByRating(80, 87)));                             // 55% Oro
+        }
     }
     
     triggerWalkoutAnimation(cards);
@@ -3865,7 +4019,8 @@ function triggerWalkoutAnimation(cards) {
         if (p.rating >= 90) cls += " tcg-legend";
         if (p.stagione === "Hall of Fame") cls += " tcg-icon";
         if (p.stagione === "Centenario") cls += " tcg-centenario";
-        let styleAttr = tcgGoldStyle(p.rating);
+        if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
+        let styleAttr = tcgGoldStyle(p.rating, p.tipo);
         
         const bannerHtml = isDupe 
             ? '<div class="card-banner banner-dupe">DOPPIONE</div>' 
@@ -3979,7 +4134,7 @@ function triggerWalkoutAnimation(cards) {
 
 // Funzione per renderizzare la collezione nel sottomenu (Aggiornata con Paginazione 3x3)
 function renderCollection() {
-    const coll = getCollection();
+    const collFull = getCollection();
     const grid = document.getElementById("collection-grid");
     const count = document.getElementById("collection-count");
     const wallet = document.getElementById("collection-wallet");
@@ -3987,25 +4142,34 @@ function renderCollection() {
     if(!grid) return;
     
     wallet.textContent = getCredits();
-    count.textContent = coll.length;
+    count.textContent = collFull.length;
     grid.innerHTML = "";
     
     // Rimuovi eventuali bottoni di paginazione vecchi
     let vecchiBottoni = document.getElementById("collection-pagination");
     if (vecchiBottoni) vecchiBottoni.remove();
     
-    if (coll.length === 0) {
+    if (collFull.length === 0) {
         grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Non hai ancora nessuna carta. Apri un pacchetto nel Negozio!</p>`;
         return;
     }
     
     // Ordina la collezione dalle carte più forti a quelle più deboli
-    coll.sort((a, b) => b.rating - a.rating);
+    collFull.sort((a, b) => b.rating - a.rating);
+
+    // Filtro di ricerca
+    const collSearchTerm = (state.collectionSearch || "").trim().toLowerCase();
+    const coll = collFull.filter(p => !collSearchTerm || p.nome.toLowerCase().includes(collSearchTerm) || (p.stagione || "").toLowerCase().includes(collSearchTerm) || (p.tipo || "").toLowerCase().includes(collSearchTerm));
+
+    if (coll.length === 0) {
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Nessuna carta trovata per "${collSearchTerm}".</p>`;
+        return;
+    }
     
     // --- LOGICA PAGINAZIONE (9 Carte alla volta per griglia 3x3) ---
     if (state.collectionPage == null) state.collectionPage = 0;
     const pageSize = 9; 
-    const totalPages = Math.ceil(coll.length / pageSize);
+    const totalPages = Math.max(1, Math.ceil(coll.length / pageSize));
     
     // Sicurezza nel caso si vendano carte e l'ultima pagina sparisca
     if (state.collectionPage >= totalPages) state.collectionPage = 0;
@@ -4018,11 +4182,13 @@ function renderCollection() {
         if (p.rating >= 90) cls += " tcg-legend";
         if (p.stagione === "Hall of Fame") cls += " tcg-icon";
         if (p.stagione === "Centenario") cls += " tcg-centenario";
-        let styleAttr = tcgGoldStyle(p.rating);
+        if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
+        let styleAttr = tcgGoldStyle(p.rating, p.tipo);
         
         const card = document.createElement("div");
         card.className = cls;
         card.style.cssText = styleAttr;
+        if (p.evento) card.title = p.evento;
         card.innerHTML = tcgCardInner(p, false, p.ruoli[0]);
         grid.appendChild(card);
     });
@@ -4391,7 +4557,9 @@ if (typeof auth !== "undefined") {
 const SBC_CHALLENGES = {
     scugnizzo: { id: "scugnizzo", nome: "Scambio Base", desc: "Scambia <strong>5 doppioni qualsiasi</strong> per ottenere un Pacchetto Scugnizzo.", reqCount: 5, minOvr: 1, rewardPack: "scugnizzo", color: "var(--rar-comune)" },
     azzurro: { id: "azzurro", nome: "Scambio Azzurro", desc: "Scambia <strong>4 doppioni con OVR 80+</strong> per ottenere un Pacchetto Azzurro.", reqCount: 4, minOvr: 80, rewardPack: "azzurro", color: "var(--celeste)" },
-    d10s: { id: "d10s", nome: "Scambio Leggenda", desc: "Scambia <strong>5 doppioni con OVR 85+</strong> per ottenere un Pacchetto D10S.", reqCount: 5, minOvr: 85, rewardPack: "d10s", color: "var(--rar-elite)" }
+    d10s: { id: "d10s", nome: "Scambio Leggenda", desc: "Scambia <strong>5 doppioni con OVR 85+</strong> per ottenere un Pacchetto D10S.", reqCount: 5, minOvr: 85, rewardPack: "d10s", color: "var(--rar-elite)" },
+    centurion: { id: "centurion", nome: "Scambio Centenario", desc: "Scambia <strong>8 doppioni con OVR 88+</strong> per ottenere un Pacchetto Centenario (carta IF/MOTM/TOTS garantita).", reqCount: 8, minOvr: 88, rewardPack: "centurion", color: "#e6f5ff" },
+    icona: { id: "icona", nome: "Scambio Icona", desc: "Scambia <strong>10 doppioni con OVR 90+</strong> per ottenere un Pacchetto Icona (Hall of Fame o Centenario garantita).", reqCount: 10, minOvr: 90, rewardPack: "icona", color: "#d4af37" }
 };
 
 let currentSBC = null;
@@ -4485,7 +4653,7 @@ window.openSBCChallenge = function(challengeId) {
         let cls = "player-card tcg sbc-card";
         if (p.rating >= 90) cls += " tcg-legend";
         if (p.stagione === "Hall of Fame") cls += " tcg-icon";
-        let styleAttr = tcgGoldStyle(p.rating);
+        let styleAttr = tcgGoldStyle(p.rating, p.tipo);
 
         const card = document.createElement("div");
         card.className = cls;
@@ -4587,7 +4755,8 @@ window.renderDuplicates = function() {
         if (p.rating >= 90) cls += " tcg-legend";
         if (p.stagione === "Hall of Fame") cls += " tcg-icon";
         if (p.stagione === "Centenario") cls += " tcg-centenario";
-        let styleAttr = tcgGoldStyle(p.rating);
+        if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
+        let styleAttr = tcgGoldStyle(p.rating, p.tipo);
 
         const card = document.createElement("div");
         card.className = cls;
