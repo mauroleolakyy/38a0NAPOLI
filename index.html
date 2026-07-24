@@ -15,22 +15,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>38-0-0 NAPOLI · Cento anni d'azzurro</title>
-  <!-- Descrizione per Google -->
-  <meta name="description" content="Il manageriale azzurro definitivo. Costruisci il tuo Napoli All-Time, apri i pacchetti, gestisci le tattiche e punta allo scudetto perfetto per il centenario!">
-  
-  <!-- Tag per le condivisioni su WhatsApp, Facebook, Telegram (Open Graph) -->
-  <meta property="og:title" content="38-0-0 NAPOLI · Cento anni d'azzurro">
-  <meta property="og:description" content="Costruisci il tuo Napoli All-Time, apri i pacchetti, schiva i bidoni e punta allo scudetto perfetto!">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://38-0napoli.it/">
-  <!-- ========================================== -->
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Saira:wght@400;500;600;700;800&family=Saira+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23003c82'/><text x='16' y='20' font-family='Arial Black,Arial,sans-serif' font-size='10' font-weight='900' text-anchor='middle' fill='%23ffffff'>38-0-0</text></svg>">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -287,8 +275,19 @@
         <div class="subpanel" data-panel="play" hidden style="display: none;">
           <button type="button" class="sm-back" data-back>← Menu principale</button><p class="subpanel__title">Scegli la modalità</p>
           <div class="sm-modes">
+            <!-- Carriera Giocatore (Diventa una Leggenda) -->
+<button class="mode-row is-featured" data-mode="player_career" style="border-left-color: #ffd24a;">
+  <span class="mode-row__idx">★</span>
+  <span class="mode-row__body">
+    <span class="mode-row__badge" style="background: rgba(0, 255, 136, 0.15); color: #ffd24a;">★ Nuova Modalità</span>
+    <span class="mode-row__lab">Carriera Giocatore</span>
+    <span class="mode-row__desc">Crea il tuo calciatore, scala le gerarchie del Napoli e diventa la leggenda azzurra.</span>
+  </span>
+  <span class="mode-row__arr" aria-hidden="true">▶</span>
+</button>
             <button class="mode-row is-featured" data-mode="rogue"><span class="mode-row__idx">01</span><span class="mode-row__body"><span class="mode-row__badge">★ Modalità Cazzimma</span><span class="mode-row__lab">San Gennaro Aiutaci</span><span class="mode-row__desc">Allenatore a sorte, bonus iniziali e imprevisti (tipo ammutinamenti e scuse in conferenza). Ogni run è diversa.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
             <button class="mode-row" data-mode="carriera"><span class="mode-row__idx">02</span><span class="mode-row__body"><span class="mode-row__badge">★ Modalità speciale</span><span class="mode-row__lab">Carriera</span><span class="mode-row__desc">Allenatore a sorte, 10 stagioni con la stessa rosa. Tifa la maglia, cambia i giocatori.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
+            
             <button class="mode-row" data-mode="impossibile"><span class="mode-row__idx">03</span><span class="mode-row__body"><span class="mode-row__lab">Classica</span><span class="mode-row__desc">Tutto il database, 3 reroll. Punta allo scudetto perfetto.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
             <button class="mode-row" data-mode="serieb"><span class="mode-row__idx">04</span><span class="mode-row__body"><span class="mode-row__lab">Amma fa schif'</span><span class="mode-row__desc">Obiettivo ribaltato: chiudi <strong>20° in classifica</strong>.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
             <button type="button" class="mode-row" data-mode="salary">
@@ -400,6 +399,27 @@
 
     <section id="screen-career-swap" class="screen"><div class="lower-third"><h2 class="section-title">Cambi rosa</h2></div><div id="career-swap-area"></div></section>
     <section id="screen-career-final" class="screen"><div class="lower-third"><h2 class="section-title">Fine carriera</h2></div><div id="career-final-body"></div><div id="career-formation-compare"></div><div class="career-savebar" id="career-savebar"></div><div class="result-actions"><button id="btn-career-home" class="btn primary">← Menu principale</button></div></section>
+  <!-- SCHERMATA CREAZIONE / HUB GIOCATORE -->
+<section id="screen-player-career" class="screen">
+  <div class="lower-third">
+    <h2 class="section-title" id="player-career-title">Carriera Giocatore</h2>
+  </div>
+  <p class="section-sub" id="player-career-sub">Crea il tuo profilo e vesti la maglia del Napoli.</p>
+  
+  <div id="player-career-body" style="max-width: 600px; margin: 0 auto;">
+    <!-- Il JS inietterà qui il modulo di creazione o la dashboard del calciatore -->
+  </div>
+</section>
+
+<!-- SCHERMATA SIMULAZIONE MATCH GIOCATORE -->
+<section id="screen-player-match" class="screen">
+  <div class="lower-third">
+    <h2 class="section-title">Resoconto Partita</h2>
+  </div>
+  <div id="player-match-body" style="max-width: 600px; margin: 0 auto; text-align: center;">
+    <!-- Dettagli prestazione e voti -->
+  </div>
+</section>
   </main>
 
   <div id="mode-modal" class="info-modal" hidden>
@@ -544,6 +564,23 @@
     </p>
     <div style="display: flex; justify-content: center;">
       <button id="btn-wrong-pw-ok" class="btn primary" style="flex: 1; background: #ff5c5c; border-color: #ff5c5c;">Ho capito</button>
+    </div>
+  </div>
+</div>
+<!-- MODALE CONFERMA RESET CARRIERA -->
+<div id="reset-career-modal" class="pick-modal">
+  <div class="pm-card" style="max-width: 420px; width: 95%; background: linear-gradient(145deg, #290000, #440000); border: 2px solid #ff5c5c;">
+    <div class="pm-header">
+      <span class="pm-icon">⚠️</span>
+      <span class="pm-tag" style="color: #ff5c5c;">ATTENZIONE</span>
+    </div>
+    <h3 style="color: white; margin: 10px 0; font-size: 1.6rem;">Ricominciare?</h3>
+    <p style="color: #ffb3b3; margin-bottom: 25px; font-size: 0.95rem; line-height: 1.5;">
+      Sei sicuro di voler cancellare questa carriera? Perderai tutti i progressi e i trofei del tuo giocatore.
+    </p>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button id="btn-reset-cancel" class="btn ghost" style="flex: 1; border-color: #ffb3b3; color: #ffb3b3;">Annulla</button>
+      <button id="btn-reset-confirm" class="btn primary" style="flex: 1; background: #ff5c5c; border-color: #ff5c5c; color: #fff;">Sì, cancella</button>
     </div>
   </div>
 </div>
