@@ -171,7 +171,17 @@
     <button class="pack-card d10s-pack" data-pack="d10s">
       <h3 style="color: var(--rar-elite);">D10S</h3>
       <p>3 Carte Giocatore<br>Altissima probabilità OVR 90+.</p>
-      <div class="pack-price elite">800 Crediti</div>
+      <div class="pack-price elite">1000 Crediti</div>
+    </button>
+    <button class="pack-card centurion-pack" data-pack="centurion">
+      <h3 style="color: #fff;">CENTENARIO</h3>
+      <p>3 Carte Giocatore<br>Carta speciale IF/MOTM/TOTS garantita.</p>
+      <div class="pack-price centurion">2000 Crediti</div>
+    </button>
+    <button class="pack-card icona-pack" data-pack="icona">
+      <h3 style="color: #d4af37;">ICONA</h3>
+      <p>3 Carte Giocatore<br>Leggenda Hall of Fame o Centenario garantita.</p>
+      <div class="pack-price icona">5000 Crediti</div>
     </button>
   </div>
 
@@ -242,6 +252,9 @@
     <div class="wallet-display">💰 <span id="collection-wallet">0</span></div>
   </div>
   <p class="options-hint" style="text-align: center; margin-bottom: 15px;">Carte possedute: <strong id="collection-count" style="color:var(--celeste);">0</strong></p>
+  <div class="card-search-wrap">
+    <input type="text" id="collection-search" class="card-search-input" placeholder="🔍 Cerca per nome, stagione o rarità (IF, MOTM, TOTS)...">
+  </div>
   <p class="swipe-hint">👉 Scorri con il dito per cambiare pagina</p>
   <div id="collection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;">
     <!-- Le carte verranno iniettate qui dal JS -->
@@ -318,6 +331,10 @@
       Carte possedute: <strong id="db-counter" style="color: #00ff88; font-size: 1.1rem;">0 / 0</strong>
     </div>
 
+    <div class="card-search-wrap">
+      <input type="text" id="db-search" class="card-search-input" placeholder="🔍 Cerca per nome, stagione o rarità (IF, MOTM, TOTS)...">
+    </div>
+
     <p class="swipe-hint">👉 Scorri con il dito per cambiare pagina</p>
     <div id="hof-content">
       <!-- La griglia delle carte verrà generata qui dinamicamente -->
@@ -353,7 +370,7 @@
     </section>
 
     <section id="screen-break" class="screen"><div class="lower-third"><h2 class="section-title">Sosta di metà stagione</h2></div><div id="break-body"></div></section>
-    <section id="screen-replay" class="screen"><div class="replay-top"><div class="lower-third"><h2 class="section-title" id="replay-heading">La stagione</h2></div><button id="btn-skip-replay" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div class="replay-controls"><label class="replay-control"><span>Modalità</span><select id="replay-mode"><option value="auto">Auto</option><option value="manual">Uno per volta</option></select></label><label class="replay-control"><span>Velocità</span><select id="replay-speed"><option value="120">Veloce</option><option value="260" selected>Normale</option><option value="420">Lenta</option></select></label><button id="btn-step-replay" class="btn ghost" type="button" disabled>Avanti</button></div><div id="replay-list" class="replay-list" aria-live="polite"></div></section>
+    <section id="screen-replay" class="screen"><div class="replay-top"><div class="lower-third"><h2 class="section-title" id="replay-heading">La stagione</h2></div><button id="btn-skip-replay" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div class="replay-controls"><label class="replay-control"><span>Modalità</span><select id="replay-mode"><option value="auto">Auto</option><option value="manual">Uno per volta</option></select></label><label class="replay-control"><span>Velocità</span><select id="replay-speed"><option value="260">Veloce</option><option value="480" selected>Normale</option><option value="700">Lenta</option><option value="950">Molto lenta</option></select></label><button id="btn-step-replay" class="btn ghost" type="button" disabled>Avanti</button></div><div id="replay-list" class="replay-list" aria-live="polite"></div></section>
     <section id="screen-champions" class="screen"><div class="replay-top"><div class="lower-third"><h2 class="section-title" id="cl-heading">Champions League</h2></div><button id="btn-skip-cl" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div id="cl-stage" class="cl-stage" aria-live="polite"></div></section>
     
     <section id="screen-result" class="screen">
