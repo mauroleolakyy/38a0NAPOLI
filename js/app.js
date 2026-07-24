@@ -716,6 +716,7 @@ if (name === "hof") { renderDbGrid(); }
       playSound('click');
       e.preventDefault();
       const key = modeBtn.getAttribute("data-mode");
+      if (key === "player_career") { startPlayerCareer(); return; }
       // --- INIEZIONE SALARY CAP ---
       if (key === "salary") {
         state.budget = 200; // Il tuo budget totale
@@ -4765,6 +4766,7 @@ window.renderDuplicates = function() {
         grid.appendChild(card);
     });
 };
+
 /* ============================================================
    AGGIORNAMENTO AUTOMATICO CONTEGGIO DOPPIONI
    ============================================================ */
@@ -4773,6 +4775,543 @@ window.updateDupesBadge = function() {
     document.querySelectorAll("#dupes-badge-count, #dupes-count").forEach(el => {
         el.textContent = doppioni.length;
     });
+};
+/* ============================================================
+   LOGICA CARRIERA GIOCATORE (DIVENTA UNA LEGGENDA)
+   ============================================================ */
+window.playerCareerState = null;
+
+window.getPlayerCareerData = function() {
+  return JSON.parse(localStorage.getItem('napoli380_player_career') || "null");
+};
+
+window.savePlayerCareerData = function(data) {
+  window.playerCareerState = data;
+  localStorage.setItem('napoli380_player_career', JSON.stringify(data));
+};
+
+// Avvio della modalità dal menu
+window.startPlayerCareer = function() {
+  window.playerCareerState = window.getPlayerCareerData();
+  
+  // Controllo di sicurezza: verifichiamo che l'HTML esista
+  const screenObj = document.getElementById("screen-player-career");
+  if (screenObj) {
+      showScreen("#screen-player-career");
+      if (!window.playerCareerState) {
+        window.renderPlayerCreationForm();
+      } else {
+        window.renderPlayerDashboard();
+      }
+  } else {
+      toast("Errore: Schermata HTML non trovata.");
+  }
+};
+
+/* ============================================================
+   CARRIERA GIOCATORE: CREAZIONE CON MAGLIA, PREMI E FIX VISIVI
+   ============================================================ */
+
+// Form Creazione Calciatore con Maglia Live e Input Custom
+window.renderPlayerCreationForm = function() {
+  const body = document.getElementById("player-career-body");
+  const sub = document.getElementById("player-career-sub");
+  if (sub) sub.textContent = "Scegli nome, numero e ruolo. Firma e diventa leggenda.";
+
+  const pitch4231 = [
+    { role: "POR", x: 50, y: 91 },
+    { role: "TD", x: 84, y: 74 }, { role: "DC", x: 64, y: 80 }, { role: "DC", x: 36, y: 80 }, { role: "TS", x: 16, y: 74 },
+    { role: "MED", x: 64, y: 57 }, { role: "MED", x: 36, y: 57 },
+    { role: "AD", x: 83, y: 32 }, { role: "TRQ", x: 50, y: 30 }, { role: "AS", x: 17, y: 32 },
+    { role: "ATT", x: 50, y: 11 }
+  ];
+
+  let slotsHtml = pitch4231.map(p => `
+    <div class="slot empty role-selector" data-role="${p.role}" style="left:${p.x}%; top:${p.y}%; width: 45px; min-height: 45px; z-index: 10;">
+      <span class="slot-role" style="font-size: 0.8rem;">${p.role}</span>
+    </div>
+  `).join("");
+
+  body.innerHTML = `
+    <div class="custom-form" style="max-width: 500px;">
+      
+      <div class="jersey-preview-container">
+        <div class="jersey-preview">
+          <div class="jersey-name" id="preview-name">ESPOSITO</div>
+          <div class="jersey-num" id="preview-num">10</div>
+        </div>
+      </div>
+
+      <div class="cfg-row" style="grid-template-columns: 1fr auto;">
+        <input type="text" id="pc-name" class="auth-input" style="width:100%; text-align:center; font-size:1.1rem; padding:10px;" placeholder="Tuo Nome (es. Esposito)" maxlength="12">
+        
+        <div class="custom-number-wrap">
+          <button type="button" class="custom-number-btn" id="btn-num-minus">-</button>
+          <input type="number" id="pc-number" class="auth-input no-spinners" value="10" min="1" max="99" readonly>
+          <button type="button" class="custom-number-btn" id="btn-num-plus">+</button>
+        </div>
+      </div>
+      
+      <p class="options-hint" style="text-align:center; margin-top: 15px;">SELEZIONA IL TUO RUOLO IN CAMPO</p>
+      
+      <div class="pitch" style="width: 100%; max-width: 320px; margin: 0 auto; aspect-ratio: 3/4; overflow: visible !important;">
+        <div class="pitch-lines"></div>
+        ${slotsHtml}
+      </div>
+
+      <input type="hidden" id="pc-role" value="">
+
+      <!-- FIX ETA': Bottoni Personalizzati al posto dell'input di sistema -->
+      <div class="cfg-row" style="margin-top: 25px;">
+        <label class="cfg-label">Età Iniziale</label>
+        <div class="custom-number-wrap" style="width: 100%;">
+          <button type="button" class="custom-number-btn" id="btn-age-minus" style="flex:1;">-</button>
+          <input type="number" id="pc-age" class="auth-input no-spinners" value="18" min="16" max="21" style="width:100px;" readonly>
+          <button type="button" class="custom-number-btn" id="btn-age-plus" style="flex:1;">+</button>
+        </div>
+      </div>
+
+      <button id="btn-create-player" class="btn primary" disabled style="margin-top:15px; width:100%;">SELEZIONA UN RUOLO PER INIZIARE</button>
+      <button id="btn-back-home" class="btn ghost" style="margin-top:10px; width:100%;">← TORNA AL MENU</button>
+    </div>
+  `;
+
+  document.getElementById("btn-back-home").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    showScreen("#screen-home");
+  };
+
+  document.getElementById("pc-name").addEventListener("input", (e) => {
+    document.getElementById("preview-name").textContent = e.target.value.trim().toUpperCase() || "ESPOSITO";
+  });
+
+  // Logica Bottoni NUMERO
+  const pcNumInput = document.getElementById("pc-number");
+  const previewNum = document.getElementById("preview-num");
+  document.getElementById("btn-num-minus").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    let val = parseInt(pcNumInput.value) || 10;
+    if (val > 1) { pcNumInput.value = val - 1; previewNum.textContent = pcNumInput.value; }
+  };
+  document.getElementById("btn-num-plus").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    let val = parseInt(pcNumInput.value) || 10;
+    if (val < 99) { pcNumInput.value = val + 1; previewNum.textContent = pcNumInput.value; }
+  };
+
+  // Logica Bottoni ETA'
+  const pcAgeInput = document.getElementById("pc-age");
+  document.getElementById("btn-age-minus").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    let val = parseInt(pcAgeInput.value) || 18;
+    if (val > 16) pcAgeInput.value = val - 1;
+  };
+  document.getElementById("btn-age-plus").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    let val = parseInt(pcAgeInput.value) || 18;
+    if (val < 21) pcAgeInput.value = val + 1;
+  };
+
+  const roleSelectors = document.querySelectorAll(".role-selector");
+  const btnCreate = document.getElementById("btn-create-player");
+  const roleInput = document.getElementById("pc-role");
+
+  roleSelectors.forEach(slot => {
+    slot.onclick = function() {
+      if(typeof playSound === 'function') playSound('click');
+      roleSelectors.forEach(s => s.classList.replace("active", "empty"));
+      this.classList.replace("empty", "active");
+      this.style.background = "rgba(0, 161, 255, 0.6)";
+      this.style.borderColor = "#00ff88";
+      
+      roleInput.value = this.getAttribute("data-role");
+      btnCreate.disabled = false;
+      btnCreate.textContent = "FIRMA IL CONTRATTO CON ADL ✍️";
+    };
+  });
+
+  btnCreate.onclick = () => {
+    const name = document.getElementById("pc-name").value.trim() || "Esposito";
+    const number = parseInt(document.getElementById("pc-number").value) || 10;
+    const role = roleInput.value;
+    const age = parseInt(document.getElementById("pc-age").value) || 18;
+
+    // MAGIA: Generazione del "Potenziale Segreto"
+    let potRoll = Math.random();
+    let pot = 72 + Math.floor(Math.random() * 8); // 72-79 (Panchinaro o eterna promessa, 30%)
+    if (potRoll > 0.30) pot = 80 + Math.floor(Math.random() * 6); // 80-85 (Titolare fisso, 40%)
+    if (potRoll > 0.70) pot = 86 + Math.floor(Math.random() * 5); // 86-90 (Ottimo giocatore, 20%)
+    if (potRoll > 0.90) pot = 91 + Math.floor(Math.random() * 5); // 91-95 (Fuoriclasse, 8%)
+    if (potRoll > 0.98) pot = 96 + Math.floor(Math.random() * 5); // 96-100 (Leggenda assoluta, 2%)
+
+    const newCareer = {
+      name: name, number: number, role: role, age: age,
+      ovr: 68, potential: pot, exp: 0, matches: 0, goals: 0, assists: 0,
+      season: 1, status: "Riserva",
+      potm: 0, mvp: 0, ballonDor: 0 
+    };
+
+    window.savePlayerCareerData(newCareer);
+    if(typeof playSound === 'function') playSound('click'); 
+    toast(`Benvenuto al Napoli, ${name}! Il ${number} è tuo.`);
+    window.renderPlayerDashboard();
+  };
+};
+
+// Dashboard Principale del Calciatore
+window.renderPlayerDashboard = function() {
+  const body = document.getElementById("player-career-body");
+  const sub = document.getElementById("player-career-sub");
+  const c = window.playerCareerState;
+
+  if (sub) sub.textContent = `Pre-Stagione ${c.season} · Pronti per il Campionato`;
+
+  // FIX STATO: Dai 24 in su sei Riserva, non più Giovane
+  if (c.ovr >= 88) c.status = "Leggenda & Capitano";
+  else if (c.ovr >= 80) c.status = "Stella del Club";
+  else if (c.ovr >= 74) c.status = "Titolare";
+  else c.status = c.age >= 24 ? "Riserva" : "Giovane Riserva";
+
+  let stat1LabelDash = c.role === "POR" ? "Gol Subiti" : "Gol Tot.";
+  let stat2LabelDash = c.role === "POR" ? "Reti Inv." : "Assist Tot.";
+
+  let retireBtnHTML = "";
+  if (c.age >= 30) {
+    retireBtnHTML = `<button id="btn-retire-player" class="btn warning" style="background: linear-gradient(90deg, #ff5c5c, #d44); color:#fff; font-weight:900; margin-top:10px; width:100%; border:none;">🛑 RITIRATI DAL CALCIO</button>`;
+  }
+
+  body.innerHTML = `
+    <div class="player-profile-card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; gap:15px; align-items:center;">
+          <div style="width: 45px; height: 50px; background: linear-gradient(135deg, #00a1ff, #005bbb); border-radius: 6px 6px 12px 12px; display:flex; align-items:center; justify-content:center; border-top: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+            <span style="font-family:var(--font-display); font-size:1.6rem; color:#fff;">${c.number || 10}</span>
+          </div>
+          <div style="overflow:hidden;">
+            <h3 style="font-family:var(--font-display); font-size:1.8rem; margin:0; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">${c.name}</h3>
+            <span style="color:var(--celeste-chiaro); font-family:var(--font-cond); font-weight:700;">${c.role} · ${c.age} ANNI · <span style="color:#00ff88;">${c.status}</span></span>
+          </div>
+        </div>
+        <div style="background:rgba(0,161,255,0.2); border:1px solid var(--celeste); padding:6px 14px; border-radius:12px; text-align:center;">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">OVERALL</span>
+          <strong style="font-family:var(--font-display); font-size:1.8rem; color:#ffd24a;">${c.ovr}</strong>
+        </div>
+      </div>
+
+      <div class="player-stat-grid">
+        <div class="player-stat-box"><strong>${c.matches}</strong><span>Partite Tot.</span></div>
+        <div class="player-stat-box"><strong>${c.goals}</strong><span>${stat1LabelDash}</span></div>
+        <div class="player-stat-box"><strong>${c.assists}</strong><span>${stat2LabelDash}</span></div>
+      </div>
+
+      <div class="player-trophies-grid">
+        <div class="player-trophy-box"><strong>${c.potm || 0}</strong><span>🎖️ Gioc. Mese</span></div>
+        <div class="player-trophy-box"><strong>${c.mvp || 0}</strong><span>🏅 MVP Serie A</span></div>
+        <div class="player-trophy-box"><strong>${c.ballonDor || 0}</strong><span>🥇 Pallone d'Oro</span></div>
+      </div>
+
+      <div style="display:grid; gap:10px; margin-top:10px;">
+        <button id="btn-play-season" class="btn primary" style="background: linear-gradient(90deg, #00ff88, #00a1ff); color:#00112b; font-weight:900;">⏩ SIMULA STAGIONE INTERA</button>
+        ${retireBtnHTML}
+        <button id="btn-reset-player-career" class="btn ghost" style="border-color:#ff5c5c; color:#ff5c5c; font-size:0.8rem; margin-top:10px;">Ricomincia Nuova Carriera</button>
+        <button id="btn-player-home" class="btn ghost" style="margin-top:0;">← Menu Principale</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("btn-play-season").onclick = window.simulateFullPlayerSeason;
+  
+  if (document.getElementById("btn-retire-player")) {
+    document.getElementById("btn-retire-player").onclick = window.retirePlayer;
+  }
+
+  document.getElementById("btn-reset-player-career").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    const modal = document.getElementById("reset-career-modal");
+    if(modal) {
+      modal.classList.add("show");
+      document.getElementById("btn-reset-cancel").onclick = () => {
+         if(typeof playSound === 'function') playSound('click');
+         modal.classList.remove("show");
+      };
+      document.getElementById("btn-reset-confirm").onclick = () => {
+         if(typeof playSound === 'function') playSound('click');
+         modal.classList.remove("show");
+         localStorage.removeItem('napoli380_player_career');
+         window.playerCareerState = null;
+         window.renderPlayerCreationForm();
+      };
+    }
+  };
+  document.getElementById("btn-player-home").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    showScreen("#screen-home");
+  };
+};
+
+// SIMULAZIONE DELL'INTERA STAGIONE IN UN SOLO CLICK
+window.simulateFullPlayerSeason = function() {
+  if(typeof playSound === 'function') playSound('fischio');
+  const c = window.playerCareerState;
+  
+  let seasonMatches = 30 + Math.floor(Math.random() * 9); 
+  if (c.age >= 32) seasonMatches -= Math.floor(Math.random() * 5); 
+  
+  let seasonGoals = 0, seasonAssists = 0;
+  let ratingSum = 0;
+
+  const ovrPower = Math.pow(c.ovr / 100, 3.5); 
+
+  // Fast Loop pulito senza DOM updates
+  for (let md = 1; md <= seasonMatches; md++) {
+    let rating = 5.5 + (Math.random() * 2) + (ovrPower * 2.5);
+    if (rating > 10) rating = 10;
+    ratingSum += rating;
+
+    let scoredG = 0, scoredA = 0;
+    
+    if (c.role === "POR") {
+      let chanceCleanSheet = 0.15 + (ovrPower * 0.40);
+      if (Math.random() < chanceCleanSheet) { scoredA = 1; scoredG = 0; } 
+      else { scoredG = 1 + Math.floor(Math.random() * 2); }
+    } else if (["ATT"].includes(c.role)) {
+      if (Math.random() < ovrPower * 1.1) scoredG = Math.random() < 0.15 ? 2 : 1;
+      if (Math.random() < ovrPower * 0.4) scoredA = 1;
+    } else if (["AS", "AD"].includes(c.role)) {
+      if (Math.random() < ovrPower * 0.8) scoredG = 1;
+      if (Math.random() < ovrPower * 0.7) scoredA = 1;
+    } else if (["TRQ"].includes(c.role)) {
+      if (Math.random() < ovrPower * 0.6) scoredG = 1;
+      if (Math.random() < ovrPower * 0.9) scoredA = 1;
+    } else if (["CC", "MED"].includes(c.role)) {
+      if (Math.random() < ovrPower * 0.25) scoredG = 1;
+      if (Math.random() < ovrPower * 0.5) scoredA = 1;
+    } else if (["TD", "TS", "DC"].includes(c.role)) {
+      if (Math.random() < ovrPower * 0.08) scoredG = 1;
+      if (Math.random() < ovrPower * 0.15) scoredA = 1;
+    }
+
+    seasonGoals += scoredG;
+    seasonAssists += scoredA;
+  }
+
+  const napoliPts = 60 + Math.floor(Math.random() * (c.ovr > 80 ? 35 : 25)); 
+  let napoliPos = napoliPts >= 88 ? "1° (Campioni!)" : napoliPts >= 75 ? "Zona Champions" : "Piazzamento Europeo";
+
+  let avgRating = seasonMatches > 0 ? (ratingSum / seasonMatches) : 0;
+  
+  let wonPOTM = 0;
+  let wonMVP = false;
+  let wonBallonDor = false;
+
+  if (avgRating >= 8.5) wonPOTM = Math.floor(Math.random() * 3) + 2; 
+  else if (avgRating >= 7.8) wonPOTM = Math.floor(Math.random() * 2) + 1; 
+  else if (avgRating >= 7.3 && Math.random() > 0.5) wonPOTM = 1;
+
+  if (avgRating >= 8.2 && napoliPts >= 80) wonMVP = true;
+  
+  let hasStatsForBallonDor = false;
+  if (c.role === "POR") hasStatsForBallonDor = seasonAssists >= 18; 
+  else hasStatsForBallonDor = (seasonGoals + seasonAssists) >= 25; 
+
+  if (c.ovr >= 88 && avgRating >= 8.5 && hasStatsForBallonDor && napoliPts >= 85) wonBallonDor = true;
+
+  c.potm = (c.potm || 0) + wonPOTM;
+  if (wonMVP) c.mvp = (c.mvp || 0) + 1;
+  if (wonBallonDor) c.ballonDor = (c.ballonDor || 0) + 1;
+
+  // ========================================================
+  // SISTEMA DI CRESCITA PROPORZIONALE AL RENDIMENTO E HARD CAP
+  // ========================================================
+  let oldOvr = c.ovr;
+  let levelUps = 0;
+  c.ovr = parseInt(c.ovr); 
+  
+  // Calcolo del rendimento stagionale basato sulle attese del ruolo
+  let totalContribution = c.role === "POR" ? seasonAssists : (seasonGoals + seasonAssists);
+  let expectedContribution = ["ATT", "AS", "AD"].includes(c.role) ? 20 : ["TRQ", "CC"].includes(c.role) ? 12 : c.role === "POR" ? 12 : 5;
+  let gaRatio = totalContribution / expectedContribution;
+  
+  if (c.age >= 32) {
+      // FASE DI DECLINO (Un grande rendimento frena la caduta!)
+      let declineChance = 0.3 + ((c.age - 32) * 0.15) - (gaRatio * 0.15); 
+      if (declineChance > 0 && Math.random() < declineChance) levelUps--;
+      if (declineChance > 0.5 && Math.random() < declineChance * 0.5) levelUps--;
+  } else if (c.ovr < c.potential) {
+      // FASE DI CRESCITA
+      let gap = c.potential - c.ovr;
+      let baseChance = 0.10 + (gap * 0.05); 
+      
+      if (c.age <= 22) baseChance += 0.20; 
+      if (avgRating >= 7.5) baseChance += 0.15; 
+      
+      // I gol/assist spingono la crescita fortemente!
+      if (gaRatio >= 1.0) baseChance += 0.25;
+      if (gaRatio >= 1.5) baseChance += 0.40;
+
+      // FIX CRESCITA FORZATA: Se hai fatto una stagione assurda (es. 30 gol) prendi un +1 sicuro!
+      if (gaRatio >= 1.5 && gap > 0) {
+          levelUps++;
+          baseChance *= 0.5; // Il secondo livello costa più fatica
+      }
+
+      if (Math.random() < baseChance) {
+          levelUps++;
+          if (gap >= 3 && Math.random() < (baseChance * 0.3)) levelUps++; 
+      }
+  } else {
+      // POTENZIALE RAGGIUNTO (Crescita rallentata ma possibile se spacchi tutto)
+      let miracleChance = 0.02; 
+      if (gaRatio >= 1.5) miracleChance += 0.15; // Molti gol sfondano il potenziale!
+      if (avgRating >= 8.5) miracleChance += 0.10;
+      if (wonMVP) miracleChance += 0.15;
+      if (wonBallonDor) miracleChance += 0.25;
+
+      // Se sei a 99, arrivare a 100 è durissimo!
+      if (c.ovr === 99) miracleChance *= 0.3;
+
+      if (Math.random() < miracleChance) levelUps = 1;
+  }
+
+  // HARD CAP MATEMATICO A 100 OVR (non sfonda mai il 100)
+  if (c.ovr + levelUps > 100) {
+      levelUps = 100 - c.ovr;
+  }
+
+  c.ovr += levelUps;
+  c.age++;
+  c.matches += seasonMatches;
+  c.goals += seasonGoals;
+  c.assists += seasonAssists;
+  c.season++;
+
+  // CAP CREDITI: MAX 100 A STAGIONE
+  let rawCredits = 20 + (seasonMatches * 1) + (seasonGoals * 2) + (seasonAssists * 1) + (wonMVP ? 20 : 0) + (wonBallonDor ? 30 : 0);
+  let earnedCredits = Math.min(Math.round(rawCredits), 100); 
+  
+  addCredits(earnedCredits, `Stagione ${c.season - 1}`);
+  window.savePlayerCareerData(c);
+
+  showScreen("#screen-player-match");
+  const matchBody = document.getElementById("player-match-body");
+  
+  let growthText = "";
+  if (levelUps > 0) growthText = `<span style="color:#00ff88;">+${levelUps} OVR! (Ora sei a ${c.ovr})</span>`;
+  else if (levelUps < 0) growthText = `<span style="color:#ff5c5c;">${levelUps} OVR (Declino: ${c.ovr})</span>`;
+  else growthText = `<span style="color:var(--testo-dim);">OVR Stabile (${c.ovr})</span>`;
+
+  let awardsText = "";
+  if (wonBallonDor) awardsText += `<p style="color:#ffd24a; font-size:1.1rem; margin:5px 0;">🥇 HAI VINTO IL PALLONE D'ORO!</p>`;
+  if (wonMVP) awardsText += `<p style="color:#00a1ff; font-size:1.1rem; margin:5px 0;">🏅 Nominato MVP della Serie A!</p>`;
+  if (wonPOTM > 0) awardsText += `<p style="color:#fff; font-size:0.9rem; margin:5px 0;">🎖️ Eletto ${wonPOTM} volte Giocatore del Mese</p>`;
+
+  let stat1LabelMatch = c.role === "POR" ? "GOL SUBITI" : "GOL FATTI";
+  let stat2LabelMatch = c.role === "POR" ? "RETI INVIOLATE" : "ASSIST";
+
+  matchBody.innerHTML = `
+    <div class="verdict gold">
+      <h3 style="font-size:2.2rem; margin:10px 0; color:var(--celeste-chiaro);">FINE STAGIONE ${c.season - 1}</h3>
+      <p style="font-size: 1.1rem; margin-bottom: 15px;">Il Napoli ha chiuso la stagione in: <strong style="color:#fff;">${napoliPos}</strong></p>
+      
+      ${awardsText ? `<div style="background:rgba(255,210,74,0.1); border:1px solid #ffd24a; border-radius:12px; padding:10px; margin-bottom:20px;">${awardsText}</div>` : ''}
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">PRESENZE</span>
+          <strong style="font-size:1.8rem; color:#fff;">${seasonMatches}<small style="font-size:1rem;color:var(--testo-dim);">/38</small></strong>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">MEDIA VOTO</span>
+          <strong style="font-size:1.8rem; color:#ffd24a;">${avgRating.toFixed(1)}</strong>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat1LabelMatch}</span>
+          <strong style="font-size:1.8rem; color:#fff;">${seasonGoals}</strong>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat2LabelMatch}</span>
+          <strong style="font-size:1.8rem; color:#fff;">${seasonAssists}</strong>
+        </div>
+      </div>
+
+      <div style="background:rgba(0,255,136,0.1); border:1px solid #00ff88; padding:15px; border-radius:14px; margin-bottom:15px;">
+        <span style="font-size:0.8rem; color:#00ff88; text-transform:uppercase; display:block; margin-bottom:5px;">SVILUPPO GIOCATORE</span>
+        <strong style="font-family:var(--font-display); font-size:2rem; color:#fff;">${oldOvr} ➔ ${c.ovr}</strong><br>
+        ${growthText}
+      </div>
+      
+      <p style="color:#ffd24a; font-weight:bold;">💰 Hai guadagnato ${earnedCredits} Crediti!</p>
+
+      <button id="btn-continue-player-hub" class="btn primary" style="width:100%; margin-top:15px;">Avvia Stagione ${c.season} ➔</button>
+    </div>
+  `;
+
+  document.getElementById("btn-continue-player-hub").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    showScreen("#screen-player-career");
+    window.renderPlayerDashboard();
+  };
+};
+
+// ============================================================
+// NUOVA FUNZIONE: RITIRO DAL CALCIO E RIEPILOGO STORICO
+// ============================================================
+window.retirePlayer = function() {
+  if(typeof playSound === 'function') playSound('fischio');
+  const c = window.playerCareerState;
+  
+  showScreen("#screen-player-match"); // Ricicliamo la schermata dei match per il riepilogo
+  const matchBody = document.getElementById("player-match-body");
+  
+  let stat1LabelMatch = c.role === "POR" ? "GOL SUBITI" : "GOL FATTI";
+  let stat2LabelMatch = c.role === "POR" ? "RETI INVIOLATE" : "ASSIST";
+
+  matchBody.innerHTML = `
+    <div class="verdict gold">
+      <h3 style="font-size:2.5rem; margin:10px 0; color:#ffd24a; text-transform:uppercase;">CARRIERA CONCLUSA</h3>
+      <p style="font-size: 1.1rem; margin-bottom: 15px; color: #fff;">${c.name} appende gli scarpini al chiodo a <strong>${c.age} anni</strong>.</p>
+      
+      <div style="background:rgba(0,161,255,0.1); border:1px solid #00a1ff; padding:15px; border-radius:14px; margin-bottom:20px;">
+        <span style="font-size:0.8rem; color:var(--celeste-chiaro); text-transform:uppercase; display:block; margin-bottom:5px;">OVERALL FINALE (STORICO)</span>
+        <strong style="font-family:var(--font-display); font-size:3rem; color:#fff;">${c.ovr}</strong>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">STAGIONI GIOCATE</span>
+          <strong style="font-size:1.8rem; color:#fff;">${c.season - 1}</strong>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">PRESENZE TOTALI</span>
+          <strong style="font-size:1.8rem; color:#fff;">${c.matches}</strong>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat1LabelMatch}</span>
+          <strong style="font-size:1.8rem; color:#fff;">${c.goals}</strong>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat2LabelMatch}</span>
+          <strong style="font-size:1.8rem; color:#fff;">${c.assists}</strong>
+        </div>
+      </div>
+
+      <div class="player-trophies-grid" style="margin-bottom:20px;">
+        <div class="player-trophy-box"><strong>${c.potm || 0}</strong><span>🎖️ Gioc. Mese</span></div>
+        <div class="player-trophy-box"><strong>${c.mvp || 0}</strong><span>🏅 MVP Serie A</span></div>
+        <div class="player-trophy-box"><strong>${c.ballonDor || 0}</strong><span>🥇 Pallone d'Oro</span></div>
+      </div>
+
+      <button id="btn-end-career-home" class="btn primary" style="width:100%; margin-top:15px;">Torna al Menu Principale</button>
+    </div>
+  `;
+
+  document.getElementById("btn-end-career-home").onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    // Pulizia del salvataggio così la prossima volta ricomincia da zero
+    localStorage.removeItem('napoli380_player_career');
+    window.playerCareerState = null;
+    showScreen("#screen-home");
+  };
 };
   // Tasto ESCI
   if(btnLogout) {
