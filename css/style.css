@@ -2874,6 +2874,40 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   color: #00112b; border: none; font-weight: 900;
 }
 
+.pack-card.centurion-pack {
+  border-color: #ffffff;
+  /* Fondo scuro con riflesso bianco e una punta di celeste in basso */
+  background: linear-gradient(160deg, rgba(0,17,43,0.95), rgba(255,255,255,0.1), rgba(0,161,255,0.15));
+  box-shadow: 0 0 20px rgba(255,255,255,0.25);
+}
+/* La riga in alto sfuma dal bianco al celeste Napoli */
+.pack-card.centurion-pack::before { 
+  background: linear-gradient(90deg, #ffffff, #00a1ff); 
+}
+.pack-card.centurion-pack:hover { 
+  box-shadow: 0 8px 35px rgba(255,255,255,0.5), inset 0 0 15px rgba(0,161,255,0.3); 
+}
+/* Bottone bianco ghiaccio con bordo e riflessi azzurri */
+.pack-card.centurion-pack .pack-price.centurion {
+  background: linear-gradient(90deg, #ffffff, #e6f5ff);
+  color: #002147; 
+  border: 1px solid #00a1ff; 
+  font-weight: 900;
+  box-shadow: 0 0 10px rgba(0,161,255,0.2);
+}
+
+.pack-card.icona-pack {
+  border-color: #d4af37;
+  background: linear-gradient(160deg, rgba(0,17,43,0.95), rgba(212,175,55,0.15));
+  box-shadow: 0 0 20px rgba(212,175,55,0.25);
+}
+.pack-card.icona-pack::before { background: linear-gradient(90deg, #d4af37, #ffffff); }
+.pack-card.icona-pack:hover { box-shadow: 0 8px 35px rgba(212,175,55,0.55); }
+.pack-card.icona-pack .pack-price.icona {
+  background: linear-gradient(90deg, #d4af37, #f4e5b0);
+  color: #1a1a1a; border: none; font-weight: 900;
+}
+
 /* ============================================================
    COLLEZIONE
    ============================================================ */
@@ -4153,3 +4187,138 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   border-color: #00ff88 !important;
 }
 .sbc-card.sbc-selected .sbc-overlay { opacity: 1; }
+/* ============================================================
+   RICERCA CARTE (Database & Collezione)
+   ============================================================ */
+.card-search-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 16px 0;
+}
+.card-search-input {
+  width: 100%;
+  max-width: 520px;
+  background: rgba(0, 11, 26, 0.5);
+  border: 1.5px solid rgba(0, 161, 255, 0.35);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-family: var(--font-cond);
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.card-search-input::placeholder {
+  color: var(--testo-mute);
+}
+.card-search-input:focus {
+  border-color: var(--celeste);
+  background: rgba(0, 11, 26, 0.85);
+  box-shadow: 0 0 0 3px rgba(0, 161, 255, 0.15);
+}
+
+/* ============================================================
+   CARTA "IN FORM" (IF) - Stile Nero & Oro (come EA FC)
+   ============================================================ */
+.player-card.tcg.tcg-special-if {
+  background: linear-gradient(135deg, #1a1a1a, #000000) !important;
+  border: 2px solid #ffd24a !important;
+  box-shadow: var(--shadow-card), 0 0 25px rgba(255, 210, 74, 0.4) !important;
+}
+.player-card.tcg.tcg-special-if .tc-ln,
+.player-card.tcg.tcg-special-if .tc-overall span {
+  color: #ffd24a !important;
+  text-shadow: 0 0 10px rgba(255, 210, 74, 0.5) !important;
+}
+.player-card.tcg.tcg-special-if .tc-overall span {
+  background: rgba(255, 210, 74, 0.15) !important;
+  border-color: #ffd24a !important;
+}
+.player-card.tcg.tcg-special-if .tc-fn,
+.player-card.tcg.tcg-special-if .tc-positions {
+  color: #f0d98c !important;
+}
+.player-card.tcg.tcg-special-if .tc-season {
+  background: linear-gradient(90deg, #8c6a1a, #ffd24a) !important;
+  color: #1a1a1a !important;
+  border-color: #8c6a1a !important;
+}
+.player-card.tcg.tcg-special-if::before {
+  content: ""; position: absolute; inset: 0; left: -50%; width: 200%;
+  background: linear-gradient(125deg, transparent 20%, rgba(255,210,74,0.35) 40%, rgba(255,255,255,0.4) 50%, rgba(255,210,74,0.35) 60%, transparent 80%);
+  mix-blend-mode: color-dodge;
+  animation: holoShine 3s infinite linear;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ============================================================
+   CARTA "MAN OF THE MATCH" (MOTM) - Stile Arancione
+   ============================================================ */
+.player-card.tcg.tcg-special-motm {
+  background: linear-gradient(135deg, #3a1c00, #1a0d00) !important;
+  border: 2px solid #ff8c1a !important;
+  box-shadow: var(--shadow-card), 0 0 25px rgba(255, 140, 26, 0.45) !important;
+}
+.player-card.tcg.tcg-special-motm .tc-ln,
+.player-card.tcg.tcg-special-motm .tc-overall span {
+  color: #ffb347 !important;
+  text-shadow: 0 0 10px rgba(255, 140, 26, 0.5) !important;
+}
+.player-card.tcg.tcg-special-motm .tc-overall span {
+  background: rgba(255, 140, 26, 0.18) !important;
+  border-color: #ff8c1a !important;
+}
+.player-card.tcg.tcg-special-motm .tc-fn,
+.player-card.tcg.tcg-special-motm .tc-positions {
+  color: #ffd9b3 !important;
+}
+.player-card.tcg.tcg-special-motm .tc-season {
+  background: linear-gradient(90deg, #b34700, #ff8c1a) !important;
+  color: #ffffff !important;
+  border-color: #b34700 !important;
+}
+.player-card.tcg.tcg-special-motm::before {
+  content: ""; position: absolute; inset: 0; left: -50%; width: 200%;
+  background: linear-gradient(125deg, transparent 20%, rgba(255,140,26,0.4) 40%, rgba(255,255,255,0.45) 50%, rgba(255,140,26,0.4) 60%, transparent 80%);
+  mix-blend-mode: color-dodge;
+  animation: holoShine 3s infinite linear;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ============================================================
+   CARTA "TEAM OF THE SEASON" (TOTS) - Stile Blu & Oro
+   ============================================================ */
+.player-card.tcg.tcg-special-tots {
+  background: linear-gradient(135deg, #002a5c, #001233) !important;
+  border: 2px solid #ffd24a !important;
+  box-shadow: var(--shadow-card), 0 0 25px rgba(74, 157, 255, 0.45) !important;
+}
+.player-card.tcg.tcg-special-tots .tc-ln,
+.player-card.tcg.tcg-special-tots .tc-overall span {
+  color: #ffd24a !important;
+  text-shadow: 0 0 10px rgba(255, 210, 74, 0.5) !important;
+}
+.player-card.tcg.tcg-special-tots .tc-overall span {
+  background: rgba(74, 157, 255, 0.2) !important;
+  border-color: #ffd24a !important;
+}
+.player-card.tcg.tcg-special-tots .tc-fn,
+.player-card.tcg.tcg-special-tots .tc-positions {
+  color: #cfe6ff !important;
+}
+.player-card.tcg.tcg-special-tots .tc-season {
+  background: linear-gradient(90deg, #003a8c, #4a9dff) !important;
+  color: #ffd24a !important;
+  border-color: #003a8c !important;
+}
+.player-card.tcg.tcg-special-tots::before {
+  content: ""; position: absolute; inset: 0; left: -50%; width: 200%;
+  background: linear-gradient(125deg, transparent 20%, rgba(255,210,74,0.35) 40%, rgba(74,157,255,0.4) 50%, rgba(255,210,74,0.35) 60%, transparent 80%);
+  mix-blend-mode: color-dodge;
+  animation: holoShine 3s infinite linear;
+  pointer-events: none;
+  z-index: 10;
+}
