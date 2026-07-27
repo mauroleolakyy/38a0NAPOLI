@@ -60,6 +60,14 @@
           </div>
         </div>
         <!-- FINE WIDGET LOGIN -->
+        
+        <!-- BOTTONE MISSIONI GIORNALIERE -->
+        <button id="btn-missions-toggle" class="btn ghost" style="margin-bottom: 20px; width: fit-content; display: flex; gap: 10px; align-items: center; padding: 8px 16px;">
+          <span style="font-size: 1.2rem;">📋</span> 
+          <span style="font-size: 0.9rem;">Missioni & Login</span>
+          <span id="missions-badge" style="background: #ff5c5c; color: #fff; border-radius: 50%; width: 22px; height: 22px; font-family: var(--font-display); font-size: 0.8rem; display: none; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(255,92,92,0.6);">!</span>
+        </button>
+         
         <div class="sm-kicker">Il manageriale azzurro</div>
         <div class="hero-title-wrapper">
   <h1 class="sm-lock"><span class="sm-napoli">NAPOLI</span><span class="sm-num">38<b>-</b>0<b>-</b>0</span></h1>
@@ -448,13 +456,13 @@
     <p id="adl-desc" style="margin-bottom: 25px; color: #b3e0ff; font-size: 0.95rem;">Descrizione evento.</p>
     
     <div style="display: flex; flex-direction: column; gap: 12px;">
-      <button id="adl-btn-a" class="btn primary" style="white-space: normal; height: auto; padding: 15px; text-align: left; line-height: 1.3;">
-        <strong style="display: block; font-size: 1.05rem; margin-bottom: 4px;">Scelta A</strong>
-        <span id="adl-eff-a" style="font-size: 0.8rem; opacity: 0.85; font-weight: normal;">Effetto A</span>
+      <button id="adl-btn-a" class="btn primary" style="flex-direction: column; align-items: flex-start; white-space: normal; height: auto; width: 100%; padding: 15px; text-align: left; line-height: 1.3;">
+        <strong style="display: block; width: 100%; font-size: 1.05rem; margin-bottom: 4px;">Scelta A</strong>
+        <span id="adl-eff-a" style="display: block; width: 100%; font-size: 0.8rem; opacity: 0.85; font-weight: normal;">Effetto A</span>
       </button>
-      <button id="adl-btn-b" class="btn ghost" style="white-space: normal; height: auto; padding: 15px; text-align: left; line-height: 1.3; border: 1px solid rgba(255,255,255,0.2);">
-        <strong style="display: block; font-size: 1.05rem; margin-bottom: 4px; color: #fff;">Scelta B</strong>
-        <span id="adl-eff-b" style="font-size: 0.8rem; opacity: 0.7; font-weight: normal; color: #e6f5ff;">Effetto B</span>
+      <button id="adl-btn-b" class="btn ghost" style="flex-direction: column; align-items: flex-start; white-space: normal; height: auto; width: 100%; padding: 15px; text-align: left; line-height: 1.3; border: 1px solid rgba(255,255,255,0.2);">
+        <strong style="display: block; width: 100%; font-size: 1.05rem; margin-bottom: 4px; color: #fff;">Scelta B</strong>
+        <span id="adl-eff-b" style="display: block; width: 100%; font-size: 0.8rem; opacity: 0.7; font-weight: normal; color: #e6f5ff;">Effetto B</span>
       </button>
     </div>
   </div>
@@ -584,5 +592,27 @@
     </div>
   </div>
 </div>
+<!-- ============================================================
+     MODALE MISSIONI GIORNALIERE
+     ============================================================ -->
+<div id="missions-modal" class="pick-modal">
+  <div class="pm-card" style="max-width: 500px; width: 95%; background: linear-gradient(160deg, #001229, #000b1a); border: 2px solid var(--celeste); text-align: left; padding: 24px;">
+    <div class="pm-header" style="justify-content: space-between; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="pm-icon" style="font-size: 1.5rem;">🎯</span>
+        <span class="pm-tag" style="font-size: 0.8rem;">OBIETTIVI DI OGGI</span>
+      </div>
+      <button type="button" id="btn-close-missions" style="background: transparent; border: none; color: var(--testo-dim); font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+    
+    <p style="color: var(--testo-dim); font-size: 0.9rem; margin-bottom: 20px; text-align: center; font-family: var(--font-body);">
+      Completa le missioni giocando. Si resettano ogni giorno a mezzanotte!
+    </p>
+    
+    <div id="missions-list" style="display: flex; flex-direction: column; gap: 12px;">
+      <!-- Le missioni verranno iniettate dal JS -->
+    </div>
+  </div>
+</div>
 </body>
-</html>
+</html>.
