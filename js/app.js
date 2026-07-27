@@ -1821,6 +1821,7 @@ function markFilledSlot(slot, p) {
   
   if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
   if (p.stagione === "Centenario") node.classList.add("slot-centenario"); else node.classList.remove("slot-centenario");
+  if (p.tipo === "EROE") node.classList.add("slot-eroe"); else node.classList.remove("slot-eroe");
   
   const eff = effRating(slot.id); 
   // ATTIVO SOLO SE NON È UNA ICONA (Hall of Fame)
@@ -1841,6 +1842,7 @@ function refreshSlotRating(slotId) {
   
   if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
   if (p.stagione === "Centenario") node.classList.add("slot-centenario"); else node.classList.remove("slot-centenario");
+  if (p.tipo === "EROE") node.classList.add("slot-eroe"); else node.classList.remove("slot-eroe");
   
   const eff = effRating(slotId); 
   // ATTIVO SOLO SE NON È UNA ICONA (Hall of Fame)
@@ -2274,6 +2276,8 @@ updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.le
   let creds = getCredits();
   localStorage.setItem('napoli380_credits', creds + earned);
   if(typeof updateWalletUI === 'function') updateWalletUI();
+  // AGGIUNTA XP PASS AZZURRO (150 punti a campionato finito)
+  addPassXP(150);
 
   // CREAZIONE PANNELLI GRAFICI
   const coachLine = state.coach ? `<div class="rec-coach">Allenatore: <strong>${state.coach.nome}</strong></div>` : "";
@@ -2865,10 +2869,13 @@ const BIRTH_YEARS = {
   "Rasmus Hojlund": 2003,
   "Vanja Milinkovic-Savic": 1997,
   "Lorenzo Lucca": 2000,
+  "Giovane": 2003,
 };
 
 const DB = [
   /* ---------- Hall of Fame & Leggende (Rating estremi) ---------- */
+  P("Giovane", "2025/25", ["ATT", "TRQ"], 76, ),
+  P("Giovane", "Eroe del Mese", ["ATT", "TRQ"], 92, { tipo: "EROE", evento: "Livello 30 Pass Azzurro" }),
   P("Diego Armando Maradona", "Centenario", ["TRQ","ATT"], 100),
   P("Marek Hamsik", "Centenario", ["CC","TRQ"], 100),
   P("Giovanni Di Lorenzo", "Centenario", ["DC","TD"], 100),
@@ -5647,6 +5654,8 @@ window.simulateFullPlayerSeason = function() {
     
     addCredits(earnedCredits, `Stagione ${c.season - 1}`);
     window.savePlayerCareerData(c);
+    // AGGIUNTA XP PASS AZZURRO IN CARRIERA (100 punti a stagione)
+    addPassXP(100);
     // --- INIZIO HOOK MISSIONI CARRIERA ---
     window.updateMissionProgress('career', 1);
     window.updateMissionProgress('goal', seasonGoals);
@@ -5808,6 +5817,178 @@ window.retirePlayer = function() {
     showScreen("#screen-home");
   };
 };
+// ============================================================
+// SISTEMA PASS AZZURRO (CONFIGURABILE OGNI 30 GIORNI)
+// ============================================================
+
+// ⚙️ CAMBIA QUESTI DATI OGNI MESE! ⚙️
+const PASS_CONFIG = {
+    idMese: "pass_agosto_2026", 
+    maxLevel: 30,
+    xpPerLevel: 1000,
+    premioFinale: {
+        nome: "Giovane",          
+        stagione: "Eroe del Mese" 
+    },
+    getRewardText: function(level) {
+        if (level === this.maxLevel) return "🎁 CARTA: " + this.premioFinale.nome;
+        if (level === 15) return "📦 Pacchetto Icona (OVR 90+)"; // <-- Cambiato a Pacchetto Icona
+        if (level % 5 === 0) return "💰 200 Crediti";
+        return "💰 50 Crediti";
+    }
+};
+
+function checkAndResetPass() {
+    let currentPassId = localStorage.getItem('napoli380_pass_id');
+    if (currentPassId !== PASS_CONFIG.idMese) {
+        localStorage.setItem('napoli380_pass_xp', "0");
+        localStorage.setItem('napoli380_pass_claimed', "false");
+        localStorage.setItem('napoli380_pass_id', PASS_CONFIG.idMese);
+    }
+}
+
+function addPassXP(amount) {
+    checkAndResetPass();
+    let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
+    xp += amount;
+    localStorage.setItem('napoli380_pass_xp', xp);
+    
+    setTimeout(() => { toast(`⭐ +${amount} XP Pass Azzurro!`); }, 1000);
+    
+    if(document.getElementById("pass-modal") && document.getElementById("pass-modal").classList.contains("show")) {
+        updatePassUI();
+    }
+}
+
+window.updatePassUI = function() {
+    checkAndResetPass();
+    let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
+    let level = Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1;
+    let missingXP = PASS_CONFIG.xpPerLevel - (xp % PASS_CONFIG.xpPerLevel); // <-- Calcolo XP Mancanti
+    
+    if (level > PASS_CONFIG.maxLevel) {
+        level = PASS_CONFIG.maxLevel;
+        missingXP = 0;
+    }
+    
+    const xpDisplay = document.getElementById("pass-xp-display");
+    const levelDisplay = document.getElementById("pass-level-display");
+    const missingDisplay = document.getElementById("pass-xp-missing");
+    const bar = document.getElementById("pass-progress-bar");
+    const list = document.getElementById("pass-rewards-list");
+
+    if(xpDisplay) xpDisplay.textContent = xp;
+    if(levelDisplay) levelDisplay.textContent = level;
+    
+    // Mostra il testo corretto
+    if(missingDisplay) {
+        if(level >= PASS_CONFIG.maxLevel) {
+            missingDisplay.innerHTML = "🎉 <strong style='color:#00ff88;'>Pass Completato!</strong>";
+        } else {
+            missingDisplay.innerHTML = `Mancano <strong>${missingXP} XP</strong> al Livello ${level + 1}`;
+        }
+    }
+    
+    if(bar) {
+        let pct = level >= PASS_CONFIG.maxLevel ? 100 : ((xp % PASS_CONFIG.xpPerLevel) / PASS_CONFIG.xpPerLevel) * 100;
+        bar.style.width = pct + "%";
+    }
+
+    if(list) {
+        let isClaimed = localStorage.getItem('napoli380_pass_claimed') === "true";
+        let html = "";
+
+        for (let i = 1; i <= PASS_CONFIG.maxLevel; i++) {
+            let isCurrent = (i === level);
+            let isPassed = (i < level);
+            let isLocked = (i > level);
+            
+            let bg = isPassed ? "rgba(0, 255, 136, 0.08)" : (isCurrent ? "rgba(0, 161, 255, 0.15)" : "rgba(255, 255, 255, 0.03)");
+            let border = isPassed ? "#00ff88" : (isCurrent ? "var(--celeste)" : "rgba(255, 255, 255, 0.1)");
+            let rewardText = PASS_CONFIG.getRewardText(i);
+
+            let actionHtml = "";
+            if (i === PASS_CONFIG.maxLevel) {
+                if (isClaimed) {
+                    actionHtml = `<span style="color: #00ff88; font-weight: bold; font-size: 0.8rem;">RISCATTATA ✓</span>`;
+                } else if (level >= PASS_CONFIG.maxLevel) {
+                    actionHtml = `<button class="btn primary" style="padding: 6px 12px; min-height: 0; font-size: 0.8rem; background: #00ff88; color: #00112b;" onclick="claimPassReward()">RISCATTA</button>`;
+                } else {
+                    actionHtml = `<span style="color: var(--testo-mute); font-size: 0.8rem;">🔒 Bloccato</span>`;
+                }
+            } else {
+                if (isPassed) actionHtml = `<span style="color: #00ff88; font-weight: bold; font-size: 0.8rem;">RAGGIUNTO ✓</span>`;
+                else if (isCurrent) actionHtml = `<span style="color: var(--celeste-chiaro); font-weight: bold; font-size: 0.8rem;">IN CORSO...</span>`;
+                else actionHtml = `<span style="color: var(--testo-mute); font-size: 0.8rem;">🔒 Bloccato</span>`;
+            }
+
+            html += `
+            <div style="background: ${bg}; border: 1px solid ${border}; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span style="font-family: var(--font-cond); font-weight: bold; color: ${isLocked ? 'var(--testo-dim)' : '#fff'}; font-size: 1rem; text-transform: uppercase;">Livello ${i}</span>
+                    <span style="color: ${i === PASS_CONFIG.maxLevel ? '#ffd24a' : 'var(--celeste-chiaro)'}; font-size: 0.85rem; font-weight: bold;">${rewardText}</span>
+                </div>
+                <div>${actionHtml}</div>
+            </div>`;
+        }
+        list.innerHTML = html;
+    }
+}
+
+window.claimPassReward = function() {
+    if(typeof playSound === 'function') playSound('vittoria');
+    localStorage.setItem('napoli380_pass_claimed', "true");
+    
+    // Pesca la carta ESATTAMENTE come l'hai definita nel DB!
+    const premioDalDB = DB.find(p => p.nome === PASS_CONFIG.premioFinale.nome && p.stagione === PASS_CONFIG.premioFinale.stagione);
+    
+    if (premioDalDB) {
+        let coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
+        coll.push(premioDalDB);
+        localStorage.setItem('napoli380_collection', JSON.stringify(coll));
+        
+        // SINCRONIZZA CON FIREBASE
+        if (typeof syncToCloud === 'function') syncToCloud(true);
+        toast(`✨ Hai sbloccato ${premioDalDB.nome}! Controlla la Collezione.`);
+    } else {
+        toast("Errore: Carta non trovata nel DB!");
+    }
+    updatePassUI();
+};
+
+// --- LOGICA MODALE PASS AZZURRO ---
+const btnPassToggle = document.getElementById("btn-pass-toggle");
+const passModal = document.getElementById("pass-modal");
+const btnPassClose = document.getElementById("btn-close-pass");
+
+if (btnPassToggle && passModal) {
+  btnPassToggle.onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    updatePassUI(); 
+    passModal.classList.add("show");
+  };
+}
+if (btnPassClose && passModal) {
+  btnPassClose.onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    passModal.classList.remove("show");
+  };
+}
+if (passModal) {
+  passModal.onclick = (e) => {
+    if (e.target === passModal) {
+      if(typeof playSound === 'function') playSound('click');
+      passModal.classList.remove("show");
+    }
+  };
+}
+
+// Inizializza l'UI al caricamento
+setTimeout(updatePassUI, 500);
+
+// Aggancia gli XP alle partite (nella funzione runSeason esistente, aggiungi questo in fondo prima del playMatchReplay):
+// Aggiungi: addPassXP(150); // XP per aver finito un campionato
+// Aggiungi nella Carriera Giocatore (in simulateFullPlayerSeason): addPassXP(100);
   // Tasto ESCI
   if(btnLogout) {
     btnLogout.onclick = () => {
