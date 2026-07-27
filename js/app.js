@@ -329,7 +329,16 @@ function checkAndUnlockAchievements(seasonPts, seasonW, team) {
 
   if (newlyUnlocked) localStorage.setItem("napoli380_ach", JSON.stringify(unlocked));
 }
-
+window.addPassXP = function(amount) {
+  if (typeof checkAndResetPass === 'function') checkAndResetPass();
+  let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
+  xp += amount;
+  localStorage.setItem('napoli380_pass_xp', xp);
+  setTimeout(() => { if (typeof toast === 'function') toast(`⭐ +${amount} XP Pass Azzurro!`); }, 1000);
+  if (document.getElementById("pass-modal") && document.getElementById("pass-modal").classList.contains("show")) {
+    if (typeof updatePassUI === 'function') updatePassUI();
+  }
+};
 function renderBacheca() {
   const container = document.getElementById("achievements-list");
   const palmaresBox = document.getElementById("palmares-stats");
@@ -837,7 +846,11 @@ const DAILY_QUESTS_POOL = [
   { id: "sbc_1", desc: "Completa 1 Scambio Rosa (SBC)", target: 1, reward: 100, type: "sbc" },
   { id: "pack_2", desc: "Apri 2 pacchetti nel negozio", target: 2, reward: 50, type: "pack" }
 ];
-
+function checkDailyLogin() {
+  if (typeof initDailyMissions === 'function') {
+    initDailyMissions();
+  }
+}
 function initDailyMissions() {
   const today = new Date().toLocaleDateString('it-IT');
   let missionsData = JSON.parse(localStorage.getItem('napoli380_missions') || "null");
@@ -2009,14 +2022,29 @@ function renderMarketBreak(R, first) {
   const ctx = leagueContext(); const halfScud = Math.floor(ctx.scudetto / 2); const halfCL = Math.floor(ctx.champions / 2);
   let posTxt; if (first.pts > halfScud) posTxt = "Primi! Sogniamo!"; else if (first.pts >= halfCL) posTxt = "Zona Champions."; else if (first.pts >= halfCL - 6) posTxt = "A ridosso dell'Europa."; else if (first.pts >= 20) posTxt = "Metà classifica."; else posTxt = "Disastro totale.";
   
-  // NUOVA LOGICA: SFIDA DEL RITORNO
-  let sfidaGoal = Math.floor(R / 3) + 12; // Obiettivo matematico dinamico in base alla tua forza
+  let sfidaGoal = Math.floor(R / 3) + 12; 
   state.sfidaRitorno = sfidaGoal;
   const challengeHtml = `<div class="break-standings" style="margin-top: 15px; background: rgba(0, 161, 255, 0.1);"><div class="bs-item" style="border-color: #00a1ff;"><span class="bs-label" style="color: #00a1ff;">🎯 SFIDA DEL PRESIDENTE</span><span class="bs-sub" style="color: white; font-size: 0.9rem;">Fai almeno <strong>${sfidaGoal} punti</strong> nel girone di ritorno! Se ci riesci avrai un boost in Carriera.</span></div></div>`;
   
   const box = $("#break-body"); 
   box.innerHTML = `<div class="break-standings"><div class="bs-item"><span class="bs-label">Dopo 19 giornate</span><span class="bs-big">${first.pts}</span><span class="bs-sub">${vpsLabel(first.w, first.d, first.l)}</span></div><div class="bs-item"><span class="bs-label">Forza squadra</span><span class="bs-big">${R.toFixed(1)}</span><span class="bs-sub">${posTxt}</span></div></div>${challengeHtml}<p class="break-intro">Mercato: pesca un rinforzo o giocatela così.</p><div class="break-actions"><button id="btn-market" class="btn ghost">Apri il mercato</button><button id="btn-skip-market" class="btn primary">Continua</button></div><div id="market-area"></div>`;
-  $("#btn-skip-market").onclick = () => runSeason(); $("#btn-market").onclick = () => openMarket();
+  
+  // Collegamento sicuro dei bottoni con feedback in caso di errore
+  const btnSkip = $("#btn-skip-market");
+  const btnMarket = $("#btn-market");
+  if (btnSkip) {
+    btnSkip.onclick = () => {
+      try {
+        runSeason();
+      } catch (err) {
+        console.error("Errore in runSeason:", err);
+        toast("❌ Errore nell'avviare il ritorno. Controlla la console.");
+      }
+    };
+  }
+  if (btnMarket) {
+    btnMarket.onclick = () => openMarket();
+  }
 }
 
 function openMarket() { state.marketSwapsLeft = 1; state.marketOfferShown = false; renderJanuaryMarketPitch(); }
@@ -5817,6 +5845,7 @@ window.retirePlayer = function() {
     showScreen("#screen-home");
   };
 };
+
 // ============================================================
 // SISTEMA PASS AZZURRO (CONFIGURABILE OGNI 30 GIORNI)
 // ============================================================
@@ -5989,6 +6018,8 @@ setTimeout(updatePassUI, 500);
 // Aggancia gli XP alle partite (nella funzione runSeason esistente, aggiungi questo in fondo prima del playMatchReplay):
 // Aggiungi: addPassXP(150); // XP per aver finito un campionato
 // Aggiungi nella Carriera Giocatore (in simulateFullPlayerSeason): addPassXP(100);
+
+
   // Tasto ESCI
   if(btnLogout) {
     btnLogout.onclick = () => {
@@ -6000,4 +6031,6 @@ setTimeout(updatePassUI, 500);
       });
     };
   }
+
+  
 }
