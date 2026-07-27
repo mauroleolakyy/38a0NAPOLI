@@ -1633,6 +1633,63 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
     linear-gradient(145deg, var(--celeste-chiaro), var(--celeste) 45%, var(--azzurro-vivo) 75%, var(--celeste-chiaro)) border-box;
 }
 
+/* ============================================================
+   MODALITÀ SQUADRA DEI SOGNI — TEMA PREMIUM ORO
+   ============================================================ */
+body.dreamteam-mode #screen-modulo,
+body.dreamteam-mode #screen-draft {
+  position: relative;
+}
+body.dreamteam-mode #screen-modulo::before,
+body.dreamteam-mode #screen-draft::before {
+  content: "";
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(255,210,74,0.14), transparent 65%),
+    radial-gradient(ellipse 700px 500px at 100% 100%, rgba(255,210,74,0.06), transparent 60%);
+}
+body.dreamteam-mode #pitch {
+  border: 1px solid rgba(255,210,74,0.35);
+  box-shadow: 0 0 0 1px rgba(255,210,74,0.08), 0 0 40px -12px rgba(255,210,74,0.35), inset 0 0 60px -20px rgba(255,210,74,0.15);
+}
+body.dreamteam-mode .slot.empty {
+  border-color: rgba(255,210,74,0.55);
+  background: rgba(20, 14, 0, 0.5);
+  color: #ffe9ad;
+}
+body.dreamteam-mode .slot.empty:hover {
+  background: rgba(255,210,74,0.14);
+  box-shadow: 0 0 18px -2px rgba(255,210,74,0.55);
+}
+body.dreamteam-mode .slot.active {
+  border-color: #ffd24a;
+  background: rgba(255,210,74,0.18);
+  box-shadow: 0 0 20px -4px rgba(255,210,74,0.6);
+}
+body.dreamteam-mode .slot.filled {
+  background:
+    linear-gradient(160deg, var(--card-3), var(--blu-notte)) padding-box,
+    linear-gradient(145deg, #fff3d0, #ffd24a 45%, #d4a017 75%, #fff3d0) border-box;
+  box-shadow: 0 0 14px -4px rgba(255,210,74,0.5);
+}
+body.dreamteam-mode .formation-card {
+  border-color: rgba(255,210,74,0.3);
+}
+body.dreamteam-mode .formation-card:hover {
+  border-color: #ffd24a;
+  box-shadow: var(--shadow-lift), 0 0 24px -6px rgba(255,210,74,0.5);
+}
+body.dreamteam-mode #screen-draft .options-panel,
+body.dreamteam-mode #screen-draft .draft-sidebar {
+  border: 1px solid rgba(255,210,74,0.25);
+  box-shadow: 0 0 24px -12px rgba(255,210,74,0.3);
+}
+body.dreamteam-mode .btn.primary {
+  background: linear-gradient(160deg, #ffe9ad, #ffd24a 55%, #d4a017);
+  color: #1a1200;
+  text-shadow: none;
+}
+
 /* Modale imprevisto */
 .pm-card {
   background: linear-gradient(160deg, var(--card-3) 0%, var(--card) 60%, rgba(5,2,4,0.9) 100%);
@@ -4531,3 +4588,79 @@ body[data-screen="screen-home"] main { max-width: none; padding: 0; margin: 0; }
   color: #fff;
 }
 .custom-number-wrap input:focus { box-shadow: none; outline: none; }
+/* Forza lo stile chiaro per le Icone anche in Squadra dei Sogni */
+body.dreamteam-mode .slot.filled.slot-icon {
+  background:
+    linear-gradient(160deg, #ffffff, #e0e0e0) padding-box,
+    linear-gradient(145deg, #f3e5ab, #d4af37 45%, #b5952f 75%, #f3e5ab) border-box !important;
+  color: #1a1a1a !important;
+}
+
+body.dreamteam-mode .slot.filled.slot-icon .slot-name,
+body.dreamteam-mode .slot.filled.slot-icon .slot-season,
+body.dreamteam-mode .slot.filled.slot-icon .slot-age {
+  color: #1a1a1a !important;
+}
+/* ============================================================
+   STILI MISSIONI GIORNALIERE E BARRE DI PROGRESSO
+   ============================================================ */
+.mission-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 161, 255, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mission-card.completed {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: #00ff88;
+}
+.mission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.mission-title {
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+  text-transform: uppercase;
+}
+.mission-reward {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: #ffd24a;
+  background: rgba(255, 210, 74, 0.15);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.mission-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mission-progress-bg {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mission-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--celeste), var(--azzurro-vivo));
+  transition: width 0.4s ease;
+}
+.mission-card.completed .mission-progress-fill {
+  background: #00ff88;
+}
+.mission-counter {
+  font-family: var(--font-cond);
+  font-size: 0.8rem;
+  color: var(--testo-dim);
+  min-width: 40px;
+  text-align: right;
+}
