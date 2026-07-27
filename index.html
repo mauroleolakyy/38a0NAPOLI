@@ -58,16 +58,60 @@
             <span class="auth-greeting">Uè, <strong id="logged-username" style="color: #fff;"></strong>!</span>
             <button type="button" id="btn-logout" class="btn ghost auth-btn">Esci</button>
           </div>
+          
         </div>
         <!-- FINE WIDGET LOGIN -->
         
-        <!-- BOTTONE MISSIONI GIORNALIERE -->
-        <button id="btn-missions-toggle" class="btn ghost" style="margin-bottom: 20px; width: fit-content; display: flex; gap: 10px; align-items: center; padding: 8px 16px;">
-          <span style="font-size: 1.2rem;">📋</span> 
-          <span style="font-size: 0.9rem;">Missioni & Login</span>
-          <span id="missions-badge" style="background: #ff5c5c; color: #fff; border-radius: 50%; width: 22px; height: 22px; font-family: var(--font-display); font-size: 0.8rem; display: none; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(255,92,92,0.6);">!</span>
-        </button>
-         
+        <!-- CONTENITORE BOTTONI EXTRA (Missioni & Pass) -->
+        <div style="display: flex; gap: 12px; margin-bottom: 25px; flex-wrap: wrap;">
+
+          <!-- BOTTONE MISSIONI GIORNALIERE -->
+          <button id="btn-missions-toggle" class="btn ghost" style="width: fit-content; display: flex; gap: 10px; align-items: center; padding: 8px 16px;">
+            <span style="font-size: 1.2rem;">📋</span> 
+            <span style="font-size: 0.9rem; font-weight: bold;">Missioni & Login</span>
+            <span id="missions-badge" style="background: #ff5c5c; color: #fff; border-radius: 50%; width: 22px; height: 22px; font-family: var(--font-display); font-size: 0.8rem; display: none; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(255,92,92,0.6);">!</span>
+          </button>
+
+          <!-- BOTTONE PASS AZZURRO (Ora apre il popup invece del menu) -->
+          <button type="button" id="btn-pass-toggle" class="btn ghost" style="width: fit-content; display: flex; gap: 10px; align-items: center; padding: 8px 16px; border-color: #ffffff; color: #ffffff; box-shadow: 0 0 10px rgba(255,255,255,0.1);">
+            <span style="font-size: 1.2rem;">⭐</span> 
+            <span style="font-size: 0.9rem; font-weight: bold;">Pass Azzurro</span>
+          </button>
+
+        </div>
+         <!-- PANNELLO PASS AZZURRO -->
+<!-- ============================================================
+     MODALE PASS AZZURRO (Stile Battle Pass)
+     ============================================================ -->
+<div id="pass-modal" class="pick-modal">
+  <div class="pm-card" style="max-width: 500px; width: 95%; background: linear-gradient(160deg, #001229, #000b1a); border: 2px solid #00ff88; text-align: left; padding: 24px; display: flex; flex-direction: column; max-height: 85vh;">
+    
+    <div class="pm-header" style="justify-content: space-between; margin-bottom: 10px; flex-shrink: 0;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="pm-icon" style="font-size: 1.5rem;">⭐</span>
+        <span class="pm-tag" style="font-size: 0.8rem; color: #00ff88; border-color: #00ff88; background: rgba(0,255,136,0.1);">PASS AZZURRO</span>
+      </div>
+      <button type="button" id="btn-close-pass" style="background: transparent; border: none; color: var(--testo-dim); font-size: 1.2rem; cursor: pointer;">✕</button>
+    </div>
+    
+    <div style="text-align: center; margin-bottom: 15px; flex-shrink: 0;">
+      <h3 style="color: #fff; font-family: var(--font-display); font-size: 1.8rem; text-transform: uppercase;">Livello Pass: <span id="pass-level-display" style="color: #00ff88;">1</span> / 30</h3>
+      <p style="color: var(--celeste-chiaro); font-size: 0.9rem; margin-top: 5px;">XP Totali: <strong id="pass-xp-display">0</strong></p>
+      <!-- NUOVO: XP MANCANTI AL PROSSIMO LIVELLO -->
+      <p id="pass-xp-missing" style="color: var(--testo-dim); font-size: 0.85rem; margin-top: 4px; font-family: var(--font-cond); text-transform: uppercase; letter-spacing: 0.05em;"></p>
+      <!-- Barra di Progresso -->
+      <div style="width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; margin-top: 10px;">
+        <div id="pass-progress-bar" style="height: 100%; width: 0%; background: #00ff88; transition: width 0.5s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Lista dei Premi Scorrevole -->
+    <div id="pass-rewards-list" style="display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding-right: 5px; flex-grow: 1;">
+      <!-- I 30 Livelli vengono iniettati qui dal Javascript -->
+    </div>
+
+  </div>
+</div>
         <div class="sm-kicker">Il manageriale azzurro</div>
         <div class="hero-title-wrapper">
   <h1 class="sm-lock"><span class="sm-napoli">NAPOLI</span><span class="sm-num">38<b>-</b>0<b>-</b>0</span></h1>
@@ -78,6 +122,7 @@
       <div class="startmenu__right">
         
     <nav class="smenu" data-panel="root" style="display: flex;">
+      
   <!-- 1° Posto -->
   <button type="button" class="srow srow--play" data-menu="play">
     <span class="srow__idx">01</span>
@@ -614,5 +659,21 @@
     </div>
   </div>
 </div>
+<!-- BARRA SOCIAL FLUTTUANTE -->
+<div class="floating-socials">
+  
+  <a href="https://www.tiktok.com/@napoli38_0" target="_blank" class="social-circ tiktok" title="TikTok">
+    <svg width="20" height="20" viewBox="0 0 448 512" fill="currentColor"><path d="M448,209.91a210.06,210.06,0,0,1-122.77-39.25V349.38A162.55,162.55,0,1,1,185,188.31V278.2a74.62,74.62,0,1,0,52.23,71.18V0l88,0a121.18,121.18,0,0,0,1.86,22.17h0A122.18,122.18,0,0,0,381,102.39a121.43,121.43,0,0,0,67,20.14Z"/></svg>
+  </a>
+  
+  <a href="https://www.instagram.com/napoli38_0" target="_blank" class="social-circ ig" title="Instagram">
+    <svg width="20" height="20" viewBox="0 0 448 512" fill="currentColor"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+  </a>
+  
+  <a href="mailto:supporto@38-0napoli.it" class="social-circ mail" title="Supporto Email">
+    <svg width="20" height="20" viewBox="0 0 512 512" fill="currentColor"><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/></svg>
+  </a>
+  
+</div>
 </body>
-</html>.
+</html>
