@@ -771,10 +771,11 @@ if (name === "hof") { renderDbGrid(); }
               return;
           }
           
-          state.diff = { key: "dreamteam", label: "Squadra dei Sogni", min: 1, max: 99, reroll: 0, options: 5 };
+          state.diff = { key: "dreamteam", label: "Squadra dei Sogni", min: 1, max: 100, reroll: 0, options: 5 };
           state.rerolls = 0; // Reroll azzerati a 0 come richiesto!
           state.optionsCount = 5;
           state.team = {}; state.usedNames = new Set(); state.activeSlot = null; state.options = []; 
+          document.body.classList.add("dreamteam-mode");
           resetRogueState(); updateHud(); renderFormationCards(); showScreen("#screen-modulo");
       };
   }
@@ -817,6 +818,7 @@ if (name === "hof") { renderDbGrid(); }
          
          if (getCredits() >= cost) {
              addCredits(-cost, `Acquisto Pacchetto ${packType.toUpperCase()}`);
+             if (typeof syncToCloud === 'function') syncToCloud(true);
              openPack(packType);
          } else {
              toast("❌ Crediti insufficienti! Gioca per vincerne altri.");
@@ -825,26 +827,182 @@ if (name === "hof") { renderDbGrid(); }
   });
   document.body.dataset.screen = "screen-home";
   document.body.dataset.live = "off";
-// --- BONUS LOGIN GIORNALIERO ---
-  function checkDailyLogin() {
-    const today = new Date().toLocaleDateString('it-IT');
-    let lastLogin = localStorage.getItem('napoli380_lastLogin');
+// ============================================================
+// MOTORE MISSIONI GIORNALIERE E LOGIN
+// ============================================================
+const DAILY_QUESTS_POOL = [
+  { id: "win_1", desc: "Vinci 1 campionato in Qualsiasi Modalità", target: 1, reward: 150, type: "win" },
+  { id: "score_10", desc: "Segna 10 gol totali in campionato", target: 10, reward: 100, type: "goal" },
+  { id: "play_career", desc: "Gioca una stagione in Carriera Giocatore", target: 1, reward: 200, type: "career" },
+  { id: "sbc_1", desc: "Completa 1 Scambio Rosa (SBC)", target: 1, reward: 100, type: "sbc" },
+  { id: "pack_2", desc: "Apri 2 pacchetti nel negozio", target: 2, reward: 50, type: "pack" }
+];
+
+function initDailyMissions() {
+  const today = new Date().toLocaleDateString('it-IT');
+  let missionsData = JSON.parse(localStorage.getItem('napoli380_missions') || "null");
+
+  // Se è un nuovo giorno, resetta tutto e genera nuove missioni
+  if (!missionsData || missionsData.date !== today) {
     let streak = parseInt(localStorage.getItem('napoli380_streak') || "0");
+    let lastLogin = localStorage.getItem('napoli380_lastLogin');
+    
+    // Controlla se ha loggato ieri, altrimenti azzera la streak
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('it-IT');
+    if (lastLogin === yesterdayStr) streak++; else streak = 1;
+    
+    localStorage.setItem('napoli380_lastLogin', today);
+    localStorage.setItem('napoli380_streak', streak.toString());
 
-    if (lastLogin !== today) {
-        streak++; // Incrementa i giorni consecutivi
-        localStorage.setItem('napoli380_lastLogin', today);
-        localStorage.setItem('napoli380_streak', streak.toString());
+    let loginReward = 50 + (streak * 20);
+    if (loginReward > 300) loginReward = 300;
 
-        let reward = 50 + (streak * 20); // +20 crediti per ogni giorno consecutivo
-        if (reward > 300) reward = 300;  // Tetto massimo di 300 crediti al giorno
+    // Pesca 2 missioni casuali + il login
+    let shuffled = shuffle(DAILY_QUESTS_POOL).slice(0, 2);
+    let newQuests = [
+      { id: "login", desc: `Accedi al gioco (Streak: ${streak} gg)`, target: 1, progress: 1, reward: loginReward, type: "login", claimed: false },
+      ...shuffled.map(q => ({ ...q, progress: 0, claimed: false }))
+    ];
 
-        // Aspettiamo 2 secondi così il giocatore ha tempo di caricare la home e vede la notifica
-        setTimeout(() => {
-            addCredits(reward, `Premio Giornaliero: Giorno ${streak} 🔥`);
-        }, 2000); 
-    }
+    missionsData = { date: today, quests: newQuests };
+    localStorage.setItem('napoli380_missions', JSON.stringify(missionsData));
   }
+  updateMissionsBadge();
+}
+
+function updateMissionsBadge() {
+  let data = JSON.parse(localStorage.getItem('napoli380_missions') || "null");
+  const badge = document.getElementById("missions-badge");
+  if (!data || !badge) return;
+
+  // Mostra il badge rosso se c'è almeno una missione completata e NON riscattata
+  const hasUnclaimed = data.quests.some(q => q.progress >= q.target && !q.claimed);
+  badge.style.display = hasUnclaimed ? "flex" : "none";
+}
+
+window.renderMissionsMenu = function() {
+  const list = document.getElementById("missions-list");
+  let data = JSON.parse(localStorage.getItem('napoli380_missions') || "null");
+  if (!list || !data) return;
+
+  // Generazione barra della "Striscia" (Streak)
+  let streak = parseInt(localStorage.getItem('napoli380_streak') || "0");
+  let currentCycle = streak > 0 ? ((streak - 1) % 7) + 1 : 0; // Calcola il giorno da 1 a 7
+
+  let streakHtml = `
+    <div style="text-align:center; margin-bottom: 20px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(0, 161, 255, 0.1);">
+      <span style="font-family:var(--font-cond); color:var(--celeste-chiaro); font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; display:block; margin-bottom:10px;">Striscia di Accessi: ${streak} Giorni 🔥</span>
+      <div class="daily-streak-track">`;
+        for(let i=1; i<=7; i++) {
+          let isDone = i < currentCycle;
+          let isToday = i === currentCycle;
+          let classes = "daily-streak-dot";
+          if (isDone) classes += " is-done";
+          if (isToday) classes += " is-today";
+          streakHtml += `<div class="${classes}">${i}</div>`;
+        }
+  streakHtml += `
+      </div>
+    </div>`;
+
+  // Generazione Carte Missioni
+  const questsHtml = data.quests.map((q, idx) => {
+    const isReady = q.progress >= q.target && !q.claimed;
+    const isDone = q.claimed;
+    const pct = Math.min((q.progress / q.target) * 100, 100);
+
+    let actionHtml = "";
+    if (isReady) {
+      actionHtml = `<button class="btn primary" style="width:100%; padding:8px; font-size:0.9rem; background:#00ff88; color:#00112b;" onclick="claimMission(${idx})">RISCATTA REWARD</button>`;
+    } else if (isDone) {
+      actionHtml = `<button class="btn" disabled style="width:100%; padding:8px; font-size:0.9rem; opacity:0.5;">GIA' RISCATTATO</button>`;
+    } else {
+      actionHtml = `
+        <div class="mission-progress-wrap">
+          <div class="mission-progress-bg"><div class="mission-progress-fill" style="width: ${pct}%;"></div></div>
+          <span class="mission-counter">${q.progress}/${q.target}</span>
+        </div>`;
+    }
+
+    return `
+      <div class="mission-card ${isDone ? 'completed' : ''}">
+        <div class="mission-header">
+          <span class="mission-title">${q.desc}</span>
+          <span class="mission-reward">💰 ${q.reward}</span>
+        </div>
+        ${actionHtml}
+      </div>`;
+  }).join("");
+
+  // Incolla tutto nel menu: prima la striscia, poi le missioni
+  list.innerHTML = streakHtml + questsHtml;
+};
+
+window.claimMission = function(idx) {
+  if(typeof playSound === 'function') playSound('click');
+  let data = JSON.parse(localStorage.getItem('napoli380_missions'));
+  if (data && data.quests[idx] && !data.quests[idx].claimed) {
+    data.quests[idx].claimed = true;
+    localStorage.setItem('napoli380_missions', JSON.stringify(data));
+    addCredits(data.quests[idx].reward, "Missione Completata");
+    
+    if(typeof playSound === 'function') playSound('vittoria');
+    renderMissionsMenu();
+    updateMissionsBadge();
+  }
+};
+
+window.updateMissionProgress = function(type, amount = 1) {
+  let data = JSON.parse(localStorage.getItem('napoli380_missions'));
+  if (!data) return;
+  let updated = false;
+  data.quests.forEach(q => {
+    if (q.type === type && !q.claimed && q.progress < q.target) {
+      q.progress = Math.min(q.progress + amount, q.target);
+      updated = true;
+    }
+  });
+  if (updated) {
+    localStorage.setItem('napoli380_missions', JSON.stringify(data));
+    updateMissionsBadge();
+  }
+};
+
+// Inizializza subito al caricamento
+initDailyMissions();
+
+// Apre il menu modale al click e gestisce la chiusura
+const btnToggle = document.getElementById("btn-missions-toggle");
+const btnClose = document.getElementById("btn-close-missions");
+const modal = document.getElementById("missions-modal");
+
+if (btnToggle && modal) {
+  btnToggle.onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    renderMissionsMenu();
+    modal.classList.add("show");
+  };
+}
+
+if (btnClose && modal) {
+  // Chiusura con la "X"
+  btnClose.onclick = () => {
+    if(typeof playSound === 'function') playSound('click');
+    modal.classList.remove("show");
+  };
+}
+
+if (modal) {
+  // Chiusura automatica cliccando fuori dalla finestra (sul background scuro)
+  modal.onclick = (e) => {
+    if (e.target === modal) {
+      if(typeof playSound === 'function') playSound('click');
+      modal.classList.remove("show");
+    }
+  };
+}
   checkDailyLogin();
 }
 
@@ -1046,7 +1204,7 @@ function renderCoachReveal() {
   $("#btn-coach-go").onclick = () => { if (isCareer) { buildCareerSlotBand(); buildPitch(); showScreen("#screen-draft"); } else { renderBonusChoices(); showScreen("#screen-bonus"); } };
 }
 
-function goHome() { state.diff = null; state.formationKey = null; state.team = {}; state.usedNames = new Set(); state.activeSlot = null; state.options = []; resetRogueState(); state.champions = null; state.career = null; state.slotBand = null; document.body.classList.remove("cl-mode"); updateHud(); showScreen("#screen-home"); }
+function goHome() { state.diff = null; state.formationKey = null; state.team = {}; state.usedNames = new Set(); state.activeSlot = null; state.options = []; resetRogueState(); state.champions = null; state.career = null; state.slotBand = null; document.body.classList.remove("cl-mode"); document.body.classList.remove("dreamteam-mode"); updateHud(); showScreen("#screen-home"); }
 
 function renderBonusChoices() {
   const wrap = $("#bonus-cards"); wrap.innerHTML = ""; const choices = drawBonusChoices(3);
@@ -1204,6 +1362,18 @@ function buildPitch() {
 
 function buildCareerSlotBand() { const bands = shuffle(CAREER_BANDS.slice()); state.slotBand = {}; slots().forEach((s, i) => { state.slotBand[s.id] = bands[i]; }); }
 
+// In Squadra dei Sogni, se lo slot che stai ridisegnando contiene già un giocatore,
+// il suo nome non deve bloccare le ALTRE versioni dello stesso giocatore: altrimenti
+// se hai già trovato una versione più scarsa non potresti mai vedere/scegliere quella Centenario.
+function usedNamesForSlot(slot) {
+  if (state.diff && state.diff.key === "dreamteam" && slot && state.team[slot.id]) {
+    const s = new Set(state.usedNames);
+    s.delete(state.team[slot.id].nome);
+    return s;
+  }
+  return state.usedNames;
+}
+
 function eligiblePool(slot, excludeNames = []) {
   const minLimit = state.diff && state.diff.min != null ? state.diff.min : 1;
   const maxLimit = state.diff && state.diff.max != null ? state.diff.max : 99;
@@ -1214,12 +1384,13 @@ function eligiblePool(slot, excludeNames = []) {
 
   // NOVITÀ: Sceglie se usare tutto il gioco o solo le carte che hai trovato!
   const sourceDB = (state.diff && state.diff.key === "dreamteam") ? getCollection() : DB;
+  const usedForThisSlot = usedNamesForSlot(slot);
 
   return sourceDB.filter(p => 
     p.rating >= min && 
     p.rating <= max && 
     p.ruoli.some(r => slot.accepts.includes(r)) && 
-    !state.usedNames.has(p.nome) && 
+    !usedForThisSlot.has(p.nome) && 
     !excludeNames.includes(p.nome + p.stagione)
   );
 }
@@ -1903,12 +2074,13 @@ function buildOptionPool(slot, exclude = []) {
 
   const sourceDB = (state.diff && state.diff.key === "dreamteam") ? getCollection() : DB;
 
+  const usedForThisSlot = usedNamesForSlot(slot);
   const broad = sourceDB.filter(p => 
     p && p.rating >= minLimit && 
     p.rating <= maxLimit && 
     p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && 
     !exclude.includes(p.nome + p.stagione) &&
-    !state.usedNames.has(p.nome)
+    !usedForThisSlot.has(p.nome)
   );
 
   const combinedPool = base.concat(broad.filter(p => !base.some(b => b.nome === p.nome && b.stagione === p.stagione)));
@@ -1939,7 +2111,8 @@ function drawRipickOptions(slot) {
 function marketOptions(slotId) { 
   const slot = slots().find(s => s.id === slotId); 
   const sourceDB = (state.diff && state.diff.key === "dreamteam") ? getCollection() : DB;
-  let pool = sourceDB.filter(p => p && p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && !state.usedNames.has(p.nome)); 
+  const usedForThisSlot = usedNamesForSlot(slot);
+  let pool = sourceDB.filter(p => p && p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && !usedForThisSlot.has(p.nome)); 
   
   if (state.diff && state.diff.key === "dreamteam") {
       if (pool.length === 0) {
@@ -2035,6 +2208,11 @@ function runSeason() {
   
   if (state.career) recordCareerSeasonResult();
  checkAndUnlockAchievements(season.pts, season.w, state.team);
+ // --- INIZIO HOOK MISSIONI CAMPIONATO ---
+  if (place.win || lg.napoliRank === 1) window.updateMissionProgress('win', 1);
+  const napoliGoals = lg.table.find(t => t.isNapoli).gf; // Prende i gol fatti dal Napoli
+  window.updateMissionProgress('goal', napoliGoals);
+  // --- FINE HOOK MISSIONI CAMPIONATO ---
 updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.leaguePhase.pts : 0);
 // --- INIZIO: STATISTICHE GLOBALI E MARCATORI ALL-TIME ---
   let palmares;
@@ -3974,7 +4152,10 @@ function openPack(type) {
             else cards.push(randItem(getByRating(80, 87)));                             // 55% Oro
         }
     }
-    
+    // --- INIZIO HOOK MISSIONI PACCHETTI ---
+    window.updateMissionProgress('pack', 1);
+    // --- FINE HOOK MISSIONI PACCHETTI ---
+
     triggerWalkoutAnimation(cards);
 }
 
@@ -4119,6 +4300,9 @@ function triggerWalkoutAnimation(cards) {
             doppioni.sort((a, b) => b.rating - a.rating);
             localStorage.setItem('napoli380_collection', JSON.stringify(coll));
             localStorage.setItem('napoli380_doppioni', JSON.stringify(doppioni));
+            // Salvataggio immediato sul Cloud: le carte trovate nel pacchetto
+            // non devono MAI andare perse, anche se l'utente chiude subito il sito.
+            if (typeof syncToCloud === 'function') syncToCloud(true);
         }
         
         overlay.classList.remove("show");
@@ -4238,30 +4422,67 @@ const btnLogout = document.getElementById("btn-logout");
 const loggedUsernameDisplay = document.getElementById("logged-username");
 
 let syncTimeout = null;
+let pendingCloudSync = false; // true finché una scrittura non è ancora confermata dal Cloud
 
-// --- 1. FUNZIONE PER SALVARE SUL CLOUD ---
-function syncToCloud() {
-  if (typeof auth === "undefined" || !auth.currentUser) return; // Salva solo se loggato
-  
-  clearTimeout(syncTimeout);
-  // Ritardo di 2 secondi per evitare di "spammare" il server se succedono tante cose insieme
-  syncTimeout = setTimeout(() => {
-    const creds = parseInt(localStorage.getItem('napoli380_credits') || "0", 10);
-    const coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
-    const ach = JSON.parse(localStorage.getItem('napoli380_ach') || "[]");
+// --- 1. FUNZIONE CHE ESEGUE DAVVERO IL SALVATAGGIO SUL CLOUD (senza ritardo) ---
+function performCloudSave() {
+  if (typeof auth === "undefined" || !auth.currentUser) { pendingCloudSync = false; return; }
 
-    db.collection("users").doc(auth.currentUser.uid).set({
-      credits: creds,
-      collection: coll,
-      achievements: ach,
-      lastSync: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true }).then(() => {
-      console.log("☁️ Salvataggio Cloud completato in background!");
-    });
-  }, 2000); 
+  const creds = parseInt(localStorage.getItem('napoli380_credits') || "0", 10);
+  const coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
+  const ach = JSON.parse(localStorage.getItem('napoli380_ach') || "[]");
+
+  db.collection("users").doc(auth.currentUser.uid).set({
+    credits: creds,
+    collection: coll,
+    achievements: ach,
+    lastSync: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true }).then(() => {
+    pendingCloudSync = false;
+    console.log("☁️ Salvataggio Cloud completato in background!");
+  }).catch(err => {
+    console.error("Errore salvataggio Cloud:", err);
+    // Se il salvataggio fallisce (es. connessione instabile) riprova a breve:
+    // non vogliamo perdere i progressi dell'utente.
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(performCloudSave, 3000);
+  });
 }
 
-// --- 2. MAGIA: INTERCETTA I SALVATAGGI LOCALI E LI MANDA AL CLOUD ---
+// --- 2. FUNZIONE PER SALVARE SUL CLOUD (con piccolo ritardo per raggruppare più scritture) ---
+// Se "immediate" è true, salva subito senza aspettare (usata dopo azioni importanti
+// come l'apertura di un pacchetto, dove non possiamo rischiare che l'utente chiuda
+// la pagina prima che parta la sincronizzazione).
+function syncToCloud(immediate) {
+  if (typeof auth === "undefined" || !auth.currentUser) return; // Salva solo se loggato
+
+  clearTimeout(syncTimeout);
+  pendingCloudSync = true;
+
+  if (immediate) {
+    performCloudSave();
+    return;
+  }
+  // Ritardo breve solo per raggruppare più modifiche fatte nello stesso istante
+  syncTimeout = setTimeout(performCloudSave, 400);
+}
+
+// --- 3. RETE DI SICUREZZA: se l'utente cambia scheda, minimizza o chiude il sito
+// mentre c'è un salvataggio "in sospeso", lo forziamo a partire immediatamente
+// invece di aspettare il timer (altrimenti si perdono carte/crediti appena ottenuti).
+function flushPendingCloudSync() {
+  if (pendingCloudSync) {
+    clearTimeout(syncTimeout);
+    performCloudSave();
+  }
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) flushPendingCloudSync();
+});
+window.addEventListener("pagehide", flushPendingCloudSync);
+window.addEventListener("beforeunload", flushPendingCloudSync);
+
+// --- 4. MAGIA: INTERCETTA I SALVATAGGI LOCALI E LI MANDA AL CLOUD ---
 const originalSetItem = localStorage.setItem;
 localStorage.setItem = function(key, value) {
   originalSetItem.apply(this, arguments); // Salva normalmente in locale
@@ -4697,6 +4918,9 @@ window.openSBCChallenge = function(challengeId) {
             });
             updateDupesBadge();
             localStorage.setItem('napoli380_doppioni', JSON.stringify(allDoppioni));
+            // --- INIZIO HOOK MISSIONI SBC ---
+            window.updateMissionProgress('sbc', 1);
+            // --- FINE HOOK MISSIONI SBC ---
             toast("✨ Scambio completato! Apertura pacchetto in corso...");
             updateDupesBadge();
             window.renderSBCHub(); 
@@ -4811,7 +5035,15 @@ window.startPlayerCareer = function() {
 /* ============================================================
    CARRIERA GIOCATORE: CREAZIONE CON MAGLIA, PREMI E FIX VISIVI
    ============================================================ */
-
+window.getCareerRarity = function(ovr) {
+  if (ovr >= 100) return { label: "CENTENARIO", bg: "linear-gradient(160deg, #29b5f6, #005bbb)", border: "#b88a44", text: "#fff", ovrColor: "#b88a44", badgeBg: "rgba(41,181,246,0.2)" };
+  if (ovr >= 93) return { label: "ICONA", bg: "linear-gradient(135deg, #ffffff, #f0f0f0)", border: "#d4af37", text: "#1a1a1a", ovrColor: "#d4af37", badgeBg: "rgba(212,175,55,0.2)" };
+  if (ovr >= 88) return { label: "TOTS", bg: "linear-gradient(135deg, #002a5c, #001233)", border: "#ffd24a", text: "#cfe6ff", ovrColor: "#ffd24a", badgeBg: "rgba(74,157,255,0.2)" };
+  if (ovr >= 85) return { label: "IN FORM", bg: "linear-gradient(135deg, #1a1a1a, #000000)", border: "#ffd24a", text: "#f0d98c", ovrColor: "#ffd24a", badgeBg: "rgba(255,210,74,0.2)" };
+  if (ovr >= 75) return { label: "ORO", bg: "linear-gradient(135deg, #d4af37, #8a6327)", border: "#fceea7", text: "#fff", ovrColor: "#ffd24a", badgeBg: "rgba(212,175,55,0.2)" };
+  if (ovr >= 65) return { label: "ARGENTO", bg: "linear-gradient(135deg, #b0b0b0, #737373)", border: "#ffffff", text: "#fff", ovrColor: "#e0e0e0", badgeBg: "rgba(176,176,176,0.2)" };
+  return { label: "BRONZO", bg: "linear-gradient(135deg, #b06d3b, #70401b)", border: "#e8a46b", text: "#fff", ovrColor: "#e8a46b", badgeBg: "rgba(176,109,59,0.2)" };
+};
 // Form Creazione Calciatore con Maglia Live e Input Custom
 window.renderPlayerCreationForm = function() {
   const body = document.getElementById("player-career-body");
@@ -4980,24 +5212,28 @@ window.renderPlayerDashboard = function() {
     retireBtnHTML = `<button id="btn-retire-player" class="btn warning" style="background: linear-gradient(90deg, #ff5c5c, #d44); color:#fff; font-weight:900; margin-top:10px; width:100%; border:none;">🛑 RITIRATI DAL CALCIO</button>`;
   }
 
-  body.innerHTML = `
+  // Calcola subito la rarità!
+  const rarity = window.getCareerRarity(c.ovr);
+
+ body.innerHTML = `
     <div class="player-profile-card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="display:flex; gap:15px; align-items:center;">
+          <!-- QUI HO RIMESSO I COLORI AZZURRI FISSI PER LA MAGLIA E IL NUMERO -->
           <div style="width: 45px; height: 50px; background: linear-gradient(135deg, #00a1ff, #005bbb); border-radius: 6px 6px 12px 12px; display:flex; align-items:center; justify-content:center; border-top: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
             <span style="font-family:var(--font-display); font-size:1.6rem; color:#fff;">${c.number || 10}</span>
           </div>
           <div style="overflow:hidden;">
             <h3 style="font-family:var(--font-display); font-size:1.8rem; margin:0; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">${c.name}</h3>
-            <span style="color:var(--celeste-chiaro); font-family:var(--font-cond); font-weight:700;">${c.role} · ${c.age} ANNI · <span style="color:#00ff88;">${c.status}</span></span>
+            <span style="color:var(--celeste-chiaro); font-family:var(--font-cond); font-weight:700;">${c.role} · ${c.age} ANNI · <span style="color:${rarity.ovrColor};">${c.status}</span></span>
           </div>
         </div>
-        <div style="background:rgba(0,161,255,0.2); border:1px solid var(--celeste); padding:6px 14px; border-radius:12px; text-align:center;">
-          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">OVERALL</span>
-          <strong style="font-family:var(--font-display); font-size:1.8rem; color:#ffd24a;">${c.ovr}</strong>
+        <!-- MENTRE QUI IL BADGE OVR CONTINUA A CAMBIARE COLORE IN BASE ALLA RARITÀ -->
+        <div style="background:${rarity.badgeBg}; border:1px solid ${rarity.border}; padding:6px 14px; border-radius:12px; text-align:center;">
+          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">CARTA ${rarity.label}</span>
+          <strong style="font-family:var(--font-display); font-size:1.8rem; color:${rarity.ovrColor};">${c.ovr}</strong>
         </div>
       </div>
-
       <div class="player-stat-grid">
         <div class="player-stat-box"><strong>${c.matches}</strong><span>Partite Tot.</span></div>
         <div class="player-stat-box"><strong>${c.goals}</strong><span>${stat1LabelDash}</span></div>
@@ -5049,6 +5285,220 @@ window.renderPlayerDashboard = function() {
   };
 };
 
+// ============================================================
+// EVENTI CARRIERA GIOCATORE (BIVI STAGIONALI)
+// ============================================================
+const PLAYER_CAREER_EVENTS = [
+  {
+    title: "Rigore Pesantissimo", icon: "⚽",
+    desc: "Siamo al 90' contro la Juventus, risultato bloccato sullo 0-0. L'arbitro fischia un rigore per noi. De Bruyne ha il pallone in mano, ma tu ti senti caldo. Che fai?",
+    btnA: "Pretendi di tirarlo", effA: "Tiri tu il rigore! (Mini-gioco interattivo)",
+    btnB: "Lasci tirare De Bruyne", effB: "Scelta sicura. Nessun malus, ma niente gloria extra.",
+    actionA: (c, resolve) => {
+      // 1. APRE IL MODALE DEL RIGORE!
+      const penModal = document.getElementById("penalty-modal");
+      document.getElementById("pen-tag").textContent = "RIGORE DECISIVO!";
+      document.getElementById("pen-tag").style.color = "#00ff88";
+      document.getElementById("pen-title").textContent = "Tira il rigore contro la Juventus";
+      document.getElementById("pen-desc").textContent = `Sei sul dischetto, ${c.name}. Scegli l'angolo!`;
+
+      penModal.classList.add("show");
+
+      let answered = false;
+      document.querySelectorAll(".pen-dir").forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        // 2. GESTISCE IL TIRO
+        newBtn.addEventListener("click", function() {
+          if (answered) return;
+          answered = true;
+          document.querySelectorAll(".pen-dir").forEach(b => { if (b !== this) b.classList.add("disabled"); });
+
+          if(typeof playSound === 'function') playSound('carta');
+          const playerDir = this.getAttribute("data-dir");
+          const dirs = ["top-left", "top-center", "top-right", "bot-left", "bot-center", "bot-right"];
+          const aiDir = dirs[Math.floor(Math.random() * dirs.length)];
+
+          let success = false;
+          if (playerDir !== aiDir) {
+            success = Math.random() < 0.85; // 85% di segnare se spiazzi il portiere
+          } else {
+            success = Math.random() < 0.20; // 20% di segnare anche se indovina
+          }
+
+          if (success) {
+            this.classList.add("pen-gol");
+            this.innerHTML = "⚽ GOL!";
+            document.getElementById("pen-title").textContent = "GOL SOTTO L'INCROCIO! Lo stadio esplode!";
+            if(typeof playSound === 'function') playSound('vittoria');
+          } else {
+            this.classList.add("pen-parata");
+            this.innerHTML = "🧤 PARATO";
+            document.getElementById("pen-title").textContent = "PARATO! Il portiere ti ipnotizza...";
+          }
+
+          // 3. ASPETTA L'ANIMAZIONE E RISOLVE L'EVENTO
+          setTimeout(() => {
+            penModal.classList.remove("show");
+            document.querySelectorAll(".pen-dir").forEach(b => {
+                b.classList.remove("disabled", "pen-gol", "pen-parata");
+                b.innerHTML = b.getAttribute("data-dir").includes("top") ? "Alto" : "Basso";
+            });
+
+            if (success) {
+              resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Rigore decisivo segnato sotto l'incrocio: Eroe assoluto! (+1 OVR)</span>" });
+            } else {
+              resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Rigore sbagliato contro la Juve: la stampa ti distrugge. (-1 OVR)</span>" });
+            }
+          }, 3000);
+        });
+      });
+    },
+    actionB: (c, resolve) => {
+      toast("🤝 Scelta matura. De Bruyne segna e ti ringrazia.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai fatto squadra. Nessun malus.</span>" });
+    }
+  },
+  {
+    title: "Sirene di Mercato", icon: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    desc: "Il tuo procuratore ti chiama: un club di Premier League è disposto a coprirti d'oro. I giornalisti ti fanno domande sul tuo futuro.",
+    btnA: "Giuri amore al Napoli", effA: "I tifosi impazziscono per te. La carica ti dà un boost (+1 OVR).",
+    btnB: "Lasci la porta aperta", effB: "De Laurentiis si infuria. Rischio di calo (-1 OVR) ma guadagni 50 Crediti dal procuratore.",
+    actionA: (c, resolve) => {
+      toast("💙 Baci la maglia in TV! La città è con te.");
+      resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Dichiarazione d'amore: la piazza ti esalta! (+1 OVR)</span>" });
+    },
+    actionB: (c, resolve) => {
+      addCredits(50, "Bonus Sponsorizzazione");
+      toast("💰 Hai guadagnato 50 crediti, ma ADL è furioso!");
+      resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Polemiche di mercato: perdi lucidità (-1 OVR) ma intaschi 50 crediti.</span>" });
+    }
+  },
+  {
+    title: "Serata a Posillipo", icon: "🌃",
+    desc: "Siamo a metà settimana, sabato c'è il big match contro l'Inter. I tuoi compagni organizzano una mega festa in un locale a Posillipo.",
+    btnA: "Vai alla festa", effA: "Rischio. Se ti scoprono: calo fisico e multa (-1 OVR). Se ti va bene: umore a mille (+1 OVR).",
+    btnB: "Resti a casa a riposare", effB: "Sei un professionista. Guadagni un bonus sicuro (+1 OVR) se sei giovane (sotto i 24 anni).",
+    actionA: (c, resolve) => {
+      const sgamato = Math.random() > 0.5;
+      if (sgamato) {
+        toast("📸 Beccato dai paparazzi alle 4 di notte!");
+        resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Notte brava: l'allenatore ti punisce. (-1 OVR)</span>" });
+      } else {
+        toast("🕺 Serata epica, umore alle stelle!");
+        resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Serata fantastica: giochi sulle ali dell'entusiasmo! (+1 OVR)</span>" });
+      }
+    },
+    actionB: (c, resolve) => {
+      if (c.age <= 24) {
+        toast("🛌 Riposo perfetto, voli in allenamento!");
+        resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Mentalità da campione giovanissimo (+1 OVR)</span>" });
+      } else {
+        toast("🛌 Riposo, ordinaria amministrazione.");
+        resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Ti sei riposato, ma alla tua età è normale.</span>" });
+      }
+    }
+  },
+  {
+    title: "Fastidio Muscolare", icon: "🩹",
+    desc: "Rifinitura a Castel Volturno: durante un contrasto con Buongiorno senti tirare la coscia. Domani c'è una sfida europea cruciale.",
+    btnA: "Stringi i denti e giochi", effA: "Rischio enorme: puoi fare la partita della vita (+1 OVR) o infortunarti gravemente (-2 OVR).",
+    btnB: "Chiedi il riposo", effB: "Salti la partita. Crescita bloccata ma eviti guai fisici.",
+    actionA: (c, resolve) => {
+      const eroe = Math.random() > 0.45; // 55% di farcela
+      if(eroe) {
+        toast("🔥 Partita stoica! Non senti dolore!");
+        resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Hai giocato sul dolore risultando decisivo: gladiatore! (+1 OVR)</span>" });
+      } else {
+        toast("🏥 Crac! Ti fermi al 15' minuto.");
+        resolve({ ovrMod: -2, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Lesione muscolare. Hai forzato e hai perso mesi di stagione (-2 OVR).</span>" });
+      }
+    },
+    actionB: (c, resolve) => {
+      toast("🛋️ Guardi la partita dalla tribuna.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai saltato il big match per precauzione. Il muscolo è salvo.</span>" });
+    }
+  },
+  {
+    title: "Sostituzione al 60'", icon: "🤬",
+    desc: "Stai giocando una grande partita, ma l'allenatore ti richiama in panchina per coprirsi. Senti i mormorii del Maradona.",
+    btnA: "Calci la bottiglietta", effA: "Rischio rottura col mister (-1 OVR), ma i tifosi potrebbero ammirare la tua 'cazzimma' (+1 OVR).",
+    btnB: "Dai il cinque ed esci", effB: "Atteggiamento da leader maturo. Guadagni la stima del gruppo.",
+    actionA: (c, resolve) => {
+      const tifosi_con_te = Math.random() > 0.6; // Solo il 40% delle volte i tifosi ti capiscono
+      if(tifosi_con_te) {
+        toast("🔥 La curva canta il tuo nome!");
+        resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Che carattere! I tifosi amano chi non vuole mai uscire dal campo (+1 OVR).</span>" });
+      } else {
+        toast("🧊 L'allenatore ti mette fuori rosa.");
+        resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Atteggiamento infantile: multa e tribuna. (-1 OVR)</span>" });
+      }
+    },
+    actionB: (c, resolve) => {
+      toast("👏 Ti siedi in panchina e inciti i compagni.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Uomo squadra. Niente polemiche sui giornali, va bene così.</span>" });
+    }
+  },
+  {
+    title: "Il Contratto di ADL", icon: "📑",
+    desc: "Sei negli uffici della Filmauro. De Laurentiis ti mette davanti un rinnovo: stipendio d'oro, ma devi cedere il 100% dei diritti d'immagine.",
+    btnA: "Firma tutto", effA: "Guadagni subito 100 Crediti. Nessun boost al tuo overall in campo.",
+    btnB: "Rifiuta le condizioni", effB: "Scelta audace. I tifosi amano la tua fedeltà (+1 OVR) ma perdi 40 Crediti in penali.",
+    actionA: (c, resolve) => {
+      addCredits(100, "Rinnovo Filmauro");
+      toast("💰 Hai firmato! ADL è felice.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai ceduto i diritti d'immagine. Ti sei arricchito (100 Crediti)!</span>" });
+    },
+    actionB: (c, resolve) => {
+      const currentCreds = getCredits();
+      if(currentCreds >= 40) addCredits(-40, "Avvocati e procuratori");
+      toast("⚖️ Braccio di ferro con la società!");
+      resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>I tifosi stanno dalla tua parte contro la società! (+1 OVR)</span>" });
+    }
+  },
+  {
+    title: "Chiamata da Istanbul", icon: "📞",
+    desc: "Alla vigilia di un match europeo, ricevi una chiamata da Dries Mertens. Ti spiega un movimento speciale per eludere i difensori.",
+    btnA: "Provi la giocata di Ciro", effA: "Se ti riesce fai una partita pazzesca (+1 OVR), se sbagli fai brutta figura in mondovisione (-1 OVR).",
+    btnB: "Fai il tuo gioco", effB: "Nessun rischio, giochi come sai.",
+    actionA: (c, resolve) => {
+      const successo = Math.random() > 0.35; // 65% di successo
+      if(successo) {
+        toast("⚽ Tiro a giro pazzesco!");
+        resolve({ ovrMod: 1, extraGoals: 2, msg: "<span style='color:#00ff88'>Hai ascoltato Dries! Giocata da fenomeno puro! (+1 OVR)</span>" });
+      } else {
+        toast("🤦‍♂️ Inciampi sul pallone...");
+        resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Hai provato a fare Ciro, ma non sei lui. Brutta prestazione (-1 OVR).</span>" });
+      }
+    },
+    actionB: (c, resolve) => {
+      toast("🤷‍♂️ Ringrazi Dries ma resti sul classico.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai fatto una partita solida, senza strafare.</span>" });
+    }
+  },
+  {
+    title: "La Cena di Squadra", icon: "🍕",
+    desc: "Siamo in ritiro e c'è aria tesa. Si organizza una cena di squadra in una nota pizzeria sul lungomare per compattare il gruppo.",
+    btnA: "Offri la cena a tutti", effA: "Spendi 35 Crediti, ma diventi l'anima incontrastata dello spogliatoio (+1 OVR sicuro).",
+    btnB: "Paghi alla romana", effB: "Serata tranquilla tra compagni, nessun bonus o spesa extra.",
+    actionA: (c, resolve) => {
+      if(getCredits() >= 35) {
+        addCredits(-35, "Cena di squadra offerta");
+        toast("🍕 Hai offerto a tutti! Sei un leader.");
+        resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Gesto da vero capitano. Lo spogliatoio ora lotta per te! (+1 OVR)</span>" });
+      } else {
+        toast("💸 Non hai abbastanza soldi per offrire!");
+        resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Volevi offrire ma avevi il portafoglio vuoto. Che figura...</span>" });
+      }
+    },
+    actionB: (c, resolve) => {
+      toast("🍕 Pizza, sfogliatelle e chiacchiere.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Bella serata di gruppo, niente di eccezionale per le statistiche.</span>" });
+    }
+  }
+];
+
 // SIMULAZIONE DELL'INTERA STAGIONE IN UN SOLO CLICK
 window.simulateFullPlayerSeason = function() {
   if(typeof playSound === 'function') playSound('fischio');
@@ -5062,7 +5512,7 @@ window.simulateFullPlayerSeason = function() {
 
   const ovrPower = Math.pow(c.ovr / 100, 3.5); 
 
-  // Fast Loop pulito senza DOM updates
+  // 1. Calcolo Statistiche Base
   for (let md = 1; md <= seasonMatches; md++) {
     let rating = 5.5 + (Math.random() * 2) + (ovrPower * 2.5);
     if (rating > 10) rating = 10;
@@ -5095,161 +5545,206 @@ window.simulateFullPlayerSeason = function() {
     seasonAssists += scoredA;
   }
 
-  const napoliPts = 60 + Math.floor(Math.random() * (c.ovr > 80 ? 35 : 25)); 
-  let napoliPos = napoliPts >= 88 ? "1° (Campioni!)" : napoliPts >= 75 ? "Zona Champions" : "Piazzamento Europeo";
-
   let avgRating = seasonMatches > 0 ? (ratingSum / seasonMatches) : 0;
   
-  let wonPOTM = 0;
-  let wonMVP = false;
-  let wonBallonDor = false;
-
-  if (avgRating >= 8.5) wonPOTM = Math.floor(Math.random() * 3) + 2; 
-  else if (avgRating >= 7.8) wonPOTM = Math.floor(Math.random() * 2) + 1; 
-  else if (avgRating >= 7.3 && Math.random() > 0.5) wonPOTM = 1;
-
-  if (avgRating >= 8.2 && napoliPts >= 80) wonMVP = true;
-  
-  let hasStatsForBallonDor = false;
-  if (c.role === "POR") hasStatsForBallonDor = seasonAssists >= 18; 
-  else hasStatsForBallonDor = (seasonGoals + seasonAssists) >= 25; 
-
-  if (c.ovr >= 88 && avgRating >= 8.5 && hasStatsForBallonDor && napoliPts >= 85) wonBallonDor = true;
-
-  c.potm = (c.potm || 0) + wonPOTM;
-  if (wonMVP) c.mvp = (c.mvp || 0) + 1;
-  if (wonBallonDor) c.ballonDor = (c.ballonDor || 0) + 1;
-
-  // ========================================================
-  // SISTEMA DI CRESCITA PROPORZIONALE AL RENDIMENTO E HARD CAP
-  // ========================================================
+  // 2. Crescita (Level Ups) Pre-Evento
   let oldOvr = c.ovr;
   let levelUps = 0;
   c.ovr = parseInt(c.ovr); 
   
-  // Calcolo del rendimento stagionale basato sulle attese del ruolo
   let totalContribution = c.role === "POR" ? seasonAssists : (seasonGoals + seasonAssists);
   let expectedContribution = ["ATT", "AS", "AD"].includes(c.role) ? 20 : ["TRQ", "CC"].includes(c.role) ? 12 : c.role === "POR" ? 12 : 5;
   let gaRatio = totalContribution / expectedContribution;
   
   if (c.age >= 32) {
-      // FASE DI DECLINO (Un grande rendimento frena la caduta!)
       let declineChance = 0.3 + ((c.age - 32) * 0.15) - (gaRatio * 0.15); 
       if (declineChance > 0 && Math.random() < declineChance) levelUps--;
       if (declineChance > 0.5 && Math.random() < declineChance * 0.5) levelUps--;
   } else if (c.ovr < c.potential) {
-      // FASE DI CRESCITA
       let gap = c.potential - c.ovr;
       let baseChance = 0.10 + (gap * 0.05); 
-      
       if (c.age <= 22) baseChance += 0.20; 
       if (avgRating >= 7.5) baseChance += 0.15; 
-      
-      // I gol/assist spingono la crescita fortemente!
       if (gaRatio >= 1.0) baseChance += 0.25;
       if (gaRatio >= 1.5) baseChance += 0.40;
 
-      // FIX CRESCITA FORZATA: Se hai fatto una stagione assurda (es. 30 gol) prendi un +1 sicuro!
       if (gaRatio >= 1.5 && gap > 0) {
           levelUps++;
-          baseChance *= 0.5; // Il secondo livello costa più fatica
+          baseChance *= 0.5; 
       }
-
       if (Math.random() < baseChance) {
           levelUps++;
           if (gap >= 3 && Math.random() < (baseChance * 0.3)) levelUps++; 
       }
   } else {
-      // POTENZIALE RAGGIUNTO (Crescita rallentata ma possibile se spacchi tutto)
       let miracleChance = 0.02; 
-      if (gaRatio >= 1.5) miracleChance += 0.15; // Molti gol sfondano il potenziale!
+      if (gaRatio >= 1.5) miracleChance += 0.15; 
       if (avgRating >= 8.5) miracleChance += 0.10;
-      if (wonMVP) miracleChance += 0.15;
-      if (wonBallonDor) miracleChance += 0.25;
-
-      // Se sei a 99, arrivare a 100 è durissimo!
       if (c.ovr === 99) miracleChance *= 0.3;
-
       if (Math.random() < miracleChance) levelUps = 1;
   }
 
-  // HARD CAP MATEMATICO A 100 OVR (non sfonda mai il 100)
-  if (c.ovr + levelUps > 100) {
-      levelUps = 100 - c.ovr;
-  }
-
-  c.ovr += levelUps;
-  c.age++;
-  c.matches += seasonMatches;
-  c.goals += seasonGoals;
-  c.assists += seasonAssists;
-  c.season++;
-
-  // CAP CREDITI: MAX 100 A STAGIONE
-  let rawCredits = 20 + (seasonMatches * 1) + (seasonGoals * 2) + (seasonAssists * 1) + (wonMVP ? 20 : 0) + (wonBallonDor ? 30 : 0);
-  let earnedCredits = Math.min(Math.round(rawCredits), 100); 
+  // ==========================================
+  // 3. IL BIVIO STAGIONALE (EVENTO INTERATTIVO)
+  // ==========================================
+  // Seleziona un evento a caso
+  const ev = PLAYER_CAREER_EVENTS[Math.floor(Math.random() * PLAYER_CAREER_EVENTS.length)];
   
-  addCredits(earnedCredits, `Stagione ${c.season - 1}`);
-  window.savePlayerCareerData(c);
-
-  showScreen("#screen-player-match");
-  const matchBody = document.getElementById("player-match-body");
+  const modal = document.getElementById("adl-modal");
+  document.getElementById("adl-icon").textContent = ev.icon;
+  document.getElementById("adl-title").textContent = ev.title;
+  document.getElementById("adl-desc").textContent = ev.desc;
   
-  let growthText = "";
-  if (levelUps > 0) growthText = `<span style="color:#00ff88;">+${levelUps} OVR! (Ora sei a ${c.ovr})</span>`;
-  else if (levelUps < 0) growthText = `<span style="color:#ff5c5c;">${levelUps} OVR (Declino: ${c.ovr})</span>`;
-  else growthText = `<span style="color:var(--testo-dim);">OVR Stabile (${c.ovr})</span>`;
+  // Cambiamo l'etichetta in alto
+  const tagEl = modal.querySelector(".pm-tag");
+  if(tagEl) tagEl.textContent = "BIVIO CARRIERA";
+  
+  document.getElementById("adl-btn-a").querySelector("strong").textContent = ev.btnA;
+  document.getElementById("adl-eff-a").textContent = ev.effA;
+  document.getElementById("adl-btn-b").querySelector("strong").textContent = ev.btnB;
+  document.getElementById("adl-eff-b").textContent = ev.effB;
 
-  let awardsText = "";
-  if (wonBallonDor) awardsText += `<p style="color:#ffd24a; font-size:1.1rem; margin:5px 0;">🥇 HAI VINTO IL PALLONE D'ORO!</p>`;
-  if (wonMVP) awardsText += `<p style="color:#00a1ff; font-size:1.1rem; margin:5px 0;">🏅 Nominato MVP della Serie A!</p>`;
-  if (wonPOTM > 0) awardsText += `<p style="color:#fff; font-size:0.9rem; margin:5px 0;">🎖️ Eletto ${wonPOTM} volte Giocatore del Mese</p>`;
+  modal.classList.add("show");
 
-  let stat1LabelMatch = c.role === "POR" ? "GOL SUBITI" : "GOL FATTI";
-  let stat2LabelMatch = c.role === "POR" ? "RETI INVIOLATE" : "ASSIST";
+  // Funzione che riceve il risultato dall'evento (o dal rigore)
+  const resolveSeason = (eventResult) => {
+    // Applica l'esito dell'evento
+    levelUps += eventResult.ovrMod;
+    seasonGoals += eventResult.extraGoals;
 
-  matchBody.innerHTML = `
-    <div class="verdict gold">
-      <h3 style="font-size:2.2rem; margin:10px 0; color:var(--celeste-chiaro);">FINE STAGIONE ${c.season - 1}</h3>
-      <p style="font-size: 1.1rem; margin-bottom: 15px;">Il Napoli ha chiuso la stagione in: <strong style="color:#fff;">${napoliPos}</strong></p>
-      
-      ${awardsText ? `<div style="background:rgba(255,210,74,0.1); border:1px solid #ffd24a; border-radius:12px; padding:10px; margin-bottom:20px;">${awardsText}</div>` : ''}
+    // HARD CAP MATEMATICO A 100 OVR
+    if (c.ovr + levelUps > 100) levelUps = 100 - c.ovr;
+    
+    // Aggiorna definitivamente i dati del giocatore
+    c.ovr += levelUps;
+    c.age++;
+    c.matches += seasonMatches;
+    c.goals += seasonGoals;
+    c.assists += seasonAssists;
+    c.season++;
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
-        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
-          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">PRESENZE</span>
-          <strong style="font-size:1.8rem; color:#fff;">${seasonMatches}<small style="font-size:1rem;color:var(--testo-dim);">/38</small></strong>
-        </div>
-        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
-          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">MEDIA VOTO</span>
-          <strong style="font-size:1.8rem; color:#ffd24a;">${avgRating.toFixed(1)}</strong>
-        </div>
-        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
-          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat1LabelMatch}</span>
-          <strong style="font-size:1.8rem; color:#fff;">${seasonGoals}</strong>
-        </div>
-        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
-          <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat2LabelMatch}</span>
-          <strong style="font-size:1.8rem; color:#fff;">${seasonAssists}</strong>
-        </div>
-      </div>
+    // Trofei e Piazzamenti
+    const napoliPts = 60 + Math.floor(Math.random() * (c.ovr > 80 ? 35 : 25)); 
+    let napoliPos = napoliPts >= 88 ? "1° (Campioni!)" : napoliPts >= 75 ? "Zona Champions" : "Piazzamento Europeo";
 
-      <div style="background:rgba(0,255,136,0.1); border:1px solid #00ff88; padding:15px; border-radius:14px; margin-bottom:15px;">
-        <span style="font-size:0.8rem; color:#00ff88; text-transform:uppercase; display:block; margin-bottom:5px;">SVILUPPO GIOCATORE</span>
-        <strong style="font-family:var(--font-display); font-size:2rem; color:#fff;">${oldOvr} ➔ ${c.ovr}</strong><br>
-        ${growthText}
-      </div>
-      
-      <p style="color:#ffd24a; font-weight:bold;">💰 Hai guadagnato ${earnedCredits} Crediti!</p>
+    let wonPOTM = 0, wonMVP = false, wonBallonDor = false;
+    if (avgRating >= 8.5) wonPOTM = Math.floor(Math.random() * 3) + 2; 
+    else if (avgRating >= 7.8) wonPOTM = Math.floor(Math.random() * 2) + 1; 
+    else if (avgRating >= 7.3 && Math.random() > 0.5) wonPOTM = 1;
 
-      <button id="btn-continue-player-hub" class="btn primary" style="width:100%; margin-top:15px;">Avvia Stagione ${c.season} ➔</button>
-    </div>
-  `;
+    if (avgRating >= 8.2 && napoliPts >= 80) wonMVP = true;
+    
+    let hasStatsForBallonDor = c.role === "POR" ? seasonAssists >= 18 : (seasonGoals + seasonAssists) >= 25; 
+    if (c.ovr >= 88 && avgRating >= 8.5 && hasStatsForBallonDor && napoliPts >= 85) wonBallonDor = true;
 
-  document.getElementById("btn-continue-player-hub").onclick = () => {
+    c.potm = (c.potm || 0) + wonPOTM;
+    if (wonMVP) c.mvp = (c.mvp || 0) + 1;
+    if (wonBallonDor) c.ballonDor = (c.ballonDor || 0) + 1;
+
+    // CAP CREDITI: MAX 100 A STAGIONE
+    let rawCredits = 20 + (seasonMatches * 1) + (seasonGoals * 2) + (seasonAssists * 1) + (wonMVP ? 20 : 0) + (wonBallonDor ? 30 : 0);
+    let earnedCredits = Math.min(Math.round(rawCredits), 100); 
+    
+    addCredits(earnedCredits, `Stagione ${c.season - 1}`);
+    window.savePlayerCareerData(c);
+    // --- INIZIO HOOK MISSIONI CARRIERA ---
+    window.updateMissionProgress('career', 1);
+    window.updateMissionProgress('goal', seasonGoals);
+    // --- FINE HOOK MISSIONI CARRIERA ---
+
+    // ==========================================
+    // 4. MOSTRA LA SCHERMATA FINALE
+    // ==========================================
+    setTimeout(() => {
+        showScreen("#screen-player-match");
+        const matchBody = document.getElementById("player-match-body");
+        
+        // Controlliamo se la rarità è cambiata
+        const oldRarity = window.getCareerRarity(oldOvr);
+        const newRarity = window.getCareerRarity(c.ovr);
+        
+        let growthText = "";
+        if (levelUps > 0) growthText = `<span style="color:#00ff88;">+${levelUps} OVR! (Ora sei a ${c.ovr})</span>`;
+        else if (levelUps < 0) growthText = `<span style="color:#ff5c5c;">${levelUps} OVR (Declino: ${c.ovr})</span>`;
+        else growthText = `<span style="color:var(--testo-dim);">OVR Stabile (${c.ovr})</span>`;
+
+        if (oldRarity.label !== newRarity.label && levelUps > 0) {
+            growthText += `<br><span style="color:${newRarity.ovrColor}; font-family:var(--font-cond); font-weight:bold; font-size:1.1rem; display:block; margin-top:8px;">🌟 EVOLUZIONE IN CARTA ${newRarity.label}! 🌟</span>`;
+        } else if (oldRarity.label !== newRarity.label && levelUps < 0) {
+            growthText += `<br><span style="color:#ff5c5c; font-family:var(--font-cond); font-weight:bold; font-size:1rem; display:block; margin-top:8px;">📉 DECLASSATO A CARTA ${newRarity.label}</span>`;
+        }
+
+        let awardsText = "";
+        if (wonBallonDor) awardsText += `<p style="color:#ffd24a; font-size:1.1rem; margin:5px 0;">🥇 HAI VINTO IL PALLONE D'ORO!</p>`;
+        if (wonMVP) awardsText += `<p style="color:#00a1ff; font-size:1.1rem; margin:5px 0;">🏅 Nominato MVP della Serie A!</p>`;
+        if (wonPOTM > 0) awardsText += `<p style="color:#fff; font-size:0.9rem; margin:5px 0;">🎖️ Eletto ${wonPOTM} volte Giocatore del Mese</p>`;
+
+        let stat1LabelMatch = c.role === "POR" ? "GOL SUBITI" : "GOL FATTI";
+        let stat2LabelMatch = c.role === "POR" ? "RETI INVIOLATE" : "ASSIST";
+
+        matchBody.innerHTML = `
+          <div class="verdict gold">
+            <h3 style="font-size:2.2rem; margin:10px 0; color:var(--celeste-chiaro);">FINE STAGIONE ${c.season - 1}</h3>
+            <p style="font-size: 1.1rem; margin-bottom: 15px;">Il Napoli ha chiuso la stagione in: <strong style="color:#fff;">${napoliPos}</strong></p>
+            
+            ${awardsText ? `<div style="background:rgba(255,210,74,0.1); border:1px solid #ffd24a; border-radius:12px; padding:10px; margin-bottom:20px;">${awardsText}</div>` : ''}
+
+            <!-- IL MESSAGGIO DELL'EVENTO -->
+            <div style="background:rgba(0,11,26,0.6); border:1px dashed var(--celeste); border-radius:10px; padding:12px; margin-bottom:20px; font-size:0.9rem;">
+              <strong style="color:var(--celeste-chiaro); display:block; margin-bottom:4px;">L'episodio della stagione:</strong>
+              ${eventResult.msg}
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:20px;">
+              <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+                <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">PRESENZE</span>
+                <strong style="font-size:1.8rem; color:#fff;">${seasonMatches}<small style="font-size:1rem;color:var(--testo-dim);">/38</small></strong>
+              </div>
+              <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+                <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">MEDIA VOTO</span>
+                <strong style="font-size:1.8rem; color:#ffd24a;">${avgRating.toFixed(1)}</strong>
+              </div>
+              <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+                <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat1LabelMatch}</span>
+                <strong style="font-size:1.8rem; color:#fff;">${seasonGoals}</strong>
+              </div>
+              <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; border:1px solid rgba(0,161,255,0.3);">
+                <span style="font-size:0.7rem; color:var(--testo-dim); display:block;">${stat2LabelMatch}</span>
+                <strong style="font-size:1.8rem; color:#fff;">${seasonAssists}</strong>
+              </div>
+            </div>
+
+            <div style="background:rgba(0,255,136,0.1); border:1px solid #00ff88; padding:15px; border-radius:14px; margin-bottom:15px;">
+              <span style="font-size:0.8rem; color:#00ff88; text-transform:uppercase; display:block; margin-bottom:5px;">SVILUPPO GIOCATORE</span>
+              <strong style="font-family:var(--font-display); font-size:2rem; color:#fff;">${oldOvr} ➔ ${c.ovr}</strong><br>
+              ${growthText}
+            </div>
+            
+            <p style="color:#ffd24a; font-weight:bold;">💰 Hai guadagnato ${earnedCredits} Crediti!</p>
+
+            <button id="btn-continue-player-hub" class="btn primary" style="width:100%; margin-top:15px;">Avvia Stagione ${c.season} ➔</button>
+          </div>
+        `;
+
+        document.getElementById("btn-continue-player-hub").onclick = () => {
+          if(typeof playSound === 'function') playSound('click');
+          showScreen("#screen-player-career");
+          window.renderPlayerDashboard();
+        };
+    }, 200); 
+  };
+
+  // 5. ASSEGNAZIONE EVENTI E CALLBACK
+  document.getElementById("adl-btn-a").onclick = () => { 
+    modal.classList.remove("show");
     if(typeof playSound === 'function') playSound('click');
-    showScreen("#screen-player-career");
-    window.renderPlayerDashboard();
+    ev.actionA(c, resolveSeason); 
+  };
+  
+  document.getElementById("adl-btn-b").onclick = () => { 
+    modal.classList.remove("show");
+    if(typeof playSound === 'function') playSound('click');
+    ev.actionB(c, resolveSeason); 
   };
 };
 
