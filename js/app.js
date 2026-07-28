@@ -1174,12 +1174,19 @@ function initDailyMissions() {
     let loginReward = 50 + (streak * 20);
     if (loginReward > 300) loginReward = 300;
 
-    // Pesca 2 missioni casuali + il login
-    let shuffled = shuffle(DAILY_QUESTS_POOL).slice(0, 2);
-    let newQuests = [
-      { id: "login", desc: `Accedi al gioco (Streak: ${streak} gg)`, target: 1, progress: 1, reward: loginReward, type: "login", claimed: false },
-      ...shuffled.map(q => ({ ...q, progress: 0, claimed: false }))
-    ];
+   // Calcoliamo un "ID del giorno" basato sulla data attuale (cambia a mezzanotte)
+        const dayIndex = Math.floor(new Date().getTime() / 86400000);
+        const poolSize = DAILY_QUESTS_POOL.length;
+        
+        // Peschiamo 2 missioni matematicamente legate al giorno (identiche su PC e Telefono!)
+        const idx1 = (dayIndex * 2) % poolSize;
+        const idx2 = (dayIndex * 2 + 1) % poolSize;
+        const missioniDelGiorno = [ DAILY_QUESTS_POOL[idx1], DAILY_QUESTS_POOL[idx2] ];
+
+        let newQuests = [
+          { id: "login", desc: `Accedi al gioco (Streak: ${streak} gg)`, target: 1, progress: 1, reward: loginReward, type: "login", claimed: false },
+          ...missioniDelGiorno.map(q => ({ ...q, progress: 0, claimed: false }))
+        ];
 
     missionsData = { date: today, quests: newQuests };
     localStorage.setItem('napoli380_missions', JSON.stringify(missionsData));
@@ -4989,12 +4996,11 @@ function renderCollection() {
         };
     }
 }
-/* ============================================================
-   SISTEMA DI LOGIN E SINCRONIZZAZIONE CLOUD (FIREBASE)
-   ============================================================ */
-const FAKE_DOMAIN = "@napoli380.game"; // Dominio inventato per ingannare Firebase
+// ============================================================
+// SISTEMA DI LOGIN E SINCRONIZZAZIONE CLOUD (FIREBASE)
+// ============================================================
+const FAKE_DOMAIN = "@napoli380.game";
 
-// Elementi grafici del widget
 const authLoggedOut = document.getElementById("auth-logged-out");
 const authLoggedIn = document.getElementById("auth-logged-in");
 const authUsernameInput = document.getElementById("auth-username");
@@ -5004,32 +5010,33 @@ const btnLogout = document.getElementById("btn-logout");
 const loggedUsernameDisplay = document.getElementById("logged-username");
 
 let syncTimeout = null;
-let pendingCloudSync = false; // true finché una scrittura non è ancora confermata dal Cloud
+let pendingCloudSync = false;
 
-// --- 1. FUNZIONE CHE ESEGUE DAVVERO IL SALVATAGGIO SUL CLOUD ---
+// --- 1. FUNZIONE CHE ESEGUE DAVVERO IL SALVATAGGIO SUL CLOUD (TUTTE LE CHIAVI) ---
 function performCloudSave() {
   if (typeof auth === "undefined" || !auth.currentUser) { pendingCloudSync = false; return; }
 
-  const creds = parseInt(localStorage.getItem('napoli380_credits') || "0", 10);
-  const coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
-  const ach = JSON.parse(localStorage.getItem('napoli380_ach') || "[]");
-  const doppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
-  const carriera = JSON.parse(localStorage.getItem('napoli380_player_career') || "null");
-  const stats = JSON.parse(localStorage.getItem('napoli380_stats') || "null");
-  const passXp = localStorage.getItem('napoli380_pass_xp') || "0";
-  const missioni = JSON.parse(localStorage.getItem('napoli380_missions') || "null");
-
-  db.collection("users").doc(auth.currentUser.uid).set({
-    credits: creds,
-    collection: coll,
-    achievements: ach,
-    doppioni: doppioni,
-    carriera: carriera,
-    stats: stats,
-    passXp: passXp,
-    missioni: missioni,
+  const payload = {
+    credits: parseInt(localStorage.getItem('napoli380_credits') || "0", 10),
+    collection: JSON.parse(localStorage.getItem('napoli380_collection') || "[]"),
+    achievements: JSON.parse(localStorage.getItem('napoli380_ach') || "[]"),
+    doppioni: JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]"),
+    carriera: JSON.parse(localStorage.getItem('napoli380_player_career') || "null"),
+    stats: JSON.parse(localStorage.getItem('napoli380_stats') || "null"),
+    passXp: localStorage.getItem('napoli380_pass_xp') || "0",
+    missioni: JSON.parse(localStorage.getItem('napoli380_missions') || "null"),
+    upgrades: JSON.parse(localStorage.getItem('napoli380_upgrades') || "[]"),
+    allTimeScorers: JSON.parse(localStorage.getItem('napoli380_allTimeScorers') || "{}"),
+    streak: localStorage.getItem('napoli380_streak') || "0",
+    lastLogin: localStorage.getItem('napoli380_lastLogin') || "",
+    passClaimed: localStorage.getItem('napoli380_pass_claimed') || "false",
+    passId: localStorage.getItem('napoli380_pass_id') || "",
+    hof: JSON.parse(localStorage.getItem('napoli380_hof') || "null"),
     lastSync: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true }).then(() => {
+  };
+
+  db.collection("users").doc(auth.currentUser.uid).set(payload, { merge: true })
+  .then(() => {
     pendingCloudSync = false;
     console.log("☁️ Salvataggio Cloud completato in background!");
   }).catch(err => {
@@ -5039,12 +5046,9 @@ function performCloudSave() {
   });
 }
 
-// --- 2. FUNZIONE PER SALVARE SUL CLOUD (con piccolo ritardo per raggruppare più scritture) ---
-// Se "immediate" è true, salva subito senza aspettare (usata dopo azioni importanti
-// come l'apertura di un pacchetto, dove non possiamo rischiare che l'utente chiuda
-// la pagina prima che parta la sincronizzazione).
+// --- 2. FUNZIONE PER SALVARE SUL CLOUD (Con ritardo anti-spam) ---
 function syncToCloud(immediate) {
-  if (typeof auth === "undefined" || !auth.currentUser) return; // Salva solo se loggato
+  if (typeof auth === "undefined" || !auth.currentUser) return;
 
   clearTimeout(syncTimeout);
   pendingCloudSync = true;
@@ -5053,31 +5057,58 @@ function syncToCloud(immediate) {
     performCloudSave();
     return;
   }
-  // Ritardo breve solo per raggruppare più modifiche fatte nello stesso istante
   syncTimeout = setTimeout(performCloudSave, 400);
 }
 
-// --- 3. RETE DI SICUREZZA: se l'utente cambia scheda, minimizza o chiude il sito
-// mentre c'è un salvataggio "in sospeso", lo forziamo a partire immediatamente
-// invece di aspettare il timer (altrimenti si perdono carte/crediti appena ottenuti).
-function flushPendingCloudSync() {
-  if (pendingCloudSync) {
-    clearTimeout(syncTimeout);
-    performCloudSave();
-  }
+// --- 3. FUNZIONE PER CARICARE DAL CLOUD AL LOGIN O ALLA RIAPERTURA APP ---
+function loadFromCloud(uid, showToast = true) {
+  db.collection("users").doc(uid).get().then(doc => {
+    if (doc.exists) {
+      const data = doc.data();
+      const setLoc = (k, v) => originalSetItem.call(localStorage, k, v); // Usa la funzione originale senza triggerare nuovi upload
+      
+      if (data.credits !== undefined) setLoc('napoli380_credits', data.credits);
+      if (data.collection) setLoc('napoli380_collection', JSON.stringify(data.collection));
+      if (data.achievements) setLoc('napoli380_ach', JSON.stringify(data.achievements));
+      if (data.doppioni) setLoc('napoli380_doppioni', JSON.stringify(data.doppioni));
+      if (data.carriera) setLoc('napoli380_player_career', JSON.stringify(data.carriera));
+      if (data.stats) setLoc('napoli380_stats', JSON.stringify(data.stats));
+      if (data.passXp !== undefined) setLoc('napoli380_pass_xp', data.passXp);
+      if (data.missioni) setLoc('napoli380_missions', JSON.stringify(data.missioni));
+      if (data.upgrades) setLoc('napoli380_upgrades', JSON.stringify(data.upgrades));
+      if (data.allTimeScorers) setLoc('napoli380_allTimeScorers', JSON.stringify(data.allTimeScorers));
+      if (data.streak !== undefined) setLoc('napoli380_streak', data.streak);
+      if (data.lastLogin !== undefined) setLoc('napoli380_lastLogin', data.lastLogin);
+      if (data.passClaimed !== undefined) setLoc('napoli380_pass_claimed', data.passClaimed);
+      if (data.passId !== undefined) setLoc('napoli380_pass_id', data.passId);
+      if (data.hof) setLoc('napoli380_hof', JSON.stringify(data.hof));
+
+      // Aggiorna visivamente tutte le UI in tempo reale
+      if(typeof updateWalletUI === 'function') updateWalletUI();
+      if(typeof updateDupesBadge === 'function') updateDupesBadge();
+      if(typeof updatePassUI === 'function') updatePassUI();
+      if(typeof updateMissionsBadge === 'function') updateMissionsBadge();
+      if(typeof renderCollection === 'function' && document.getElementById("collection-grid") && document.getElementById("collection-grid").innerHTML !== "") renderCollection();
+      if(typeof renderBacheca === 'function') renderBacheca();
+      if(typeof renderStadium === 'function' && document.getElementById("stadium-upgrades-list") && document.getElementById("stadium-upgrades-list").innerHTML !== "") renderStadium();
+      
+      // Aggiorna la carriera live se ci sei dentro
+      if(window.playerCareerState !== undefined && data.carriera) {
+         window.playerCareerState = data.carriera;
+      }
+      
+      if(showToast) toast("☁️ Dati sincronizzati dal Cloud!");
+    } else {
+      syncToCloud(true); // Se l'utente è nuovo, carica il suo salvataggio locale sul cloud
+    }
+  }).catch(err => console.error("Errore caricamento Cloud:", err));
 }
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) flushPendingCloudSync();
-});
-window.addEventListener("pagehide", flushPendingCloudSync);
-window.addEventListener("beforeunload", flushPendingCloudSync);
 
 // --- 4. MAGIA: INTERCETTA I SALVATAGGI LOCALI E LI MANDA AL CLOUD ---
 const originalSetItem = localStorage.setItem;
 localStorage.setItem = function(key, value) {
-  originalSetItem.apply(this, arguments); // Salva normalmente in locale
+  originalSetItem.apply(this, arguments); 
   
-  // Lista di tutte le chiavi importanti da sincronizzare
   const syncKeys = [
     'napoli380_credits', 
     'napoli380_collection', 
@@ -5086,50 +5117,43 @@ localStorage.setItem = function(key, value) {
     'napoli380_doppioni',
     'napoli380_stats',
     'napoli380_pass_xp',
-    'napoli380_missions'
+    'napoli380_missions',
+    'napoli380_upgrades',
+    'napoli380_allTimeScorers',
+    'napoli380_streak',
+    'napoli380_lastLogin',
+    'napoli380_pass_claimed',
+    'napoli380_pass_id',
+    'napoli380_hof'
   ];
 
-  // Se la chiave modificata è nella lista, avvisa il Cloud!
   if (syncKeys.includes(key)) {
     syncToCloud();
   }
 };
 
-// --- 3. FUNZIONE PER CARICARE DAL CLOUD AL LOGIN ---
-function loadFromCloud(uid) {
-  db.collection("users").doc(uid).get().then(doc => {
-    if (doc.exists) {
-      const data = doc.data();
-      
-      // Sovrascrive il salvataggio locale usando il comando originale
-      if (data.credits !== undefined) originalSetItem.call(localStorage, 'napoli380_credits', data.credits);
-      if (data.collection) originalSetItem.call(localStorage, 'napoli380_collection', JSON.stringify(data.collection));
-      if (data.achievements) originalSetItem.call(localStorage, 'napoli380_ach', JSON.stringify(data.achievements));
-      if (data.doppioni) originalSetItem.call(localStorage, 'napoli380_doppioni', JSON.stringify(data.doppioni));
-      if (data.carriera) originalSetItem.call(localStorage, 'napoli380_player_career', JSON.stringify(data.carriera));
-      if (data.stats) originalSetItem.call(localStorage, 'napoli380_stats', JSON.stringify(data.stats));
-      if (data.passXp) originalSetItem.call(localStorage, 'napoli380_pass_xp', data.passXp);
-      if (data.missioni) originalSetItem.call(localStorage, 'napoli380_missions', JSON.stringify(data.missioni));
-
-      // Aggiorna visivamente i numeri sullo schermo
-      if(typeof updateWalletUI === 'function') updateWalletUI();
-      if(typeof updateDupesBadge === 'function') updateDupesBadge();
-      if(typeof updatePassUI === 'function') updatePassUI();
-      if(typeof updateMissionsBadge === 'function') updateMissionsBadge();
-      if(typeof renderCollection === 'function' && document.getElementById("collection-grid") && document.getElementById("collection-grid").innerHTML !== "") renderCollection();
-      if(typeof renderBacheca === 'function') renderBacheca();
-      
-      // Se era nella schermata carriera, aggiornala
-      if(window.playerCareerState !== undefined && data.carriera) {
-         window.playerCareerState = data.carriera;
-      }
-      
-      toast("☁️ Dati sincronizzati dal Cloud!");
-    } else {
-      syncToCloud();
-    }
-  }).catch(err => console.error("Errore caricamento Cloud:", err));
+// --- 5. RETE DI SICUREZZA ANTI-DESYNC (Background / Foreground su mobile) ---
+function flushPendingCloudSync() {
+  if (pendingCloudSync) {
+    clearTimeout(syncTimeout);
+    performCloudSave();
+  }
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    // Quando riduci l'app a icona o vai su un'altra scheda, forza il salvataggio immediato!
+    flushPendingCloudSync();
+  } else {
+    // Quando riapri l'app, SCARICA in automatico e silenziosamente gli ultimi aggiornamenti dal cloud!
+    if (typeof auth !== "undefined" && auth.currentUser && !pendingCloudSync) {
+       loadFromCloud(auth.currentUser.uid, false); 
+    }
+  }
+});
+
+window.addEventListener("pagehide", flushPendingCloudSync);
+window.addEventListener("beforeunload", flushPendingCloudSync);
 
 /* ============================================================
    CLASSIFICA GLOBALE (PER MODALITÀ)
