@@ -2242,10 +2242,23 @@ function processNextRipick() {
   if (!rogueFlow.ripickQueue.length) { showRogueSummary(); return; }
   const { ev, slotId } = rogueFlow.ripickQueue.shift(); 
   const slot = slots().find(s => s.id === slotId); 
-  const victim = state.team[slotId]; 
-  const victimName = victim ? victim.nome : "Un titolare"; // Rimosso il + " (" + victim.stagione + ")"
   
-  showPickEventModal({ nome: ev.nome, kind: "repick" }, `${victimName} · ${ev.text(slotId)}`, () => { delete state.team[slotId]; delete state.ratingMods[slotId]; showScreen("#screen-draft"); buildPitch(); slots().forEach(s => { if (state.team[s.id]) markFilledSlot(s, state.team[s.id]); }); drawRipickOptions(slot); });
+  // Generiamo il testo dell'evento (che ora contiene già da solo il nome del giocatore)
+  const eventText = ev.text(slotId);
+
+  // Aggiungiamo l'evento al Log della Cronaca laterale (prima non veniva salvato!)
+  state.rogueEvents.push({ nome: ev.nome, text: eventText, kind: "repick" });
+  if (typeof renderEventLog === 'function') renderEventLog();
+
+  // Mostriamo il popup pulito
+  showPickEventModal({ nome: ev.nome, kind: "repick" }, eventText, () => { 
+    delete state.team[slotId]; 
+    delete state.ratingMods[slotId]; 
+    showScreen("#screen-draft"); 
+    buildPitch(); 
+    slots().forEach(s => { if (state.team[s.id]) markFilledSlot(s, state.team[s.id]); }); 
+    drawRipickOptions(slot); 
+  });
 }
 
 
