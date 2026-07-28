@@ -960,7 +960,15 @@ function init() {
 
   // Unico listener infallibile su tutta la pagina per intercettare i click
   document.body.addEventListener("click", function(e) {
-    
+    // --- HACK PER FORZARE L'AUDIO SUL CANALE MULTIMEDIALE ---
+    if (!window._audioCanaleSbloccato) {
+      window._audioCanaleSbloccato = true;
+      const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+      const fakeAudio = new Audio(silentWav);
+      fakeAudio.loop = true;
+      fakeAudio.play().catch(() => { window._audioCanaleSbloccato = false; });
+    }
+    // --------------------------------------------------------
     // 1. Click su "Jamm' a jucà" e menu principali
     const menuBtn = e.target.closest("[data-menu]");
     if (menuBtn) {
