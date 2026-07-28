@@ -5006,26 +5006,33 @@ const loggedUsernameDisplay = document.getElementById("logged-username");
 let syncTimeout = null;
 let pendingCloudSync = false; // true finché una scrittura non è ancora confermata dal Cloud
 
-// --- 1. FUNZIONE CHE ESEGUE DAVVERO IL SALVATAGGIO SUL CLOUD (senza ritardo) ---
+// --- 1. FUNZIONE CHE ESEGUE DAVVERO IL SALVATAGGIO SUL CLOUD ---
 function performCloudSave() {
   if (typeof auth === "undefined" || !auth.currentUser) { pendingCloudSync = false; return; }
 
+  // Recuperiamo TUTTI i salvataggi
   const creds = parseInt(localStorage.getItem('napoli380_credits') || "0", 10);
   const coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
   const ach = JSON.parse(localStorage.getItem('napoli380_ach') || "[]");
+  const doppioni = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+  const carriera = JSON.parse(localStorage.getItem('napoli380_player_career') || "null");
+  const stats = JSON.parse(localStorage.getItem('napoli380_stats') || "null");
+  const passXp = localStorage.getItem('napoli380_pass_xp') || "0";
 
   db.collection("users").doc(auth.currentUser.uid).set({
     credits: creds,
     collection: coll,
     achievements: ach,
+    doppioni: doppioni,
+    carriera: carriera,
+    stats: stats,
+    passXp: passXp,
     lastSync: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true }).then(() => {
     pendingCloudSync = false;
     console.log("☁️ Salvataggio Cloud completato in background!");
   }).catch(err => {
     console.error("Errore salvataggio Cloud:", err);
-    // Se il salvataggio fallisce (es. connessione instabile) riprova a breve:
-    // non vogliamo perdere i progressi dell'utente.
     clearTimeout(syncTimeout);
     syncTimeout = setTimeout(performCloudSave, 3000);
   });
@@ -5068,8 +5075,8 @@ window.addEventListener("beforeunload", flushPendingCloudSync);
 const originalSetItem = localStorage.setItem;
 localStorage.setItem = function(key, value) {
   originalSetItem.apply(this, arguments); // Salva normalmente in locale
-  // Se stiamo modificando monete, carte o trofei, avvisa il Cloud!
-  if (key === 'napoli380_credits' || key === 'napoli380_collection' || key === 'napoli380_ach') {
+  // Se stiamo modificando monete, carte, trofei, doppioni o carriera, avvisa il Cloud!
+  if (key === 'napoli380_credits' || key === 'napoli380_collection' || key === 'napoli380_ach' || key === 'napoli380_player_career' || key === 'napoli380_doppioni') {
     syncToCloud();
   }
 };
@@ -5080,19 +5087,31 @@ function loadFromCloud(uid) {
     if (doc.exists) {
       const data = doc.data();
       
-      // Sovrascrive il salvataggio locale usando il comando originale (per non far scattare di nuovo il salvataggio cloud)
+      // Sovrascrive il salvataggio locale usando il comando originale
       if (data.credits !== undefined) originalSetItem.call(localStorage, 'napoli380_credits', data.credits);
       if (data.collection) originalSetItem.call(localStorage, 'napoli380_collection', JSON.stringify(data.collection));
       if (data.achievements) originalSetItem.call(localStorage, 'napoli380_ach', JSON.stringify(data.achievements));
+      
+      // Nuovi campi aggiunti
+      if (data.doppioni) originalSetItem.call(localStorage, 'napoli380_doppioni', JSON.stringify(data.doppioni));
+      if (data.carriera) originalSetItem.call(localStorage, 'napoli380_player_career', JSON.stringify(data.carriera));
+      if (data.stats) originalSetItem.call(localStorage, 'napoli380_stats', JSON.stringify(data.stats));
+      if (data.passXp) originalSetItem.call(localStorage, 'napoli380_pass_xp', data.passXp);
 
       // Aggiorna visivamente i numeri sullo schermo
       if(typeof updateWalletUI === 'function') updateWalletUI();
+      if(typeof updateDupesBadge === 'function') updateDupesBadge();
+      if(typeof updatePassUI === 'function') updatePassUI();
       if(typeof renderCollection === 'function' && document.getElementById("collection-grid") && document.getElementById("collection-grid").innerHTML !== "") renderCollection();
       if(typeof renderBacheca === 'function') renderBacheca();
       
+      // Se era nella schermata carriera, aggiornala
+      if(window.playerCareerState !== undefined && data.carriera) {
+         window.playerCareerState = data.carriera;
+      }
+      
       toast("☁️ Dati sincronizzati dal Cloud!");
     } else {
-      // È un utente appena registrato: carica i suoi attuali salvataggi locali sul server
       syncToCloud();
     }
   }).catch(err => console.error("Errore caricamento Cloud:", err));
