@@ -1,0 +1,36 @@
+{
+  "name": "38-0-0 NAPOLI · Cento anni d'azzurro",
+  "short_name": "Napoli 38-0-0",
+  "description": "Il manageriale azzurro per il centenario del Napoli. Costruisci la tua squadra e vivi cento anni di storia azzurra.",
+  "id": "/",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait-primary",
+  "background_color": "#00112b",
+  "theme_color": "#00112b",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["sports", "games", "entertainment"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
