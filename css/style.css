@@ -1739,10 +1739,56 @@ body.dreamteam-mode .btn.primary {
   font-size: 1.3rem;
 }
 .scoreboard.gold { border-color: var(--celeste); box-shadow: var(--shadow-bug), 0 0 26px rgba(0, 161, 255, 0.35), inset 0 0 30px rgba(0,0,0,0.5); }
+.mission-banner {
+  padding: var(--sp-5) var(--sp-6);
+  border-radius: var(--radius-card);
+  font-family: var(--font-display);
+  font-size: var(--fs-500);
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  text-align: center;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
 .mission-banner.ok { background: linear-gradient(90deg, #002147, #003c82); color: #b3e0ff; border: 2px solid var(--serieb); }
 .mission-banner.fail { background: var(--card); color: var(--testo-dim); border: 2px solid var(--azzurro); }
 .mission-banner.epicfail { background: linear-gradient(90deg, var(--azzurro-scuro), var(--azzurro)); color: var(--oro-luce); border: 2px solid var(--celeste); }
-.mission-banner.perfect { background: linear-gradient(90deg, var(--azzurro), var(--celeste)); color: #fff; border: 2px solid #fff; box-shadow: 0 0 26px rgba(0, 161, 255, 0.6); }
+
+/* Banner "38·0 · stagione perfetta": pezzo forte, con bagliore pulsante e riflesso che scorre */
+.mission-banner.perfect {
+  position: relative;
+  overflow: hidden;
+  font-size: var(--fs-600);
+  background: linear-gradient(120deg, var(--azzurro-scuro), var(--azzurro-vivo) 45%, var(--celeste) 75%, var(--azzurro-vivo));
+  background-size: 240% 240%;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.35), 0 2px 0 rgba(0, 0, 0, 0.25);
+  animation: perfectBannerDrift 6s ease infinite, perfectBannerPulse 2.2s ease-in-out infinite;
+}
+.mission-banner.perfect::before {
+  content: "";
+  position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-20deg);
+  animation: perfectBannerShine 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes perfectBannerDrift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes perfectBannerPulse {
+  0%, 100% { box-shadow: 0 0 22px rgba(0, 161, 255, 0.45), 0 0 46px rgba(0, 161, 255, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.06); }
+  50% { box-shadow: 0 0 34px rgba(102, 198, 255, 0.75), 0 0 70px rgba(0, 161, 255, 0.4), inset 0 0 24px rgba(255, 255, 255, 0.14); }
+}
+@keyframes perfectBannerShine {
+  0% { left: -60%; }
+  100% { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mission-banner.perfect, .mission-banner.perfect::before { animation: none !important; }
+}
 
 .lineup-recap {
   display: grid;
@@ -2589,6 +2635,45 @@ body.dreamteam-mode .btn.primary {
   border: 2px solid #ff5c5c !important;
   z-index: 10;
 }
+
+/* ============================================================
+   QUICKTIME EVENT: BARRA DI TEMPISMO (Contropiede e simili)
+   ============================================================ */
+.qte-track {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  margin: 26px 0 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(0,161,255,0.10), rgba(0,0,0,0.35));
+  border: 2px solid rgba(255,255,255,0.15);
+  overflow: hidden;
+}
+.qte-target-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(0,255,136,0.32);
+  border-left: 2px dashed #00ff88;
+  border-right: 2px dashed #00ff88;
+}
+.qte-cursor {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 6px;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 0 12px rgba(255,255,255,0.9), 0 0 24px var(--celeste);
+  transform: translateX(-50%);
+  left: 0%;
+}
+.qte-cursor.qte-hit { background: #00ff88 !important; box-shadow: 0 0 22px #00ff88 !important; }
+.qte-cursor.qte-miss { background: #ff5c5c !important; box-shadow: 0 0 22px #ff5c5c !important; }
+
+#qte-tap-btn { transition: transform 0.15s ease; width: 100%; margin-top: 6px; font-size: 1.15rem; padding: 16px; }
+#qte-tap-btn:active { transform: scale(0.95); }
+#qte-tap-btn:disabled { opacity: 0.5; pointer-events: none; }
 
 /* ============================================================
    RESTYLE ESTETICO · MICRO-INTERAZIONI (versione leggera)
@@ -4019,7 +4104,7 @@ body.dreamteam-mode .btn.primary {
   .topbar { row-gap: 6px; }
   .scorebug__brand, .scorebug__meta, #hud { min-width: 0; }
   .brand, .brand-sub { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-  .pick-modal .pm-card, #adl-modal .pm-card, #penalty-modal .pm-card {
+  .pick-modal .pm-card, #adl-modal .pm-card, #penalty-modal .pm-card, #qte-timing-modal .pm-card {
     width: 92vw !important; max-width: 92vw !important;
     max-height: 88dvh; overflow-y: auto;
   }
@@ -4797,4 +4882,164 @@ body.dreamteam-mode .slot.filled.slot-icon .slot-age {
 .slot.filled.slot-eroe .slot-age {
   color: #002147 !important;
   text-shadow: none !important;
+}
+
+/* ============================================================
+   PWA — BANNER INSTALLAZIONE APP (Android + iPhone)
+   ============================================================ */
+.pwa-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  background: linear-gradient(160deg, #001e42, #00112b);
+  border: 1.5px solid var(--celeste, #00a1ff);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,161,255,0.08);
+  animation: pwaSlideUp 0.4s ease;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.pwa-banner[hidden] { display: none; }
+
+@keyframes pwaSlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.pwa-banner__icon img {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.pwa-banner__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pwa-banner__text strong {
+  color: #fff;
+  font-family: var(--font-cond, inherit);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+.pwa-banner__text span {
+  color: var(--celeste-chiaro, #66c6ff);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.pwa-banner__btn.pwa-banner__btn {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  min-height: unset;
+}
+
+.pwa-banner__close {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--celeste, #00a1ff);
+  background: #00112b;
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Nasconde il banner su schermi larghi (desktop): pensato per mobile */
+@media (min-width: 861px) {
+  .pwa-banner { display: none !important; }
+}
+
+/* --- Foglio istruzioni iOS (Aggiungi a Home) --- */
+.pwa-ios-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 8, 20, 0.72);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: pwaFadeIn 0.25s ease;
+}
+.pwa-ios-sheet[hidden] { display: none; }
+
+@keyframes pwaFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.pwa-ios-sheet__panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(160deg, #001e42, #00112b);
+  border: 1.5px solid var(--celeste, #00a1ff);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 26px 22px 32px;
+  text-align: center;
+  animation: pwaSlideUp 0.35s ease;
+}
+
+.pwa-ios-sheet__icon {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+.pwa-ios-sheet__panel h3 {
+  color: #fff;
+  font-family: var(--font-display, inherit);
+  font-size: 1.3rem;
+  margin: 6px 0 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pwa-ios-sheet__panel ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  padding: 0;
+  margin: 0;
+}
+.pwa-ios-sheet__panel ol li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--celeste-chiaro, #66c6ff);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.pwa-ios-sheet__panel ol li strong { color: #fff; }
+
+.pwa-ios-step-icon {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: rgba(0,161,255,0.12);
+  border: 1px solid rgba(0,161,255,0.4);
+  color: var(--celeste, #00a1ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
 }
