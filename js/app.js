@@ -6682,6 +6682,17 @@ setTimeout(updatePassUI, 500);
 
   if (!isMobile || permanentlyDismissed() || sessionDismissed()) return;
 
+  // Il tag <script> di app.js si trova PRIMA di alcuni elementi nel body
+  // (es. il banner PWA, aggiunto in fondo alla pagina): se cercassimo
+  // subito questi elementi con getElementById, non esisterebbero ancora
+  // nel DOM. Aspettiamo quindi che l'intero documento sia stato letto.
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPwaUI);
+  } else {
+    initPwaUI();
+  }
+
+  function initPwaUI() {
   const banner = document.getElementById("pwa-install-banner");
   const bannerDesc = document.getElementById("pwa-banner-desc");
   const bannerInstallBtn = document.getElementById("pwa-banner-install");
@@ -6750,4 +6761,5 @@ setTimeout(updatePassUI, 500);
     if (banner) banner.hidden = true;
     if (iosSheet) iosSheet.hidden = true;
   });
+  } // fine initPwaUI
 })();
