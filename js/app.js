@@ -3,19 +3,313 @@
 /* ============================================================
    GESTORE SUONI (SOUND SYSTEM)
    ============================================================ */
-const sfx = {
-  click: new Audio('sounds/click.mp3'),
-  carta: new Audio('sounds/carta.mp3'),
-  fischio: new Audio('sounds/fischio.mp3'),
-  vittoria: new Audio('sounds/stadio.mp3')
+// Suoni generati al volo con la Web Audio API: niente file mp3 da caricare,
+// durate brevi e controllate, timbri ridisegnati da zero.
+let _actx = null;
+function getAudioCtx() {
+  if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_actx.state === "suspended") _actx.resume().catch(() => {});
+  return _actx;
+}
+
+// Buffer di rumore bianco, usato come base per whoosh/boati
+function makeNoiseBuffer(ctx, duration) {
+  const size = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+  return buffer;
+}
+
+// --- Click UI: tocco secco e breve (~90ms) ---
+function sfxClick() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(1100, t0);
+  osc.frequency.exponentialRampToValueAtTime(550, t0 + 0.05);
+  gain.gain.setValueAtTime(0.22, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.08);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + 0.09);
+}
+
+// --- Carta: fruscio + scatto secco, tipo scorrere/girare una carta (~200ms) ---
+function sfxCarta() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime, dur = 0.2;
+  const noise = ctx.createBufferSource();
+  noise.buffer = makeNoiseBuffer(ctx, dur);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass"; bp.Q.value = 0.8;
+  bp.frequency.setValueAtTime(1900, t0);
+  bp.frequency.exponentialRampToValueAtTime(500, t0 + dur);
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.0001, t0);
+  ng.gain.exponentialRampToValueAtTime(0.32, t0 + 0.02);
+  ng.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+  noise.connect(bp).connect(ng).connect(ctx.destination);
+  noise.start(t0); noise.stop(t0 + dur);
+
+  const snap = ctx.createOscillator(), sg = ctx.createGain();
+  const ts = t0 + dur * 0.6;
+  snap.type = "square";
+  snap.frequency.setValueAtTime(220, ts);
+  sg.gain.setValueAtTime(0.0001, ts);
+  sg.gain.exponentialRampToValueAtTime(0.14, ts + 0.015);
+  sg.gain.exponentialRampToValueAtTime(0.0008, ts + dur * 0.35);
+  snap.connect(sg).connect(ctx.destination);
+  snap.start(ts); snap.stop(t0 + dur + 0.02);
+}
+
+// --- Fischio: doppio fischietto da arbitro, acuto e corto (~400ms totali) ---
+function sfxFischio() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  function peep(start, dur, freq) {
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(start); osc.stop(start + dur + 0.02);
+  }
+  peep(t0, 0.14, 2100);
+  peep(t0 + 0.18, 0.2, 2350);
+}
+
+// --- Vittoria: piccola fanfara ascendente, per fine partita/stagione (~550ms) ---
+function sfxVittoria() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  const notes = [523.25, 659.25, 783.99, 1046.5]; // Do-Mi-Sol-Do
+  const noteDur = 0.14;
+  notes.forEach((freq, i) => {
+    const start = t0 + i * 0.09;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(0.2, start + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + noteDur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(start); osc.stop(start + noteDur + 0.02);
+  });
+}
+
+// --- Stadio: boato + colpo di corno per un grande momento (gol/walkout) (~500ms) ---
+// NUOVO: prima "stadio" non era collegato a nessun suono reale, ora suona davvero.
+function sfxStadio() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime, dur = 0.5;
+  const noise = ctx.createBufferSource();
+  noise.buffer = makeNoiseBuffer(ctx, dur);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass"; bp.Q.value = 0.6;
+  bp.frequency.setValueAtTime(300, t0);
+  bp.frequency.linearRampToValueAtTime(900, t0 + 0.15);
+  bp.frequency.linearRampToValueAtTime(400, t0 + dur);
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.0001, t0);
+  ng.gain.exponentialRampToValueAtTime(0.38, t0 + 0.1);
+  ng.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+  noise.connect(bp).connect(ng).connect(ctx.destination);
+  noise.start(t0); noise.stop(t0 + dur);
+
+  const horn = ctx.createOscillator(), hg = ctx.createGain();
+  const th = t0 + 0.05;
+  horn.type = "sawtooth";
+  horn.frequency.setValueAtTime(233, th);
+  hg.gain.setValueAtTime(0.0001, th);
+  hg.gain.exponentialRampToValueAtTime(0.16, th + 0.04);
+  hg.gain.exponentialRampToValueAtTime(0.0008, th + 0.3);
+  horn.connect(hg).connect(ctx.destination);
+  horn.start(th); horn.stop(th + 0.35);
+}
+
+// --- NUOVO: Errore, per azioni non valide (drop sbagliato, ecc.) (~180ms) ---
+// Non ancora richiamato da nessuna parte: puoi usarlo con playSound('errore')
+// dove serve segnalare un'azione bloccata.
+function sfxErrore() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(220, t0);
+  osc.frequency.exponentialRampToValueAtTime(110, t0 + 0.16);
+  gain.gain.setValueAtTime(0.2, t0);
+  gain.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.18);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + 0.2);
+}
+
+// --- NUOVO: Gol, per quando segna il Napoli (rigore/azione) (~350ms) ---
+function sfxGol() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  // Swoosh rete
+  const dur = 0.14;
+  const noise = ctx.createBufferSource();
+  noise.buffer = makeNoiseBuffer(ctx, dur);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass"; bp.Q.value = 1.1;
+  bp.frequency.setValueAtTime(2200, t0);
+  bp.frequency.exponentialRampToValueAtTime(700, t0 + dur);
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.0001, t0);
+  ng.gain.exponentialRampToValueAtTime(0.28, t0 + 0.015);
+  ng.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+  noise.connect(bp).connect(ng).connect(ctx.destination);
+  noise.start(t0); noise.stop(t0 + dur);
+
+  // Ding di esultanza (due note brillanti)
+  [880, 1318.5].forEach((freq, i) => {
+    const start = t0 + 0.1 + i * 0.09;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(0.24, start + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0008, start + 0.16);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(start); osc.stop(start + 0.18);
+  });
+}
+
+// --- NUOVO: Parata, per la respinta del portiere (~180ms) ---
+function sfxParata() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  const thump = ctx.createOscillator(), tg = ctx.createGain();
+  thump.type = "sine";
+  thump.frequency.setValueAtTime(180, t0);
+  thump.frequency.exponentialRampToValueAtTime(70, t0 + 0.12);
+  tg.gain.setValueAtTime(0.3, t0);
+  tg.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.15);
+  thump.connect(tg).connect(ctx.destination);
+  thump.start(t0); thump.stop(t0 + 0.16);
+
+  const dur = 0.05;
+  const noise = ctx.createBufferSource();
+  noise.buffer = makeNoiseBuffer(ctx, dur);
+  const hp = ctx.createBiquadFilter();
+  hp.type = "highpass"; hp.frequency.value = 1500;
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.2, t0);
+  ng.gain.exponentialRampToValueAtTime(0.0008, t0 + dur);
+  noise.connect(hp).connect(ng).connect(ctx.destination);
+  noise.start(t0); noise.stop(t0 + dur);
+}
+
+// --- NUOVO: Delusione, per gol subito o rigore fallito (~280ms) ---
+function sfxDelusione() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(300, t0);
+  osc.frequency.exponentialRampToValueAtTime(120, t0 + 0.26);
+  gain.gain.setValueAtTime(0.001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.18, t0 + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.28);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + 0.3);
+}
+
+// --- NUOVO: Moneta, per l'acquisto di un giocatore in Salary Cap (~160ms) ---
+function sfxMoneta() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  [1046.5, 1568].forEach((freq, i) => {
+    const start = t0 + i * 0.06;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(0.14, start + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0008, start + 0.1);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(start); osc.stop(start + 0.12);
+  });
+}
+
+// --- NUOVO: Sinergia, quando si attiva un'intesa storica (~320ms) ---
+function sfxSinergia() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  [659.25, 830.6, 987.77].forEach((freq, i) => {
+    const start = t0 + i * 0.07;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(0.2, start + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0008, start + 0.2);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(start); osc.stop(start + 0.22);
+  });
+  const dur = 0.3;
+  const noise = ctx.createBufferSource();
+  noise.buffer = makeNoiseBuffer(ctx, dur);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass"; bp.Q.value = 3;
+  bp.frequency.setValueAtTime(4000, t0);
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0.0001, t0);
+  ng.gain.exponentialRampToValueAtTime(0.05, t0 + 0.02);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  noise.connect(bp).connect(ng).connect(ctx.destination);
+  noise.start(t0); noise.stop(t0 + dur);
+}
+
+// --- NUOVO: Livello, quando si sale di livello nel Pass Azzurro (~350ms) ---
+function sfxLivello() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(260, t0);
+  osc.frequency.exponentialRampToValueAtTime(1040, t0 + 0.28);
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.setValueAtTime(600, t0);
+  lp.frequency.exponentialRampToValueAtTime(4000, t0 + 0.28);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.34);
+  osc.connect(lp).connect(gain).connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + 0.36);
+}
+
+// --- NUOVO: Notifica, pop leggero per avvisi generici (~150ms) ---
+// Non ancora richiamato da nessuna parte: disponibile per un toast importante.
+function sfxNotifica() {
+  const ctx = getAudioCtx(), t0 = ctx.currentTime;
+  [740, 988].forEach((freq, i) => {
+    const start = t0 + i * 0.07;
+    const osc = ctx.createOscillator(), g = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(0.16, start + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0008, start + 0.09);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(start); osc.stop(start + 0.1);
+  });
+}
+
+const SFX_GENERATORS = {
+  click: sfxClick,
+  carta: sfxCarta,
+  fischio: sfxFischio,
+  vittoria: sfxVittoria,
+  stadio: sfxStadio,
+  errore: sfxErrore,
+  gol: sfxGol,
+  parata: sfxParata,
+  delusione: sfxDelusione,
+  moneta: sfxMoneta,
+  sinergia: sfxSinergia,
+  livello: sfxLivello,
+  notifica: sfxNotifica
 };
 
-// Funzione per suonare un effetto
+// Funzione per suonare un effetto (stessa firma di prima, nessun'altra modifica richiesta altrove)
 function playSound(nome) {
-  if (sfx[nome]) {
-    sfx[nome].currentTime = 0; // Lo fa ripartire da zero se ci clicchi velocemente
-    sfx[nome].play().catch(() => {}); // Il catch evita errori se il browser blocca l'audio
-  }
+  const gen = SFX_GENERATORS[nome];
+  if (!gen) return;
+  try { gen(); } catch (e) { /* silenzioso se l'audio è bloccato dal browser */ }
 }
 const DIFFICULTIES = {
   impossibile: { label: "Classica", min: 1,  max: 99, reroll: 3, options: 3, desc: "Tutto il database, 3 reroll. Punta allo scudetto perfetto." },
@@ -1751,15 +2045,17 @@ function renderOptionsPanel() {
 function pick(idx) {
   playSound('carta');
   if (state._picking) return; const p = state.options[idx];
+  const _prevSynergyCount = (typeof getActiveSynergies === 'function') ? getActiveSynergies().active.length : 0;
   // --- CONTROLLO FINANZIARIO ---
   if (state.budget !== undefined) {
      const cost = getPlayerCost(p.rating);
      if (state.budget < cost) {
         toast("Cassa vuota! Non hai abbastanza milioni.");
-        playSound('click'); 
+        playSound('errore'); 
         return; 
      }
      state.budget -= cost; 
+     playSound('moneta');
      if(typeof updateHud === 'function') updateHud(); 
   }
   // -----------------------------
@@ -1771,6 +2067,9 @@ function pick(idx) {
   }
 
   state.team[slot.id] = p; state.usedNames.add(p.nome); state.activeSlot = null; state.options = [];
+  if (typeof getActiveSynergies === 'function' && getActiveSynergies().active.length > _prevSynergyCount) {
+    setTimeout(() => playSound('sinergia'), 250);
+  }
   applyCoachPickBonus(slot, p);
   markFilledSlot(slot, p); animateReveal(slot.id, effRating(slot.id));
   
@@ -2046,7 +2345,169 @@ function renderMarketBreak(R, first) {
     btnMarket.onclick = () => openMarket();
   }
 }
+// ============================================================
+// MOTORE GENERICO QUICKTIME EVENTS (Contropiede, Colpo di Testa, ecc.)
+// Riusabile sia durante il replay della partita che nella carriera
+// giocatore, sullo stesso identico principio dei Rigori Interattivi.
+// ============================================================
 
+// Etichette originali dei bottoni della porta (per ripristinarle sempre
+// correttamente dopo un rigore/colpo di testa, invece del generico "Alto/Basso")
+const PEN_DIR_LABELS = {
+  "top-left": "↖ Alto Sinistra",
+  "top-center": "⬆ Alto Centro",
+  "top-right": "↗ Alto Destra",
+  "bot-left": "↙ Basso Sinistra",
+  "bot-center": "⬇ Basso Centro",
+  "bot-right": "↘ Basso Destra"
+};
+function resetPenDirButtons() {
+  document.querySelectorAll(".pen-dir").forEach(b => {
+    b.classList.remove("disabled", "pen-gol", "pen-parata");
+    b.innerHTML = PEN_DIR_LABELS[b.getAttribute("data-dir")] || b.innerHTML;
+  });
+}
+
+// --- MOTORE "BARRA DI TEMPISMO" (Contropiede e simili) ---
+// cfg: { icon, tag, tagColor, title, desc, zoneWidthPct, speedMs, maxTimeMs,
+//        labelWin, labelLose, onResult(success) }
+window.runTimingQTE = function(cfg) {
+  const modal = document.getElementById("qte-timing-modal");
+  if (!modal) { if (cfg.onResult) cfg.onResult(Math.random() < 0.5); return; }
+
+  document.getElementById("qte-icon").textContent = cfg.icon || "⚡";
+  const tagEl = document.getElementById("qte-tag");
+  tagEl.textContent = cfg.tag || "AZIONE!";
+  tagEl.style.color = cfg.tagColor || "#00ff88";
+  document.getElementById("qte-title").textContent = cfg.title || "";
+  document.getElementById("qte-desc").textContent = cfg.desc || "Premi al momento giusto!";
+
+  const cursor = document.getElementById("qte-cursor");
+  const target = document.getElementById("qte-target");
+  const tapBtn = document.getElementById("qte-tap-btn");
+
+  cursor.classList.remove("qte-hit", "qte-miss");
+  cursor.style.left = "0%";
+  tapBtn.disabled = false;
+  tapBtn.textContent = "⚡ TIRA! ⚡";
+
+  // Posiziona la zona bersaglio (verde) in un punto casuale della barra
+  const zoneWidth = cfg.zoneWidthPct || 20;
+  const zoneStart = 6 + Math.random() * (88 - zoneWidth);
+  target.style.left = zoneStart + "%";
+  target.style.width = zoneWidth + "%";
+
+  modal.classList.add("show");
+  if (typeof playSound === 'function') playSound('fischio');
+
+  let pos = 0, dir = 1, raf = null, answered = false;
+  const speed = cfg.speedMs || 2.0;
+  const maxTime = cfg.maxTimeMs || 3500;
+  const startTime = performance.now();
+
+  const finish = (success) => {
+    if (answered) return;
+    answered = true;
+    if (raf) cancelAnimationFrame(raf);
+    tapBtn.disabled = true;
+    cursor.classList.add(success ? "qte-hit" : "qte-miss");
+    document.getElementById("qte-title").textContent = success ? (cfg.labelWin || "PERFETTO!") : (cfg.labelLose || "TROPPO TARDI!");
+    if (typeof playSound === 'function') playSound(success ? 'gol' : 'delusione');
+    setTimeout(() => {
+      modal.classList.remove("show");
+      if (cfg.onResult) cfg.onResult(success);
+    }, 1600);
+  };
+
+  const tick = (t) => {
+    if (answered) return;
+    pos += dir * speed;
+    if (pos >= 100) { pos = 100; dir = -1; }
+    else if (pos <= 0) { pos = 0; dir = 1; }
+    cursor.style.left = pos + "%";
+    if (t - startTime >= maxTime) { finish(false); return; }
+    raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+
+  tapBtn.onclick = () => {
+    if (answered) return;
+    if (typeof playSound === 'function') playSound('carta');
+    const inZone = pos >= zoneStart && pos <= (zoneStart + zoneWidth);
+    finish(inZone);
+  };
+};
+
+// --- MOTORE "MIRA IN PORTA" (Colpo di Testa e simili) ---
+// Riusa la stessa griglia a 6 direzioni dei Rigori Interattivi.
+// cfg: { forNapoli, attackerOvr, defenseOvr, tagText, tagColor, titleText,
+//        descText, onResult(success) }
+window.runHeaderQTE = function(cfg) {
+  const penModal = document.getElementById("penalty-modal");
+  if (!penModal) { if (cfg.onResult) cfg.onResult(Math.random() < 0.5); return; }
+
+  document.getElementById("pen-icon").textContent = "🎯";
+  const tagEl = document.getElementById("pen-tag");
+  tagEl.textContent = cfg.tagText || (cfg.forNapoli ? "CROSS IN AREA!" : "CROSS AVVERSARIO!");
+  tagEl.style.color = cfg.tagColor || (cfg.forNapoli ? "#00ff88" : "#ff5c5c");
+  document.getElementById("pen-title").textContent = cfg.titleText || "Indirizza il colpo di testa";
+  document.getElementById("pen-desc").textContent = cfg.descText || "Scegli l'angolo dello stacco!";
+
+  penModal.classList.add("show");
+  if (typeof playSound === 'function') playSound('fischio');
+
+  let answered = false;
+  document.querySelectorAll(".pen-dir").forEach(btn => {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener("click", function() {
+      if (answered) return;
+      answered = true;
+      document.querySelectorAll(".pen-dir").forEach(b => { if (b !== this) b.classList.add("disabled"); });
+      if (typeof playSound === 'function') playSound('carta');
+
+      const playerDir = this.getAttribute("data-dir");
+      const dirs = ["top-left", "top-center", "top-right", "bot-left", "bot-center", "bot-right"];
+      const aiDir = dirs[Math.floor(Math.random() * dirs.length)];
+      const ovrGap = (cfg.attackerOvr || 78) - (cfg.defenseOvr || 78);
+
+      let success = false;
+      if (cfg.forNapoli) {
+        if (playerDir !== aiDir) {
+          success = Math.random() < 0.80; // stacco libero, difesa saltata
+        } else {
+          success = Math.random() < (ovrGap > 0 ? 0.30 : 0.18);
+        }
+      } else {
+        if (playerDir !== aiDir) {
+          success = Math.random() < 0.22; // respinta di fortuna
+        } else {
+          success = Math.random() < (ovrGap > 0 ? 0.85 : 0.70);
+        }
+      }
+
+      if (success) {
+        this.classList.add("pen-gol");
+        this.innerHTML = cfg.forNapoli ? "⚽ GOL!" : "🧤 RESPINTA!";
+        if (typeof playSound === 'function') playSound(cfg.forNapoli ? 'gol' : 'parata');
+      } else {
+        this.classList.add("pen-parata");
+        this.innerHTML = cfg.forNapoli ? "🧤 PARATO" : "⚽ GOL!";
+        if (typeof playSound === 'function') playSound('delusione');
+      }
+      document.getElementById("pen-title").textContent = success
+        ? (cfg.forNapoli ? "GOL DI TESTA! Palla all'incrocio!" : "USCITA PERFETTA! Blocca il colpo di testa!")
+        : (cfg.forNapoli ? "STACCO ALTO! Palla sopra la traversa..." : "GOL DI TESTA SUBITO! Non arriviamo sul pallone.");
+
+      setTimeout(() => {
+        penModal.classList.remove("show");
+        resetPenDirButtons();
+        if (cfg.onResult) cfg.onResult(success);
+      }, 3000);
+    });
+  });
+};
 function openMarket() { state.marketSwapsLeft = 1; state.marketOfferShown = false; renderJanuaryMarketPitch(); }
 function renderJanuaryMarketPitch() { const area = $("#market-area"); const left = state.marketSwapsLeft; renderMarketPitch(area, { left, hint: left > 0 ? "Tocca un titolare per sostituirlo. Attenzione: puoi scegliere un solo giocatore!" : "Cambio consumato.", onOpen: slotId => offerReplacements(slotId), continueBtn: null, }); }
 /* --- MOTORE DI RARITÀ E PESCAGGIO --- */
@@ -2281,7 +2742,15 @@ updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.le
       banner = place.win ? '<div class="mission-banner ok">ZONA MAZZARRI RAGGIUNTA!</div>' : '<div class="mission-banner fail">MISSIONE FALLITA.</div>'; 
   }
   else if (perfect) { 
-      banner = '<div class="mission-banner perfect">38·0 · STAGIONE PERFETTA · Tutta Napoli impazzisce! 🔥</div>'; 
+      const PERFECT_BANNERS = [
+        "38·0 · IMPRESA STORICA · Il Vesuvio erutta, Napoli si ferma e impazzisce! 🌋💙",
+        "38·0 · SCUDETTO PERFETTO · Nemmeno Diego ci avrebbe creduto fino in fondo! 🏆🔵",
+        "38·0 · ANNATA LEGGENDARIA · Il Golfo trema, tutta la città è in strada! 🎆💙",
+        "38·0 · CAPOLAVORO ASSOLUTO · Da Fuorigrotta al mondo: nessuno ci ha fermato! 🔥⚽",
+        "38·0 · STORIA ETERNA · Trentotto vittorie, zero paura: 'o Napule è leggenda! 💙🏆",
+        "38·0 · UN'ALTRA DIMENSIONE · Hai scritto il nome del Napoli tra gli dei! ⚡👑"
+      ];
+      banner = `<div class="mission-banner perfect">${rnd(PERFECT_BANNERS)}</div>`; 
   }
 
   // --- RICOMPENSE IN CREDITI DI FINE STAGIONE ---
@@ -2387,7 +2856,6 @@ function playMatchReplay(matches, done, opts = {}) {
   const skipBtn = $("#btn-skip-replay"); 
   if (skipBtn) { 
     if (opts.skipLabel) skipBtn.textContent = opts.skipLabel;
-    // Resetta lo stile del bottone all'inizio (lo fa tornare semi-trasparente)
     skipBtn.classList.remove("primary");
     skipBtn.classList.add("ghost");
   }
@@ -2396,7 +2864,8 @@ function playMatchReplay(matches, done, opts = {}) {
   if (speedSelect) speedSelect.value = String(state.replaySpeed);
   if (modeSelect) modeSelect.value = state.replayMode;
   showScreen("#screen-replay");
-  let finished = false; const finish = () => { if (finished) return; finished = true; clearReplayTimers(); if (skipBtn) skipBtn.onclick = null; if (stepBtn) stepBtn.onclick = null; done(); };
+  let finished = false; 
+  const finish = () => { if (finished) return; finished = true; clearReplayTimers(); if (skipBtn) skipBtn.onclick = null; if (stepBtn) stepBtn.onclick = null; done(); };
   if (skipBtn) skipBtn.onclick = finish;
   if (modeSelect) modeSelect.onchange = () => { state.replayMode = modeSelect.value; clearReplayTimers(); if (modeSelect.value === "manual") { if (stepBtn) stepBtn.disabled = false; } else { if (stepBtn) stepBtn.disabled = true; scheduleNext(); } };
   if (speedSelect) speedSelect.onchange = () => { state.replaySpeed = Number(speedSelect.value) || 480; clearReplayTimers(); if (state.replayMode === "auto") scheduleNext(); };
@@ -2404,6 +2873,7 @@ function playMatchReplay(matches, done, opts = {}) {
     stepBtn.disabled = state.replayMode === "auto";
     stepBtn.onclick = () => { if (state.replayMode === "manual" && !finished) { step(); } };
   }
+  
   const mdEl = $("#scorebug-matchday"); let i = 0, pts = opts.startPts || 0;
   const delayMs = () => Number(speedSelect && speedSelect.value ? speedSelect.value : state.replaySpeed) || 480;
   const scheduleNext = () => {
@@ -2424,7 +2894,13 @@ function playMatchReplay(matches, done, opts = {}) {
     }
     const m = matches[i++]; if (m.res === "W") pts += 3; else if (m.res === "D") pts += 1;
     if (mdEl) { mdEl.textContent = `GIORNATA ${m.md}/38`; mdEl.hidden = false; }
-    const row = document.createElement("div"); const cls = m.res === "W" ? "w" : m.res === "D" ? "d" : "l"; const letter = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
+    
+    // ----------------------------------------------------
+    // 1. CREIAMO SUBITO L'HTML DELLA RIGA (Fix ReferenceError)
+    // ----------------------------------------------------
+    const row = document.createElement("div"); 
+    const cls = m.res === "W" ? "w" : m.res === "D" ? "d" : "l"; 
+    const letter = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
     
     const renderScorersHtml = (matchObj) => {
       if (!matchObj.scorers || matchObj.scorers.length === 0) return "";
@@ -2439,21 +2915,16 @@ function playMatchReplay(matches, done, opts = {}) {
     row.className = `replay-row rr-${cls} ${m.isBoss ? 'rr-boss' : ''}`; 
     row.innerHTML = `<span class="rr-md">G${m.md}</span><span class="rr-opp" style="${m.isBoss ? 'color:#ff5c5c; font-weight:900;' : ''}">${m.opp}</span><span class="rr-score">${m.gf}-${m.ga}</span><span class="rr-res">${letter}</span><span class="rr-tally">${pts} pt</span>${scorersHtml}`;
     
+    // Inseriamo subito nel DOM
     list.appendChild(row); requestAnimationFrame(() => { row.classList.add("in"); list.scrollTop = list.scrollHeight; });
     
     if (m.isBoss) playSound('fischio');
-    // --- INIZIO BONUS JUVENTUS ---
-        if (m.opp.includes("Juventus") && m.res === "W") {
-            state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1;
-            setTimeout(() => toast("🔥 VITTORIA CON LA JUVE! Tifosi in delirio: +1 a tutta la squadra!"), 1000);
-        }
-        // --- FINE BONUS JUVENTUS --
-// --- MAGIA 2: RIGORI INTERATTIVI ---
-    // Funzione che gestisce il proseguimento dell'animazione.
-    // IMPORTANTE: va definita PRIMA del blocco rigore qui sotto, perché quel blocco
-    // può fare `return` in anticipo (in attesa del click dell'utente): se finishStep
-    // fosse definita dopo, in quel caso non verrebbe mai inizializzata e la chiamata
-    // asincrona dal bottone del rigore lancerebbe un errore, bloccando il replay.
+    
+    if (m.opp.includes("Juventus") && m.res === "W") {
+        state.rogueGeneralMod = (state.rogueGeneralMod || 0) + 1;
+        setTimeout(() => toast("🔥 VITTORIA CON LA JUVE! Tifosi in delirio: +1 a tutta la squadra!"), 1000);
+    }
+
     const finishStep = () => {
       if (state.replayMode === "manual") {
         if (stepBtn) stepBtn.disabled = false;
@@ -2461,8 +2932,11 @@ function playMatchReplay(matches, done, opts = {}) {
       }
       scheduleNext();
     };
+
+    // ----------------------------------------------------
+    // 2. LOGICA EVENTI CHE INTERROMPONO (Rigori, QTE, Rogue)
+    // ----------------------------------------------------
     let penChance = 0.08;
-    // Se ha comprato la Curva, aumentiamo il drop rate dei rigori!
     if (typeof hasUpgrade === "function" && hasUpgrade('curva')) penChance += 0.05;
     
     const isPenalty = state.replayMode !== "auto" || Math.random() < penChance; 
@@ -2471,7 +2945,6 @@ function playMatchReplay(matches, done, opts = {}) {
     if (!penaltyResolved && Math.random() < penChance && (!state.scheduledEvents || !state.scheduledEvents[m.md])) {
       const isForNapoli = Math.random() > 0.5;
       
-      // Calcolo OVR in campo
       const gkSlot = Object.keys(state.team).find(id => state.team[id].ruoli.includes("POR"));
       const attSlot = Object.keys(state.team).find(id => state.team[id].ruoli.some(r => ["ATT","AS","AD"].includes(r)));
       
@@ -2481,35 +2954,29 @@ function playMatchReplay(matches, done, opts = {}) {
       const attName = attSlot ? state.team[attSlot].nome : "Il rigorista";
       const oppOvr = m.oppStr || 80;
 
-      // Innesca il Modale
       const penModal = document.getElementById("penalty-modal");
       document.getElementById("pen-tag").textContent = isForNapoli ? "RIGORE PER IL NAPOLI!" : "RIGORE CONTRO!";
       document.getElementById("pen-tag").style.color = isForNapoli ? "#00ff88" : "#ff5c5c";
       document.getElementById("pen-title").textContent = `${isForNapoli ? 'Tira' : 'Para'} contro ${m.opp}`;
       document.getElementById("pen-desc").textContent = isForNapoli ? `${attName} (OVR ${myAttOvr}) è sul dischetto.` : `${gkName} (OVR ${myGkOvr}) è tra i pali.`;
       
-      // Mettiamo in pausa il replay
-      // Mettiamo in pausa il replay e salviamo il timeout
       let penTimeout = setTimeout(() => {
-        if (finished) return; // FIX: Se l'utente ha skippato, annulla l'apparizione del rigore!
+        if (finished) return; 
         
-        playSound('fischio');
+        if (typeof playSound === 'function') playSound('fischio');
         penModal.classList.add("show");
 
-        let answered = false; // Blocca i click doppi/multipli sui bottoni del rigore
+        let answered = false; 
         document.querySelectorAll(".pen-dir").forEach(btn => {
-          // Rimuovi vecchi listener per evitare bug di click multipli
           const newBtn = btn.cloneNode(true);
           btn.parentNode.replaceChild(newBtn, btn);
           
           newBtn.addEventListener("click", function() {
-            if (answered) return; // Un rigore si tira/para una volta sola
+            if (answered) return; 
             answered = true;
-            // Disabilita gli ALTRI bottoni (non quello appena cliccato, altrimenti il grigio/opacità
-            // del disabled si sovrappone all'animazione gol/parata e la fa sembrare solo "più scura")
             document.querySelectorAll(".pen-dir").forEach(b => { if (b !== this) b.classList.add("disabled"); });
 
-            playSound('carta');
+            if (typeof playSound === 'function') playSound('carta');
             const playerDir = this.getAttribute("data-dir");
             const dirs = ["top-left", "top-center", "top-right", "bot-left", "bot-center", "bot-right"];
             const aiDir = dirs[Math.floor(Math.random() * dirs.length)];
@@ -2518,14 +2985,11 @@ function playMatchReplay(matches, done, opts = {}) {
             let msg = "";
 
             if (isForNapoli) {
-              // TIRI: Più facile che il portiere avversario pari il nostro rigore
               if (playerDir !== aiDir) {
-                // 10% di probabilità di parata miracolosa anche se il portiere ha scelto l'angolo sbagliato
                 const miracolo = Math.random() < 0.10;
-                success = !miracolo; // true = gol, false = parata
+                success = !miracolo; 
                 msg = success ? `GOL! ${attName} spiazza il portiere avversario!` : `PARATA INCREDIBILE! Il portiere avversario ci arriva di puro riflesso!`;
               } else {
-                // Il portiere avversario intuisce: abbassiamo drasticamente la percentuale di segnare (10% o 25%)
                 const chance = myAttOvr > oppOvr ? 0.25 : 0.10; 
                 success = Math.random() < chance;
                 msg = success ? `GOL! ${attName} calcia forte e batte il portiere nonostante l'intuizione!` : `PARATO! Il portiere avversario intuisce e respinge il tiro di ${attName}!`;
@@ -2537,49 +3001,39 @@ function playMatchReplay(matches, done, opts = {}) {
                 m.scorers.push(`${attName} ${penMin}' (R)`);
               }
             } else {
-              // RIGORE CONTRO: Molto più facile per il nostro portiere parare
               if (playerDir !== aiDir) {
-                // 20% di probabilità di parata d'istinto anche se il nostro portiere si è buttato dal lato sbagliato
                 const parataMiracolo = Math.random() < 0.20;
-                success = parataMiracolo; // true = parata, false = gol
+                success = parataMiracolo; 
                 msg = success ? `PARATA CLAMOROSA! ${gkName} respinge d'istinto nonostante fosse in controtempo!` : `GOL SU RIGORE! ${gkName} si è buttato dalla parte sbagliata.`;
               } else {
-                // Se indoviniamo l'angolo, la percentuale di parata schizza al 75% o 90%
                 const chance = myGkOvr > oppOvr ? 0.90 : 0.75; 
-                success = Math.random() < chance; // true = parata, false = gol
+                success = Math.random() < chance; 
                 msg = success ? `PARATA EROICA di ${gkName}! Neutralizza il rigore alla grande!` : `GOL! ${gkName} intuisce ma il tiro era troppo angolato.`;
               }
               if(!success) { m.ga += 1; pts -= (m.gf < m.ga ? 1 : 0); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L"; } 
             }
 
-            // Mostra il risultato e chiudi
             document.getElementById("pen-title").textContent = msg;
             
-            // "success" indica sempre l'esito positivo per il giocatore:
-            // se tiri (isForNapoli) success = hai segnato; se pari, success = hai parato.
             if (success) {
               this.classList.add("pen-gol");
               this.innerHTML = isForNapoli ? "⚽ GOL!" : "🧤 PARATA!";
-              playSound('vittoria');
+              if (typeof playSound === 'function') playSound(isForNapoli ? 'gol' : 'parata');
             } else {
               this.classList.add("pen-parata");
               this.innerHTML = isForNapoli ? "🧤 PARATO" : "⚽ GOL!";
+              if (typeof playSound === 'function') playSound('delusione');
             }
             
-            // Aspetta che l'animazione (più lunga) finisca prima di riprendere la simulazione
             setTimeout(() => {
               penModal.classList.remove("show");
               
               row.querySelector(".rr-score").textContent = `${m.gf}-${m.ga}`;
-              // IMPORTANTE: aggiorniamo solo le classi del risultato (rr-w/rr-d/rr-l),
-              // senza toccare "in" (altrimenti la riga torna invisibile e la partita
-              // sembra sparire dall'elenco) né "rr-boss".
               row.classList.remove("rr-w", "rr-d", "rr-l");
               row.classList.add(m.res === "W" ? "rr-w" : m.res === "D" ? "rr-d" : "rr-l");
               const resLetterEl = row.querySelector(".rr-res");
               if (resLetterEl) resLetterEl.textContent = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
 
-              // Aggiorna (o crea) il blocco marcatori per mostrare il gol su rigore
               const newScorersHtml = renderScorersHtml(m);
               const existingScorersEl = row.querySelector(".rr-scorers");
               if (newScorersHtml) {
@@ -2589,52 +3043,125 @@ function playMatchReplay(matches, done, opts = {}) {
                 existingScorersEl.remove();
               }
               
-              // Resetta i bottoni della porta
-              document.querySelectorAll(".pen-dir").forEach(b => {
-                  b.classList.remove("disabled", "pen-gol", "pen-parata");
-                  b.innerHTML = b.getAttribute("data-dir").includes("top") ? "Alto" : "Basso";
-              });
-
-              // AVVIA LA RIPRESA DEL REPLAY
+              resetPenDirButtons();
               finishStep(); 
             }, 3000);
           });
         });
-      }, 500); // Ritardo prima di mostrare il rigore
+      }, 500); 
       replayTimers.push(penTimeout);
-      return; // Blocca il normale proseguimento, sarà finishStep() a riavviarlo
+      return; 
     }
-    // Funzione che gestisce il proseguimento dell'animazione (già definita sopra)
 
-    // --- MAGIA: EVENTI CASUALI DURANTE IL REPLAY ---
+    let qteChance = 0.07;
+    if (typeof hasUpgrade === "function" && hasUpgrade('curva')) qteChance += 0.02;
+
+    if (!penaltyResolved && Math.random() < qteChance && (!state.scheduledEvents || !state.scheduledEvents[m.md])) {
+      const qteKind = Math.random() < 0.5 ? "contropiede" : "testa";
+      const isForNapoli = Math.random() > 0.45;
+
+      const attSlotQ = Object.keys(state.team).find(id => state.team[id].ruoli.some(r => ["ATT","AS","AD","TRQ","CC"].includes(r)));
+      const gkSlotQ = Object.keys(state.team).find(id => state.team[id].ruoli.includes("POR"));
+
+      const attNameQ = attSlotQ ? state.team[attSlotQ].nome : "Il nostro attaccante";
+      const attOvrQ = attSlotQ ? effRating(attSlotQ) : 75;
+      const gkNameQ = gkSlotQ ? state.team[gkSlotQ].nome : "Il portiere";
+      const gkOvrQ = gkSlotQ ? effRating(gkSlotQ) : 75;
+      const oppOvrQ = m.oppStr || 80;
+
+      let qteTimeout = setTimeout(() => {
+        if (finished) return;
+
+        const onGoalScored = (scorerName, tagSuffix) => {
+          m.gf += 1; pts += (m.gf > m.ga ? 2 : (m.gf === m.ga ? 1 : 0)); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L";
+          const evMin = Math.floor(Math.random() * 94) + 1;
+          if (!m.scorers) m.scorers = [];
+          m.scorers.push(`${scorerName} ${evMin}' (${tagSuffix})`);
+        };
+        const onGoalConceded = () => {
+          m.ga += 1; pts -= (m.gf < m.ga ? 1 : 0); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L";
+        };
+        const refreshRow = () => {
+          row.querySelector(".rr-score").textContent = `${m.gf}-${m.ga}`;
+          row.classList.remove("rr-w", "rr-d", "rr-l");
+          row.classList.add(m.res === "W" ? "rr-w" : m.res === "D" ? "rr-d" : "rr-l");
+          const resLetterEl = row.querySelector(".rr-res");
+          if (resLetterEl) resLetterEl.textContent = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
+          const newScorersHtml = renderScorersHtml(m);
+          const existingScorersEl = row.querySelector(".rr-scorers");
+          if (newScorersHtml) {
+            if (existingScorersEl) existingScorersEl.outerHTML = newScorersHtml;
+            else row.insertAdjacentHTML("beforeend", newScorersHtml);
+          } else if (existingScorersEl) {
+            existingScorersEl.remove();
+          }
+        };
+
+        if (qteKind === "contropiede") {
+          window.runTimingQTE({
+            icon: "⚡",
+            tag: isForNapoli ? "CONTROPIEDE NAPOLI!" : "CONTROPIEDE AVVERSARIO!",
+            tagColor: isForNapoli ? "#00ff88" : "#ff5c5c",
+            title: isForNapoli ? `${attNameQ} parte in ripartenza!` : `${m.opp} riparte in contropiede!`,
+            desc: isForNapoli ? "Premi TIRA nel momento giusto per bruciare il portiere!" : "Il nostro portiere deve intuire il momento per uscire!",
+            zoneWidthPct: isForNapoli ? (attOvrQ > oppOvrQ ? 26 : 18) : (gkOvrQ > oppOvrQ ? 26 : 18),
+            speedMs: 2.0,
+            labelWin: isForNapoli ? "GOL! Ripartenza fulminante!" : "USCITA PERFETTA! Blocca il contropiede!",
+            labelLose: isForNapoli ? "Occasione sprecata, murata la ripartenza." : "GOL SUBITO! Non arriviamo in tempo.",
+            onResult: (success) => {
+              if (isForNapoli && success) onGoalScored(attNameQ, "Contropiede");
+              if (!isForNapoli && !success) onGoalConceded();
+              refreshRow();
+              finishStep();
+            }
+          });
+        } else {
+          window.runHeaderQTE({
+            forNapoli: isForNapoli,
+            attackerOvr: isForNapoli ? attOvrQ : oppOvrQ,
+            defenseOvr: isForNapoli ? oppOvrQ : gkOvrQ,
+            tagText: isForNapoli ? "CROSS IN AREA!" : "CROSS AVVERSARIO!",
+            tagColor: isForNapoli ? "#00ff88" : "#ff5c5c",
+            titleText: isForNapoli ? `${attNameQ} stacca di testa!` : `Colpo di testa di ${m.opp}!`,
+            descText: isForNapoli ? "Scegli l'angolo dello stacco!" : `${gkNameQ} deve indovinare il lato!`,
+            onResult: (success) => {
+              if (isForNapoli && success) onGoalScored(attNameQ, "Testa");
+              if (!isForNapoli && !success) onGoalConceded();
+              refreshRow();
+              finishStep();
+            }
+          });
+        }
+      }, 500);
+      replayTimers.push(qteTimeout);
+      return;
+    }
+
     if (state.rogue && state.scheduledEvents && state.scheduledEvents[m.md]) {
         const ev = state.scheduledEvents[m.md];
-        const slotId = randomSlot(); // Sceglie casualmente chi subisce l'evento
+        const slotId = randomSlot(); 
         
         let d = ev.apply ? ev.apply(slotId) : null;
-        if (ev.kind === "spread") d = -1; // Fallback per eventi spread
+        if (ev.kind === "spread") d = -1; 
         
         const text = ev.text(slotId);
         let formattedText = text;
         if (formattedText.includes('+')) formattedText = formattedText.replace(/(\+\d+)/g, '<strong style="color: var(--rar-noncomune);">$1</strong>');
         else if (formattedText.includes('-')) formattedText = formattedText.replace(/(-\d+)/g, '<strong style="color: #ff5c5c;">$1</strong>');
         
-        // Salva l'evento nel log a sinistra in tempo reale
         state.rogueEvents.push({ nome: ev.nome, text: text, kind: ev.kind });
         if (typeof renderEventLog === 'function') renderEventLog(); 
         
-        // Mette in PAUSA il replay e mostra il popup dopo 600ms per creare suspense
         setTimeout(() => {
             showPickEventModal({ nome: ev.nome, kind: ev.kind }, formattedText, () => {
-                // Quando l'utente clicca Continua, aggiorna la grafica delle carte e riprendi il replay!
                 slots().forEach(s => { if (state.team[s.id]) refreshSlotRating(s.id); }); 
                 finishStep(); 
             }, d);
         }, 600); 
         
-        delete state.scheduledEvents[m.md]; // Rimuove l'evento per non ripeterlo
+        delete state.scheduledEvents[m.md]; 
     } else {
-        finishStep(); // Nessun evento, la giornata scorre normalmente
+        finishStep(); 
     }
   };
   step();
@@ -2778,7 +3305,19 @@ function playChampions(champ, place, done) {
   // Il setTimeout è stato rimosso. Ora si prosegue solo cliccando il bottone.
 }
 
-function shareResultText() { const r = state.lastResult; return r.perfect ? "Ho fatto il 38-0-0 perfetto con il Napoli! Gioca a 38-0-0 NAPOLI!" : `Ho fatto ${r.pts} punti con il mio Napoli all-time. Gioca a 38-0-0 NAPOLI! Forza Napoli Sempre 💙`; }
+function shareResultText() { 
+  const r = state.lastResult; 
+  if (r.perfect) {
+    const PERFECT_SHARE_LINES = [
+      "38 partite, 38 vittorie, zero cali: ho appena scritto la storia col Napoli! 🔵🏆",
+      "Scudetto perfetto: 38-0-0. Il Napoli non ha vinto, ha dominato! 💙🔥",
+      "Nemmeno nei sogni più azzurri: 38-0-0 con il Napoli! 🌋🏆",
+      "Trentotto vittorie, zero paura. Sono nella leggenda azzurra! 💙👑"
+    ];
+    return `${rnd(PERFECT_SHARE_LINES)} Gioca anche tu a 38-0-0 NAPOLI!`;
+  }
+  return `Ho fatto ${r.pts} punti con il mio Napoli all-time. Gioca a 38-0-0 NAPOLI! Forza Napoli Sempre 💙`; 
+}
 function copyShareText() { const txt = shareResultText(); navigator.clipboard.writeText(txt).then(() => toast("Testo copiato! 📋")); }
 function shareResultImage() { toast("Condivisione non supportata in questa demo."); }
 function revealQuadrants(box, finalPts) { 
@@ -5376,10 +5915,7 @@ const PLAYER_CAREER_EVENTS = [
           // 3. ASPETTA L'ANIMAZIONE E RISOLVE L'EVENTO
           setTimeout(() => {
             penModal.classList.remove("show");
-            document.querySelectorAll(".pen-dir").forEach(b => {
-                b.classList.remove("disabled", "pen-gol", "pen-parata");
-                b.innerHTML = b.getAttribute("data-dir").includes("top") ? "Alto" : "Basso";
-            });
+            resetPenDirButtons();
 
             if (success) {
               resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Rigore decisivo segnato sotto l'incrocio: Eroe assoluto! (+1 OVR)</span>" });
@@ -5393,6 +5929,64 @@ const PLAYER_CAREER_EVENTS = [
     actionB: (c, resolve) => {
       toast("🤝 Scelta matura. De Bruyne segna e ti ringrazia.");
       resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai fatto squadra. Nessun malus.</span>" });
+    }
+  },
+  {
+    title: "Ripartenza Fulminante", icon: "⚡",
+    desc: "Palla recuperata a centrocampo, davanti a te c'è solo campo aperto e un difensore in ritardo. È il momento di partire in contropiede.",
+    btnA: "Vai in ripartenza da solo", effA: "Tenti il contropiede! (Mini-gioco di tempismo)",
+    btnB: "Rallenti e fai salire la squadra", effB: "Scelta prudente. Nessun malus, ma niente gloria extra.",
+    actionA: (c, resolve) => {
+      window.runTimingQTE({
+        icon: "⚡",
+        tag: "CONTROPIEDE DECISIVO!",
+        tagColor: "#00ff88",
+        title: `${c.name} parte in ripartenza!`,
+        desc: "Premi TIRA nel momento giusto per bruciare il portiere!",
+        zoneWidthPct: 22,
+        speedMs: 2.0,
+        labelWin: "GOL! Ripartenza da manuale, stadio in delirio!",
+        labelLose: "Occasione clamorosa sprecata, palla fuori di poco...",
+        onResult: (success) => {
+          if (success) {
+            resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Contropiede letale finalizzato alla perfezione: sei un fulmine! (+1 OVR)</span>" });
+          } else {
+            resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Occasione sprecata in contropiede: la critica ti accusa di egoismo. (-1 OVR)</span>" });
+          }
+        }
+      });
+    },
+    actionB: (c, resolve) => {
+      toast("🤝 Scelta di squadra. L'azione si sviluppa comunque bene.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai gestito con lucidità. Nessun malus.</span>" });
+    }
+  },
+  {
+    title: "Cross Perfetto in Area", icon: "🎯",
+    desc: "Ultimi minuti di un match equilibrato: dalla fascia arriva un cross basso e teso proprio sulla tua testa, in piena area di rigore.",
+    btnA: "Ci provi di testa", effA: "Tenti il colpo di testa! (Mini-gioco interattivo)",
+    btnB: "Lasci scorrere per il compagno dietro", effB: "Scelta sicura. Nessun malus, ma niente gloria extra.",
+    actionA: (c, resolve) => {
+      window.runHeaderQTE({
+        forNapoli: true,
+        attackerOvr: (c.ovr || 78) + 3,
+        defenseOvr: 78,
+        tagText: "STACCO DECISIVO!",
+        tagColor: "#00ff88",
+        titleText: `${c.name} stacca di testa!`,
+        descText: "Scegli l'angolo dello stacco!",
+        onResult: (success) => {
+          if (success) {
+            resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Colpo di testa vincente, palla all'incrocio: gol da copertina! (+1 OVR)</span>" });
+          } else {
+            resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Stacco impreciso, occasione clamorosa fallita. (-1 OVR)</span>" });
+          }
+        }
+      });
+    },
+    actionB: (c, resolve) => {
+      toast("🤝 Palla al compagno, l'azione prosegue senza intoppi.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Scelta altruista. Nessun malus.</span>" });
     }
   },
   {
@@ -5879,8 +6473,11 @@ function checkAndResetPass() {
 function addPassXP(amount) {
     checkAndResetPass();
     let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
+    const oldLevel = Math.min(PASS_CONFIG.maxLevel, Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1);
     xp += amount;
     localStorage.setItem('napoli380_pass_xp', xp);
+    const newLevel = Math.min(PASS_CONFIG.maxLevel, Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1);
+    if (newLevel > oldLevel && typeof playSound === 'function') playSound('livello');
     
     setTimeout(() => { toast(`⭐ +${amount} XP Pass Azzurro!`); }, 1000);
     
@@ -6034,3 +6631,123 @@ setTimeout(updatePassUI, 500);
 
   
 }
+
+/* ============================================================
+   PWA — Installazione app (Android + iPhone) e Service Worker
+   Modulo indipendente, non tocca la logica di gioco esistente.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  const LS_NEVER_SHOW = "napoli380_pwa_never_show"; // dismiss permanente ("Non mostrare più")
+  const SS_SESSION_HIDDEN = "napoli380_pwa_hidden_session"; // dismiss per la sessione corrente (tasto X)
+
+  let deferredPrompt = null; // evento Android/Chrome "beforeinstallprompt"
+
+  // --- Rilevamento piattaforma ---
+  const ua = window.navigator.userAgent || "";
+  const isIOS = /iphone|ipad|ipod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/i.test(ua);
+  const isMobile = isIOS || isAndroid;
+
+  // App già installata? (aperta come standalone / da home screen)
+  function isStandalone() {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true // Safari iOS
+    );
+  }
+
+  function permanentlyDismissed() {
+    try { return localStorage.getItem(LS_NEVER_SHOW) === "1"; } catch (e) { return false; }
+  }
+  function sessionDismissed() {
+    try { return sessionStorage.getItem(SS_SESSION_HIDDEN) === "1"; } catch (e) { return false; }
+  }
+
+  // --- Registrazione Service Worker ---
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch((err) => {
+        console.warn("[PWA] Registrazione Service Worker fallita:", err);
+      });
+    });
+  }
+
+  // Se l'app è già installata, non fare nient'altro
+  if (isStandalone()) {
+    try { localStorage.setItem(LS_NEVER_SHOW, "1"); } catch (e) {}
+    return;
+  }
+
+  if (!isMobile || permanentlyDismissed() || sessionDismissed()) return;
+
+  const banner = document.getElementById("pwa-install-banner");
+  const bannerDesc = document.getElementById("pwa-banner-desc");
+  const bannerInstallBtn = document.getElementById("pwa-banner-install");
+  const bannerCloseBtn = document.getElementById("pwa-banner-close");
+  const iosSheet = document.getElementById("pwa-ios-sheet");
+  const iosCloseBtn = document.getElementById("pwa-ios-close");
+
+  if (!banner) return;
+
+  function showBanner() {
+    banner.hidden = false;
+  }
+  function hideBannerForSession() {
+    banner.hidden = true;
+    try { sessionStorage.setItem(SS_SESSION_HIDDEN, "1"); } catch (e) {}
+  }
+
+  if (bannerCloseBtn) {
+    bannerCloseBtn.addEventListener("click", hideBannerForSession);
+  }
+
+  if (isIOS) {
+    // iOS/Safari: nessun prompt nativo disponibile, mostriamo sempre
+    // il banner con istruzioni "Aggiungi a Home" tramite share sheet.
+    if (bannerDesc) bannerDesc.textContent = "Aggiungila alla schermata Home per aprirla come un'app.";
+    if (bannerInstallBtn) bannerInstallBtn.textContent = "Come si fa";
+    showBanner();
+
+    if (bannerInstallBtn && iosSheet) {
+      bannerInstallBtn.addEventListener("click", () => {
+        iosSheet.hidden = false;
+      });
+    }
+    if (iosCloseBtn && iosSheet) {
+      iosCloseBtn.addEventListener("click", () => {
+        iosSheet.hidden = true;
+      });
+    }
+  } else if (isAndroid) {
+    // Android/Chrome: aspettiamo l'evento nativo, poi mostriamo il banner
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      showBanner();
+    });
+
+    if (bannerInstallBtn) {
+      bannerInstallBtn.addEventListener("click", async () => {
+        if (!deferredPrompt) return;
+        banner.hidden = true;
+        deferredPrompt.prompt();
+        try {
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome !== "accepted") {
+            // L'utente ha rifiutato: richiediamo di nuovo alla prossima visita
+          }
+        } catch (e) {}
+        deferredPrompt = null;
+      });
+    }
+  }
+
+  // Se l'installazione va a buon fine, non mostrare mai più il banner
+  window.addEventListener("appinstalled", () => {
+    try { localStorage.setItem(LS_NEVER_SHOW, "1"); } catch (e) {}
+    if (banner) banner.hidden = true;
+    if (iosSheet) iosSheet.hidden = true;
+  });
+})();
