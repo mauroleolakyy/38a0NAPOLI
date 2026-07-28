@@ -20,6 +20,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Saira:wght@400;500;600;700;800&family=Saira+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- ============================================================
+       PWA: installabilità su Android e iPhone
+       ============================================================ -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00112b">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- iOS: fa comportare Safari come un'app a schermo intero -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Napoli 38-0-0">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
   
@@ -338,6 +351,7 @@
   </span>
   <span class="mode-row__arr" aria-hidden="true">▶</span>
 </button>
+            
             <button class="mode-row is-featured" data-mode="rogue"><span class="mode-row__idx">01</span><span class="mode-row__body"><span class="mode-row__badge">★ Modalità Cazzimma</span><span class="mode-row__lab">San Gennaro Aiutaci</span><span class="mode-row__desc">Allenatore a sorte, bonus iniziali e imprevisti (tipo ammutinamenti e scuse in conferenza). Ogni run è diversa.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
             <button class="mode-row" data-mode="carriera"><span class="mode-row__idx">02</span><span class="mode-row__body"><span class="mode-row__badge">★ Modalità speciale</span><span class="mode-row__lab">Carriera</span><span class="mode-row__desc">Allenatore a sorte, 10 stagioni con la stessa rosa. Tifa la maglia, cambia i giocatori.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
             
@@ -352,7 +366,8 @@
   <span class="mode-row__arr" aria-hidden="true">▶</span>
 </button>
             <button class="mode-row" data-mode="sesto"><span class="mode-row__idx">06</span><span class="mode-row__body"><span class="mode-row__lab">Zona Mazzarri</span><span class="mode-row__desc">Obiettivo: finire <strong>secondi</strong>, colpa della pioggia o del compleanno di Cavani.</span></span><span class="mode-row__arr" aria-hidden="true">▶</span></button>
-            </div>
+          <label class="hidden-toggle sm-hidden"><input type="checkbox" id="flag-hidden"><span class="ht-box"></span><span class="ht-text"><strong>Rating nascosto</strong>: per chi tiene la cazzimma.</span></label>  
+          </div>
         </div>
 
         <div class="subpanel" data-panel="rules" hidden style="display: none;">
@@ -405,7 +420,6 @@
     </div>
   </div>
 
-        <label class="hidden-toggle sm-hidden"><input type="checkbox" id="flag-hidden"><span class="ht-box"></span><span class="ht-text"><strong>Rating nascosto</strong>: per chi tiene la cazzimma.</span></label>
       </div>
     </section>
 
@@ -570,6 +584,26 @@
     </div>
   </div>
 </div>
+<!-- ============================================================
+     MODALE QUICKTIME EVENT: BARRA DI TEMPISMO (Contropiede, ecc.)
+     ============================================================ -->
+<div id="qte-timing-modal" class="pick-modal">
+  <div class="pm-card" style="max-width: 500px; width: 95%; background: #001229; border: 3px solid #00a1ff;">
+    <div class="pm-header">
+      <span class="pm-icon" id="qte-icon">⚡</span>
+      <span class="pm-tag" id="qte-tag">CONTROPIEDE!</span>
+    </div>
+    <h3 id="qte-title" style="color: white; margin: 10px 0;">Ripartenza in contropiede</h3>
+    <p id="qte-desc" style="color: #b3e0ff; margin-bottom: 5px;">Premi al momento giusto!</p>
+
+    <div class="qte-track">
+      <div class="qte-target-zone" id="qte-target"></div>
+      <div class="qte-cursor" id="qte-cursor"></div>
+    </div>
+
+    <button type="button" id="qte-tap-btn" class="btn primary">⚡ TIRA! ⚡</button>
+  </div>
+</div>
 <!-- OVERLAY SPACCHETTAMENTO WALKOUT -->
 <div id="pack-overlay" class="pick-modal" style="flex-direction: column; z-index: 500; background: rgba(0, 5, 15, 0.95);">
   <h2 id="pack-title" style="color: var(--celeste-chiaro); font-family: var(--font-display); font-size: 2.5rem; margin-bottom: 30px; text-transform: uppercase; text-shadow: 0 0 20px var(--celeste);">APRI IL PACCHETTO</h2>
@@ -674,6 +708,41 @@
     <svg width="20" height="20" viewBox="0 0 512 512" fill="currentColor"><path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/></svg>
   </a>
   
+</div>
+
+<!-- ============================================================
+     BANNER INSTALLAZIONE APP (Android + iPhone)
+     Nascosto di default, mostrato via JS solo su mobile
+     se il sito non è ancora stato installato come app.
+     ============================================================ -->
+<div id="pwa-install-banner" class="pwa-banner" hidden>
+  <button type="button" id="pwa-banner-close" class="pwa-banner__close" aria-label="Chiudi">✕</button>
+  <div class="pwa-banner__icon">
+    <img src="icon-192.png" alt="Icona app Napoli 38-0-0" width="48" height="48">
+  </div>
+  <div class="pwa-banner__text">
+    <strong>Installa Napoli 38-0-0</strong>
+    <span id="pwa-banner-desc">Aggiungila alla schermata Home: si apre come un'app, anche offline.</span>
+  </div>
+  <div class="pwa-banner__actions">
+    <button type="button" id="pwa-banner-install" class="btn primary pwa-banner__btn">Installa</button>
+  </div>
+</div>
+
+<!-- Istruzioni iOS: mini-tutorial con animazione, mostrato al posto del bottone "Installa" -->
+<div id="pwa-ios-sheet" class="pwa-ios-sheet" hidden>
+  <div class="pwa-ios-sheet__panel">
+    <button type="button" id="pwa-ios-close" class="pwa-banner__close" aria-label="Chiudi">✕</button>
+    <img src="icon-192.png" alt="Icona app Napoli 38-0-0" width="56" height="56" class="pwa-ios-sheet__icon">
+    <h3>Installa l'app su iPhone</h3>
+    <ol>
+      <li><span class="pwa-ios-step-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 8l5-5 5 5M5 21h14"/></svg>
+          </span> Tocca l'icona <strong>Condividi</strong> nella barra di Safari</li>
+      <li><span class="pwa-ios-step-icon">➕</span> Scorri e scegli <strong>Aggiungi a Home</strong></li>
+      <li><span class="pwa-ios-step-icon">✅</span> Conferma su <strong>Aggiungi</strong>, in alto a destra</li>
+    </ol>
+  </div>
 </div>
 </body>
 </html>
