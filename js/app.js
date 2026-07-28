@@ -5010,7 +5010,6 @@ let pendingCloudSync = false; // true finché una scrittura non è ancora confer
 function performCloudSave() {
   if (typeof auth === "undefined" || !auth.currentUser) { pendingCloudSync = false; return; }
 
-  // Recuperiamo TUTTI i salvataggi
   const creds = parseInt(localStorage.getItem('napoli380_credits') || "0", 10);
   const coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
   const ach = JSON.parse(localStorage.getItem('napoli380_ach') || "[]");
@@ -5018,6 +5017,7 @@ function performCloudSave() {
   const carriera = JSON.parse(localStorage.getItem('napoli380_player_career') || "null");
   const stats = JSON.parse(localStorage.getItem('napoli380_stats') || "null");
   const passXp = localStorage.getItem('napoli380_pass_xp') || "0";
+  const missioni = JSON.parse(localStorage.getItem('napoli380_missions') || "null");
 
   db.collection("users").doc(auth.currentUser.uid).set({
     credits: creds,
@@ -5027,6 +5027,7 @@ function performCloudSave() {
     carriera: carriera,
     stats: stats,
     passXp: passXp,
+    missioni: missioni,
     lastSync: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true }).then(() => {
     pendingCloudSync = false;
@@ -5075,8 +5076,21 @@ window.addEventListener("beforeunload", flushPendingCloudSync);
 const originalSetItem = localStorage.setItem;
 localStorage.setItem = function(key, value) {
   originalSetItem.apply(this, arguments); // Salva normalmente in locale
-  // Se stiamo modificando monete, carte, trofei, doppioni o carriera, avvisa il Cloud!
-  if (key === 'napoli380_credits' || key === 'napoli380_collection' || key === 'napoli380_ach' || key === 'napoli380_player_career' || key === 'napoli380_doppioni') {
+  
+  // Lista di tutte le chiavi importanti da sincronizzare
+  const syncKeys = [
+    'napoli380_credits', 
+    'napoli380_collection', 
+    'napoli380_ach', 
+    'napoli380_player_career', 
+    'napoli380_doppioni',
+    'napoli380_stats',
+    'napoli380_pass_xp',
+    'napoli380_missions'
+  ];
+
+  // Se la chiave modificata è nella lista, avvisa il Cloud!
+  if (syncKeys.includes(key)) {
     syncToCloud();
   }
 };
@@ -5091,17 +5105,17 @@ function loadFromCloud(uid) {
       if (data.credits !== undefined) originalSetItem.call(localStorage, 'napoli380_credits', data.credits);
       if (data.collection) originalSetItem.call(localStorage, 'napoli380_collection', JSON.stringify(data.collection));
       if (data.achievements) originalSetItem.call(localStorage, 'napoli380_ach', JSON.stringify(data.achievements));
-      
-      // Nuovi campi aggiunti
       if (data.doppioni) originalSetItem.call(localStorage, 'napoli380_doppioni', JSON.stringify(data.doppioni));
       if (data.carriera) originalSetItem.call(localStorage, 'napoli380_player_career', JSON.stringify(data.carriera));
       if (data.stats) originalSetItem.call(localStorage, 'napoli380_stats', JSON.stringify(data.stats));
       if (data.passXp) originalSetItem.call(localStorage, 'napoli380_pass_xp', data.passXp);
+      if (data.missioni) originalSetItem.call(localStorage, 'napoli380_missions', JSON.stringify(data.missioni));
 
       // Aggiorna visivamente i numeri sullo schermo
       if(typeof updateWalletUI === 'function') updateWalletUI();
       if(typeof updateDupesBadge === 'function') updateDupesBadge();
       if(typeof updatePassUI === 'function') updatePassUI();
+      if(typeof updateMissionsBadge === 'function') updateMissionsBadge();
       if(typeof renderCollection === 'function' && document.getElementById("collection-grid") && document.getElementById("collection-grid").innerHTML !== "") renderCollection();
       if(typeof renderBacheca === 'function') renderBacheca();
       
