@@ -5043,3 +5043,32 @@ body.dreamteam-mode .slot.filled.slot-icon .slot-age {
   justify-content: center;
   font-size: 1.1rem;
 }
+/* ============================================================
+   FIX: TASTO INDIETRO E GRIGLIE "SOLLEVATE"
+   ============================================================ */
+
+/* 1. Abbassa la schermata del Database per non sovrapporsi al testo in alto */
+#screen-home[data-panel="hof"] .startmenu__right {
+    padding-top: 85px !important; 
+}
+
+@media (max-width: 880px) {
+    #screen-home[data-panel="hof"] .startmenu__right {
+        padding-top: 75px !important; 
+    }
+}
+
+/* 2. Ripristina lo spazio vitale (margine) sopra le griglie 3x3 per non farle sembrare schiacciate/sollevate verso l'alto */
+#collection-grid,
+.card-db-grid {
+    margin-top: 25px !important;
+    margin-bottom: 40px !important;
+}
+
+@media (max-width: 720px) {
+    #collection-grid,
+    .card-db-grid {
+        margin-top: 20px !important;
+        margin-bottom: 30px !important;
+    }
+}
