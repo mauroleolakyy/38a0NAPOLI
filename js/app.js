@@ -1366,12 +1366,26 @@ function updateCareerResultUI() { const c = state.career; const nextBtn = $("#bt
 function careerFinalScore(c) { return c.scudetti * 1000 + c.championsLeague * 2000 + c.perfectSeasons * 3000; }
 function showCareerFinal() {
   const c = state.career; const box = $("#career-final-body"); const score = careerFinalScore(c);
-  box.innerHTML = `<div class="career-final-score"><span class="bs-label">Punteggio Carriera</span><span class="bs-big career-final-score__num">${score.toLocaleString("it-IT")}</span></div>
+  box.innerHTML = `
+    <div class="career-final-score">
+      <span class="bs-label">Punteggio Carriera</span>
+      <span class="bs-big career-final-score__num">
+        ${score.toLocaleString("it-IT")} <span style="font-size: 0.45em; color: var(--testo-mute); vertical-align: middle;">PUNTI</span>
+      </span>
+    </div>
     <div class="break-standings career-final-stats">
       <div class="bs-item"><span class="bs-big">${c.scudetti}</span><span class="bs-sub">Scudetti vinti</span></div>
       <div class="bs-item"><span class="bs-big">${c.championsLeague}</span><span class="bs-sub">Champions League vinte</span></div>
       <div class="bs-item"><span class="bs-big">${c.bestStreakScudetti}</span><span class="bs-sub">Scudetti di fila (record)</span></div>
-    </div><p class="break-intro">Punteggio: 1000 per scudetto, 2000 per Champions.</p>`;
+    </div>
+    <div style="margin-top: 15px; padding: 12px; border-radius: 12px; background: rgba(0, 161, 255, 0.1); border: 1px solid rgba(0, 161, 255, 0.3);">
+      <p class="break-intro" style="color: var(--celeste-chiaro); font-weight: bold; margin-bottom: 5px;">
+        📊 Punteggio puramente statistico (1000 pt/Scudetto, 2000 pt/Champions)
+      </p>
+      <p class="break-intro" style="font-size: 0.85rem;">
+        <i>Nota: I Crediti da spendere nel negozio ti sono già stati regolarmente accreditati al termine di ogni singola stagione.</i>
+      </p>
+    </div>`;
   renderCareerFormationCompare(); showScreen("#screen-career-final");
 }
 
@@ -5155,14 +5169,9 @@ function flushPendingCloudSync() {
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
-    // Quando riduci l'app a icona o vai su un'altra scheda, forza il salvataggio immediato!
     flushPendingCloudSync();
-  } else {
-    // Quando riapri l'app, SCARICA in automatico e silenziosamente gli ultimi aggiornamenti dal cloud!
-    if (typeof auth !== "undefined" && auth.currentUser && !pendingCloudSync) {
-       loadFromCloud(auth.currentUser.uid, false); 
-    }
   }
+  // Rimuovi completamente l'else. Nessun download forzato al rientro in app.
 });
 
 window.addEventListener("pagehide", flushPendingCloudSync);
@@ -5181,6 +5190,7 @@ const LEADERBOARD_MODES = [
   { key: "salary",      label: "Salary Cap" },
   { key: "sesto",       label: "Zona Mazzarri" },
   { key: "dreamteam",   label: "Sogni" },
+  { key: "player_career", label: "Giocatore" } // <-- AGGIUNTA LA NUOVA SCHEDA
 ];
 
 function lbEscape(str) {
@@ -5209,58 +5219,117 @@ function updateLeaderboard(modeKey, modeLabel, campPts, europePts) {
   }, { merge: true }).catch(err => console.error("Errore aggiornamento classifica globale:", err));
 }
 
-// --- LEGGE e disegna la classifica globale della modalità scelta ---
-function renderLeaderboard(modeKey) {
+// --- LEGGE e disegna la classifica globale con Paginazione a 20 ---
+function renderLeaderboard(modeKey, page = 0) {
   const container = document.getElementById("lb-home");
   if (!container) return;
+  
   if (!modeKey) modeKey = state.lbMode || LEADERBOARD_MODES[0].key;
+
+  // Se cambiamo scheda, resettiamo la pagina e la memoria temporanea
+  if (state.lbMode !== modeKey) {
+    state.lbPage = 0;
+    state.lbData = null;
+  } else {
+    state.lbPage = page;
+  }
   state.lbMode = modeKey;
 
   const tabsHtml = `<div class="lb-tabs">${LEADERBOARD_MODES.map(m =>
     `<button type="button" class="lb-tab${m.key === modeKey ? " is-active" : ""}" data-lbmode="${m.key}">${m.label}</button>`
   ).join("")}</div>`;
 
-  container.innerHTML = tabsHtml + `<div class="lb-list" id="lb-rows"><p class="lb-empty">Caricamento classifica…</p></div>`;
-
-  container.querySelectorAll(".lb-tab").forEach(btn => {
-    btn.onclick = () => { playSound('click'); renderLeaderboard(btn.getAttribute("data-lbmode")); };
-  });
-
-  const rows = document.getElementById("lb-rows");
-  if (typeof db === "undefined") {
-    if (rows) rows.innerHTML = `<p class="lb-empty">Classifica non disponibile al momento.</p>`;
-    return;
-  }
-
-  db.collection("leaderboard_" + modeKey).orderBy("total", "desc").limit(50).get().then(snap => {
+  // Funzione interna che disegna i 20 nomi
+  const drawPage = () => {
     const rowsEl = document.getElementById("lb-rows");
     if (!rowsEl) return;
-    if (snap.empty) {
+
+    if (!state.lbData || state.lbData.length === 0) {
       rowsEl.innerHTML = `<p class="lb-empty">Nessuno ha ancora completato questa modalità da loggato. Fai login e gioca per essere il primo in classifica!</p>`;
       return;
     }
+
+    const pageSize = 20;
+    const totalPages = Math.ceil(state.lbData.length / pageSize);
+    if (state.lbPage >= totalPages) state.lbPage = totalPages - 1;
+    if (state.lbPage < 0) state.lbPage = 0;
+
+    const start = state.lbPage * pageSize;
+    const end = start + pageSize;
+    const pageData = state.lbData.slice(start, end);
+
     const myUid = (typeof auth !== "undefined" && auth.currentUser) ? auth.currentUser.uid : null;
-    let i = 0;
+
+    // Cambia le etichette delle colonne se siamo nella Carriera Giocatore
+    let isPlayerCareer = modeKey === "player_career";
+    let stat1Label = isPlayerCareer ? "gol" : "campionato";
+    let stat2Label = isPlayerCareer ? "assist" : "europa";
+
     let html = "";
-    snap.forEach(doc => {
-      i++;
-      const d = doc.data();
-      const posLabel = i === 1 ? "🥇" : i === 2 ? "🥈" : i === 3 ? "🥉" : i;
-      const meClass = doc.id === myUid ? " lb-row--me" : "";
+    pageData.forEach((d, index) => {
+      const globalIndex = start + index + 1; // Calcola la posizione reale (es. 21, 22...)
+      const posLabel = globalIndex === 1 ? "🥇" : globalIndex === 2 ? "🥈" : globalIndex === 3 ? "🥉" : globalIndex;
+      const meClass = d.uid === myUid ? " lb-row--me" : "";
+
       html += `<div class="lb-row${meClass}">
         <span class="lb-pos">${posLabel}</span>
         <span class="lb-name">${lbEscape(d.username)}</span>
-        <span class="lb-stat"><strong>${d.camp || 0}</strong><small>campionato</small></span>
-        <span class="lb-stat"><strong>${d.europe || 0}</strong><small>europa</small></span>
+        <span class="lb-stat"><strong>${d.camp || 0}</strong><small>${stat1Label}</small></span>
+        <span class="lb-stat"><strong>${d.europe || 0}</strong><small>${stat2Label}</small></span>
         <span class="lb-stat lb-stat--total"><strong>${d.total || 0}</strong><small>totale</small></span>
       </div>`;
     });
+
+    // Aggiunta Bottoni Paginazione
+    if (totalPages > 1) {
+      html += `
+        <div style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 15px; grid-column: 1 / -1;">
+          <button type="button" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;" ${state.lbPage === 0 ? "disabled" : ""} onclick="renderLeaderboard('${modeKey}', ${state.lbPage - 1})">⬅ Precedente</button>
+          <span style="font-family: var(--font-cond); color: var(--celeste-chiaro); font-size: 0.95rem; text-transform: uppercase;">Pagina ${state.lbPage + 1} di ${totalPages}</span>
+          <button type="button" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;" ${state.lbPage >= totalPages - 1 ? "disabled" : ""} onclick="renderLeaderboard('${modeKey}', ${state.lbPage + 1})">Successiva ➔</button>
+        </div>
+      `;
+    }
+
     rowsEl.innerHTML = html;
-  }).catch(err => {
-    console.error("Errore caricamento classifica globale:", err);
-    const rowsEl = document.getElementById("lb-rows");
-    if (rowsEl) rowsEl.innerHTML = `<p class="lb-empty">Errore nel caricamento della classifica. Riprova più tardi.</p>`;
+  };
+
+  // Setup del contenitore HTML
+  container.innerHTML = tabsHtml + `<div class="lb-list" id="lb-rows"><p class="lb-empty">Caricamento classifica…</p></div>`;
+
+  // Collegamento click delle schede
+  container.querySelectorAll(".lb-tab").forEach(btn => {
+    btn.onclick = () => { 
+        if(typeof playSound === 'function') playSound('click'); 
+        renderLeaderboard(btn.getAttribute("data-lbmode"), 0); 
+    };
   });
+
+  if (typeof db === "undefined") {
+    const rowsEl = document.getElementById("lb-rows");
+    if (rowsEl) rowsEl.innerHTML = `<p class="lb-empty">Classifica non disponibile al momento.</p>`;
+    return;
+  }
+
+  // Se i dati sono già stati scaricati, disegna subito la pagina richiesta (Nessun lag)
+  if (state.lbData) {
+    drawPage();
+  } else {
+    // Altrimenti scarica fino a 100 nomi dal server (Risparmio letture Firebase)
+    db.collection("leaderboard_" + modeKey).orderBy("total", "desc").limit(100).get().then(snap => {
+      state.lbData = [];
+      snap.forEach(doc => {
+        let d = doc.data();
+        d.uid = doc.id; // Salviamo l'uid per evidenziare l'utente corrente
+        state.lbData.push(d);
+      });
+      drawPage();
+    }).catch(err => {
+      console.error("Errore caricamento classifica globale:", err);
+      const rowsEl = document.getElementById("lb-rows");
+      if (rowsEl) rowsEl.innerHTML = `<p class="lb-empty">Errore nel caricamento della classifica. Riprova più tardi.</p>`;
+    });
+  }
 }
 
 // --- 4. GESTIONE AUTENTICAZIONE ---
@@ -6348,6 +6417,23 @@ window.simulateFullPlayerSeason = function() {
     if (wonMVP) c.mvp = (c.mvp || 0) + 1;
     if (wonBallonDor) c.ballonDor = (c.ballonDor || 0) + 1;
 
+    // --- FIX PALMARÈS GLOBALE ---
+    let palmares = JSON.parse(localStorage.getItem('napoli380_stats') || '{"scudetti":0,"champions":0,"wins":0,"matches":0,"pts":0,"runs":0}');
+
+    if (napoliPos === "1° (Campioni!)") palmares.scudetti++;
+    
+    // Se un domani vorrai mostrare i Palloni d'Oro o gli MVP anche nella Bacheca globale, 
+    // potrai aggiungerli all'oggetto palmares proprio qui!
+    // Esempio: if (wonBallonDor) palmares.palloniDoro = (palmares.palloniDoro || 0) + 1;
+
+    localStorage.setItem('napoli380_stats', JSON.stringify(palmares));
+    // ----------------------------
+// --- AGGIUNTA CLASSIFICA GLOBALE (CARRIERA GIOCATORE) ---
+    // Usiamo i gol fatti in stagione come prima statistica, e gli assist come seconda
+    if (typeof updateLeaderboard === "function") {
+        updateLeaderboard("player_career", "Carriera Giocatore", seasonGoals, seasonAssists);
+    }
+    // --------------------------------------------------------
     // CAP CREDITI: MAX 100 A STAGIONE
     let rawCredits = 20 + (seasonMatches * 1) + (seasonGoals * 2) + (seasonAssists * 1) + (wonMVP ? 20 : 0) + (wonBallonDor ? 30 : 0);
     let earnedCredits = Math.min(Math.round(rawCredits), 100); 
