@@ -4281,7 +4281,7 @@ body.dreamteam-mode .btn.primary {
 /* 4. Stessa cosa per il nome di battesimo, se presente */
 .player-card.tcg .tc-fn {
   white-space: nowrap !important;
-  font-size: 0.85rem !important;
+  font-size: 0.8rem !important;
   font-size: min(0.95rem, 8cqi) !important; 
 }
 /* ============================================================
@@ -5101,18 +5101,30 @@ body.dreamteam-mode .slot.filled.slot-icon .slot-age {
 }
 .card-flip-back {
   position: absolute;
-  inset: 0; /* Prende la misura esatta del fronte della carta */
+  inset: 0;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   transform: rotateY(180deg);
   background: linear-gradient(135deg, rgba(0,21,47,0.96), rgba(0,11,26,0.99));
   border: 2px solid var(--celeste);
   border-radius: 16px;
-  padding: 16px;
+  
+  /* MODIFICHE CHIAVE PER IL MOBILE */
+  padding: 12px 6px; 
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* Fa partire il testo dall'alto, non sfora più sopra */
   text-align: center;
+  overflow-y: auto; /* Aggiunge lo scroll se il testo è più lungo della carta */
   box-shadow: inset 0 0 24px rgba(0, 161, 255, 0.15), 0 10px 24px rgba(0,0,0,0.5);
+}
+
+/* Regola per abbellire la barra di scorrimento sul retro della carta */
+.card-flip-back::-webkit-scrollbar {
+  width: 3px;
+}
+.card-flip-back::-webkit-scrollbar-thumb {
+  background-color: var(--celeste);
+  border-radius: 4px;
 }
