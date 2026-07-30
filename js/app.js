@@ -4810,7 +4810,8 @@ function getCollection() {
 }
 
 function openPack(type) {
-    const getByRating = (min, max) => DB.filter(p => p.rating >= min && p.rating <= max);
+    // FIX: Escludiamo categoricamente le carte EROE (Pass Azzurro) da qualsiasi pacchetto!
+    const getByRating = (min, max) => DB.filter(p => p.rating >= min && p.rating <= max && p.tipo !== "EROE");
     const randItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
     let cards = [];
     // BONUS SCOUT (+2% drop rate)
@@ -4840,8 +4841,8 @@ function openPack(type) {
             else cards.push(randItem(getByRating(1, 79)));
         }
     } else if (type === 'centurion') {
-        // Pacchetto CENTURION: garantita almeno 1 carta speciale (IF / MOTM / TOTS)
-        const specialPool = DB.filter(p => p.tipo);
+        // Pacchetto CENTURION: garantita 1 carta speciale (IF / MOTM / TOTS), MA NON EROE!
+        const specialPool = DB.filter(p => p.tipo && p.tipo !== "EROE");
         cards.push(randItem(specialPool.length ? specialPool : getByRating(85, 99)));
         for(let i=0; i<2; i++) {
             let roll = Math.random();
@@ -5231,7 +5232,7 @@ function loadFromCloud(uid, showToast = true) {
       if (data.passClaimed !== undefined) setLoc('napoli380_pass_claimed', data.passClaimed);
       if (data.passId !== undefined) setLoc('napoli380_pass_id', data.passId);
       if (data.hof) setLoc('napoli380_hof', JSON.stringify(data.hof));
-
+      if (typeof initDailyMissions === 'function') initDailyMissions();
       // Aggiorna visivamente tutte le UI in tempo reale
       if(typeof updateWalletUI === 'function') updateWalletUI();
       if(typeof updateDupesBadge === 'function') updateDupesBadge();
