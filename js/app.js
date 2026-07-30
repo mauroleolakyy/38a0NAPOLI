@@ -3548,10 +3548,31 @@ const BIRTH_YEARS = {
   "Lorenzo Lucca": 2000,
   "Giovane": 2003,
   "Alisson Santos": 2002,
+  "Claudio Garella": 1955,
+  "Omar Sivori": 1935,
+  "Luis Vinicio": 1932,
+  "Michu": 1986,
+  "Mirko Valdifiori": 1986,
+  "Rafa Marin": 2002,
+  "José Sosa": 1985,
+  "Cristian Bucchi": 1977,
+  "Leander Dendoncker": 1995,
+  "Axel Tuanzebe": 1997,
 };
 
 const DB = [
   /* ---------- Hall of Fame & Leggende (Rating estremi) ---------- */
+  /* ---------- Nuove Aggiunte (Storici e Meteore) ---------- */
+  P("Leander Dendoncker", "2023/24", ["CC", "MED"], 72),
+  P("Axel Tuanzebe", "2020/21", ["DC", "TD"], 69),
+  P("Claudio Garella", "1986/87", ["POR"], 85),
+  P("Omar Sivori", "Hall of Fame", ["ATT", "TRQ"], 92),
+  P("Luis Vinicio", "Hall of Fame", ["ATT"], 89),
+  P("Michu", "2014/15", ["ATT", "TRQ"], 71),
+  P("Mirko Valdifiori", "2015/16", ["MED"], 75),
+  P("Rafa Marin", "2024/25", ["DC"], 75),
+  P("José Sosa", "2010/11", ["TRQ", "AD"], 76),
+  P("Cristian Bucchi", "2006/07", ["ATT"], 74),
   P("Alisson Santos", "2025/26", ["AS", "TRQ"], 82),
   P("Giovane", "2025/26", ["ATT", "TRQ"], 76),
   P("Giovane", "Eroe del Mese", ["ATT", "TRQ"], 92, { tipo: "EROE", evento: "Livello 30 Pass Azzurro" }),
