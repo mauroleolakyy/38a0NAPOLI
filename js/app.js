@@ -5492,32 +5492,6 @@ if (typeof auth !== "undefined") {
   }
 });
   
- // Popup dedicato: ACCOUNT ESISTENTE ma PASSWORD SBAGLIATA (diverso dal popup "nuovo account")
-  function showWrongPasswordModal(username) {
-    let modal = document.getElementById("wrong-password-modal");
-    if (!modal) {
-      modal = document.createElement("div");
-      modal.id = "wrong-password-modal";
-      modal.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);";
-      modal.innerHTML =
-        '<div style="background:#0b1e33;border:1px solid #5a2323;border-radius:14px;max-width:360px;width:90%;padding:24px;text-align:center;color:#fff;box-shadow:0 10px 40px rgba(0,0,0,.5);font-family:inherit;">' +
-          '<div style="font-size:38px;margin-bottom:8px;">🔒</div>' +
-          '<h3 style="margin:0 0 10px;font-size:18px;">Password errata</h3>' +
-          '<p id="wrong-password-text" style="margin:0 0 20px;font-size:14px;color:#cfd8e3;line-height:1.4;"></p>' +
-          '<button type="button" id="wrong-password-ok" style="width:100%;padding:10px;border-radius:8px;border:none;background:#d63b3b;color:#fff;font-weight:600;cursor:pointer;">Riprova</button>' +
-        '</div>';
-      document.body.appendChild(modal);
-      modal.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
-      modal.querySelector("#wrong-password-ok").addEventListener("click", () => {
-        modal.style.display = "none";
-        if (authPasswordInput) { authPasswordInput.value = ""; authPasswordInput.focus(); }
-      });
-    }
-    modal.querySelector("#wrong-password-text").innerHTML =
-      'L\'account "<strong>' + username + '</strong>" esiste già, ma la password inserita non è corretta. Riprova.';
-    modal.style.display = "flex";
-  }
-
  // Tasto ACCEDI / REGISTRATI (Logica blindata e definitiva)
   if(btnLoginRegister) {
     btnLoginRegister.onclick = () => {
@@ -5577,12 +5551,12 @@ const fakeEmail = usernameLower.replace(/\s+/g, '') + FAKE_DOMAIN;
             .catch(() => {
               // L'account non esiste proprio da nessuna parte: chiediamo di crearne uno nuovo!
               const regModal = document.getElementById("confirm-register-modal");
-              const regText = document.getElementById("confirm-register-text");
               const btnCancel = document.getElementById("btn-register-cancel");
               const btnConfirm = document.getElementById("btn-register-confirm");
               
               if(regModal) {
-                regText.innerHTML = `L'account "<strong>${rawUsername}</strong>" non esiste.<br>Vuoi registrare un NUOVO account con questo nome?`;
+                const regUsernameSpan = document.getElementById("confirm-register-username");
+                if (regUsernameSpan) regUsernameSpan.textContent = rawUsername;
                 regModal.classList.add("show");
                 
                 btnCancel.onclick = () => {
