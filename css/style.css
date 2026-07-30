@@ -5128,3 +5128,47 @@ body.dreamteam-mode .slot.filled.slot-icon .slot-age {
   background-color: var(--celeste);
   border-radius: 4px;
 }
+/* ============================================================
+   FOOTER DI GIOCO
+   ============================================================ */
+.game-footer {
+    
+    padding: 24px 10px;
+    background-color: rgba(0, 11, 26, 0.9); /* Sfondo scuro per staccare dal gioco */
+    border-top: 1px solid rgba(0, 161, 255, 0.2); /* Linea sottile celeste in alto */
+    text-align: center;
+    width: 100%;
+}
+
+.footer-content p {
+    color: var(--testo-dim, #8892b0);
+    font-size: 0.85rem;
+    margin: 0 0 12px 0;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9rem;
+}
+
+.footer-links a {
+    color: var(--celeste, #00a1ff);
+    text-decoration: none;
+    font-family: var(--font-display, sans-serif);
+    letter-spacing: 0.5px;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.footer-links a:hover {
+    color: var(--celeste-chiaro, #ffffff);
+    text-decoration: underline;
+    text-shadow: 0 0 8px rgba(0, 161, 255, 0.5);
+}
+
+.footer-separator {
+    color: var(--testo-mute, #444);
+    font-size: 0.9rem;
+}
