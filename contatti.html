@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
+    <title>Contatti - 38-0 Napoli</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #00112b; /* Il blu scuro del gioco */
+            color: #e0e0e0;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        h1 {
+            color: #00a1ff; /* Il celeste del gioco */
+            font-family: sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+        }
+        a {
+            color: #ffffff; /* Verde fluo per i link */
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: text-shadow 0.2s ease;
+        }
+        a:hover {
+            text-decoration: underline;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 40px 30px;
+            border-radius: 12px;
+            border: 1px solid #00a1ff;
+            margin-top: 10vh; /* Centra un po' la pagina verticalmente */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .subtitle {
+            color: #8892b0;
+            margin-bottom: 40px;
+            font-size: 0.95rem;
+        }
+        .contact-box {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(0, 11, 26, 0.8);
+            border-radius: 8px;
+            border-left: 4px solid #00a1ff; /* Linea laterale celeste */
+            text-align: left;
+        }
+        /* Variante grigia/bianca per il box di X (Twitter) */
+        .contact-box.x-box {
+            border-left-color: #e0e0e0; 
+        }
+        .contact-box p {
+            margin: 5px 0 0 0;
+        }
+        .contact-title {
+            color: #8892b0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #00a1ff;
+            border: 1px solid #00a1ff;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .back-link:hover {
+            background: #00a1ff;
+            color: #00112b;
+            text-decoration: none;
+            text-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Contattaci</h1>
+    <p class="subtitle">Hai suggerimenti, hai trovato un bug nel gioco o vuoi semplicemente scambiare due chiacchiere sul progetto? Ecco dove trovarci!</p>
+
+    <!-- BOX EMAIL -->
+    <div class="contact-box">
+        <div class="contact-title">Email di Supporto</div>
+        <p><a href="mailto:supporto@38-0napoli.it">supporto@38-0napoli.it</a></p>
+    </div>
+
+    <!-- BOX X (TWITTER) -->
+    <div class="contact-box x-box">
+        <div class="contact-title">Pagina X (Twitter) ufficiale</div>
+        <p><a href="https://x.com/napoli38_0" target="_blank">@napoli38_0</a></p>
+    </div>
+<!-- BOX INSTAGRAM (Esempio) -->
+    <div class="contact-box ig-box">
+        <div class="contact-title">Instagram</div>
+        <p><a href="https://www.instagram.com/napoli38_0" target="_blank">@napoli38_0</a></p>
+    </div>
+
+    <!-- BOX TIKTOK (Esempio) -->
+    <div class="contact-box tk-box">
+        <div class="contact-title">TikTok</div>
+        <p><a href="https://www.tiktok.com/@napoli38_0" target="_blank">@napoli38_0</a></p>
+    </div>
+    <!-- BOTTONE INDIETRO -->
+    <a href="index.html" class="back-link">← Torna al Gioco</a>
+</div>
+
+</body>
+</html>
