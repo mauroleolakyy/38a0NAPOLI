@@ -5072,3 +5072,47 @@ body.dreamteam-mode .slot.filled.slot-icon .slot-age {
         margin-bottom: 30px !important;
     }
 }
+/* ============================================================
+   ANIMAZIONE FLIP CARTE (COLLEZIONE E DATABASE)
+   ============================================================ */
+.card-flip-container {
+  perspective: 1000px;
+  cursor: pointer;
+  width: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-flip-container:hover {
+  transform: translateY(-4px);
+}
+.card-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-style: preserve-3d;
+}
+.card-flip-container.is-flipped .card-flip-inner {
+  transform: rotateY(180deg);
+}
+.card-flip-front {
+  position: relative; /* Spinge l'altezza in base al contenuto */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.card-flip-back {
+  position: absolute;
+  inset: 0; /* Prende la misura esatta del fronte della carta */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, rgba(0,21,47,0.96), rgba(0,11,26,0.99));
+  border: 2px solid var(--celeste);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: inset 0 0 24px rgba(0, 161, 255, 0.15), 0 10px 24px rgba(0,0,0,0.5);
+}
