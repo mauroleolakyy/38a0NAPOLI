@@ -1,74 +1,199 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
-    <title>Privacy Policy - 38-0 Napoli</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            background-color: #00112b; /* Il tuo blu scuro */
-            color: #e0e0e0;
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h1, h2 {
-            color: #00a1ff; /* Il tuo celeste */
-        }
-        a {
-            color: #ffffff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .container {
-            background-color: rgba(255, 255, 255, 0.05);
-            padding: 30px;
-            border-radius: 10px;
-            border: 1px solid #00a1ff;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Privacy Policy · 38-0-0 NAPOLI</title>
+  <meta name="description" content="Privacy Policy e gestione dei dati di 38-0-0 Napoli, il manageriale amatoriale per il centenario del Napoli.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Saira:wght@400;500;600;700;800&family=Saira+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192">
+  <link rel="stylesheet" href="css/style.css">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00112b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Napoli 38-0-0">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .static-main {
+      flex: 1;
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: var(--sp-8) var(--sp-5) var(--sp-9);
+    }
+
+    .static-hero { text-align: center; margin-bottom: var(--sp-7); }
+    .static-hero .section-title {
+      display: inline-block;
+      padding-left: 0;
+      margin: 0 0 var(--sp-3);
+    }
+    .static-hero .section-title::before {
+      left: 50%; right: auto; top: auto; bottom: -10px;
+      transform: translateX(-50%);
+      width: 54px; height: 4px; border-radius: 2px;
+    }
+    .static-hero .updated {
+      font-family: var(--font-cond);
+      font-weight: 700;
+      letter-spacing: var(--tracking-cond, 0.04em);
+      text-transform: uppercase;
+      font-size: var(--fs-300);
+      color: var(--celeste-chiaro);
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(0,161,255,0.4);
+      border-radius: var(--radius-bug);
+      padding: 3px 12px;
+      display: inline-block;
+    }
+
+    .policy-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(0,161,255,0.25);
+      border-radius: var(--radius-card);
+      box-shadow: var(--bevel-top), var(--shadow-card);
+      padding: var(--sp-6) var(--sp-6);
+      margin-bottom: var(--sp-6);
+    }
+
+    .policy-card h2 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: var(--fs-600);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--testo);
+      margin: 0 0 var(--sp-4);
+      padding-left: var(--sp-4);
+      position: relative;
+    }
+    .policy-card h2::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0.15em; bottom: 0.15em;
+      width: 4px;
+      background: linear-gradient(180deg, var(--azzurro-vivo), var(--celeste));
+      border-radius: 2px;
+    }
+
+    .policy-card p, .policy-card li {
+      color: var(--testo-dim);
+      font-size: var(--fs-400);
+      line-height: 1.7;
+    }
+    .policy-card p { margin: 0 0 var(--sp-3); }
+    .policy-card ul { margin: 0 0 var(--sp-3); padding-left: var(--sp-5); }
+    .policy-card li { margin-bottom: var(--sp-2); }
+    .policy-card li:last-child { margin-bottom: 0; }
+    .policy-card strong { color: var(--testo); }
+    .policy-card a { color: var(--celeste); text-decoration: none; font-weight: 600; }
+    .policy-card a:hover { color: var(--celeste-chiaro); text-decoration: underline; }
+
+    .contact-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-3);
+      flex-wrap: wrap;
+      background: rgba(0,161,255,0.08);
+      border: 1px solid rgba(0,161,255,0.3);
+      border-radius: var(--radius-card);
+      padding: var(--sp-4) var(--sp-5);
+      text-align: center;
+    }
+    .contact-strip strong { color: var(--testo); }
+
+    .static-back {
+      display: flex;
+      justify-content: center;
+      margin-top: var(--sp-7);
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Privacy Policy e Gestione dei Dati</h1>
-    <p>Ultimo aggiornamento: <strong>Luglio 2026</strong></p>
-    
-    <p>Benvenuto! Questa pagina ti spiega in modo semplice e trasparente come vengono gestiti i tuoi dati mentre giochi a questo web-game amatoriale.</p>
+  <header class="topbar scorebug is-sticky">
+    <a href="index.html" class="btn-home" style="text-decoration:none;">← Menu</a>
+    <div class="scorebug__brand">
+      <div class="brand">NAPOLI <span class="brand-num">38-0-0</span></div>
+      <div class="brand-sub">1926 → 2026</div>
+    </div>
+  </header>
 
-    <h2>1. Natura del Progetto</h2>
-    <p>Questo sito è un progetto <strong>amatoriale, 100% gratuito, senza scopo di lucro e privo di annunci pubblicitari</strong>. È una "Fan Art" creata esclusivamente per puro divertimento. I marchi e i diritti d'immagine appartengono ai rispettivi proprietari.</p>
+  <main class="static-main">
+    <div class="static-hero">
+      <h1 class="section-title">Privacy Policy</h1>
+      <span class="updated">Ultimo aggiornamento: Luglio 2026</span>
+    </div>
 
-    <h2>2. Quali dati raccogliamo e perché</h2>
-    <p>Per permetterti di giocare e non perdere i tuoi progressi, il sistema raccoglie esclusivamente i seguenti dati tecnici:</p>
-    <ul>
-        <li><strong>Indirizzo Email e Password (criptata):</strong> Richiesti unicamente per la creazione del tuo account, per il login e per sincronizzare i salvataggi sul Cloud. Non useremo <strong>mai</strong> la tua email per mandarti pubblicità o newsletter non richieste.</li>
-        <li><strong>Dati di Gioco:</strong> Salvi le carte che hai trovato, la tua striscia di accessi giornalieri, i crediti e il magazzino doppioni. Questi dati sono salvati sia sul tuo dispositivo (tramite LocalStorage) sia sui server Cloud.</li>
-    </ul>
+    <div class="policy-card">
+      <p>Benvenuto! Questa pagina ti spiega in modo semplice e trasparente come vengono gestiti i tuoi dati mentre giochi a questo web-game amatoriale.</p>
+    </div>
 
-    <h2>3. Cookie e LocalStorage (Salvataggi Locali)</h2>
-    <p>Questo gioco utilizza la memoria locale del tuo browser (chiamata <em>LocalStorage</em>) per salvare istantaneamente le tue carte e farti giocare in modo fluido. Essendo equiparabili a "Cookie Tecnici" strettamente necessari al funzionamento del servizio, non richiedono un banner di consenso preventivo. <strong>Non utilizziamo cookie di profilazione o tracciamento per scopi pubblicitari.</strong></p>
+    <div class="policy-card">
+      <h2>1. Natura del progetto</h2>
+      <p>Questo sito è un progetto <strong>amatoriale, 100% gratuito, senza scopo di lucro e privo di annunci pubblicitari</strong>. È una "Fan Art" creata esclusivamente per puro divertimento. I marchi e i diritti d'immagine appartengono ai rispettivi proprietari.</p>
+    </div>
 
-    <h2>4. Dove vengono salvati i dati (Servizi di Terze Parti)</h2>
-    <p>Per garantire la sicurezza degli account e il salvataggio sul cloud, ci appoggiamo a servizi esterni leader nel settore:</p>
-    <ul>
-        <li><strong>Google Firebase:</strong> Utilizzato per l'autenticazione sicura (login) e come database (Cloud Firestore) per custodire i progressi di gioco. (Puoi leggere la Privacy Policy di Google per maggiori dettagli).</li>
-        <li><strong>GitHub Pages:</strong> Utilizzato per ospitare fisicamente i file del sito web.</li>
-    </ul>
+    <div class="policy-card">
+      <h2>2. Quali dati raccogliamo e perché</h2>
+      <p>Per permetterti di giocare e non perdere i tuoi progressi, il sistema raccoglie esclusivamente i seguenti dati tecnici:</p>
+      <ul>
+        <li><strong>Indirizzo email e password (criptata):</strong> richiesti unicamente per la creazione del tuo account, per il login e per sincronizzare i salvataggi sul cloud. Non useremo mai la tua email per mandarti pubblicità o newsletter non richieste.</li>
+        <li><strong>Dati di gioco:</strong> le carte trovate, la striscia di accessi giornalieri, i crediti e il magazzino doppioni. Questi dati sono salvati sia sul tuo dispositivo (tramite LocalStorage) sia sui server cloud.</li>
+      </ul>
+    </div>
 
-    <h2>5. I tuoi diritti (Cancellazione dell'Account)</h2>
-    <p>Sei padrone dei tuoi dati. In qualsiasi momento hai il diritto di richiedere l'accesso ai tuoi dati, la loro modifica o la <strong>cancellazione definitiva</strong> del tuo account e dell'intera collezione di gioco dai nostri server.</p>
-    <p>Per richiedere la cancellazione o per qualsiasi altra domanda relativa alla privacy, puoi inviare una comunicazione via email all'amministratore all'indirizzo: <br>
-    <strong><a href="mailto:supporto@38-0napoli.it">supporto@38-0napoli.it</a></strong></p>
+    <div class="policy-card">
+      <h2>3. Cookie e LocalStorage</h2>
+      <p>Questo gioco utilizza la memoria locale del tuo browser (<em>LocalStorage</em>) per salvare istantaneamente le tue carte e farti giocare in modo fluido. Essendo equiparabili a "cookie tecnici" strettamente necessari al funzionamento del servizio, non richiedono un banner di consenso preventivo. <strong>Non utilizziamo cookie di profilazione o tracciamento per scopi pubblicitari.</strong></p>
+    </div>
 
-    <hr style="border-color: rgba(255,255,255,0.1); margin: 30px 0;">
-    <p style="text-align: center;"><a href="index.html">← Torna al Gioco</a></p>
-</div>
+    <div class="policy-card">
+      <h2>4. Dove vengono salvati i dati</h2>
+      <p>Per garantire la sicurezza degli account e il salvataggio sul cloud, ci appoggiamo a servizi esterni leader nel settore:</p>
+      <ul>
+        <li><strong>Google Firebase:</strong> utilizzato per l'autenticazione sicura (login) e come database (Cloud Firestore) per custodire i progressi di gioco.</li>
+        <li><strong>GitHub Pages:</strong> utilizzato per ospitare fisicamente i file del sito web.</li>
+      </ul>
+    </div>
+
+    <div class="policy-card">
+      <h2>5. I tuoi diritti</h2>
+      <p>Sei padrone dei tuoi dati. In qualsiasi momento hai il diritto di richiedere l'accesso ai tuoi dati, la loro modifica o la <strong>cancellazione definitiva</strong> del tuo account e dell'intera collezione di gioco dai nostri server.</p>
+      <div class="contact-strip">
+        <span>Per richieste di cancellazione o domande sulla privacy:</span>
+        <strong><a href="mailto:supporto@38-0napoli.it">supporto@38-0napoli.it</a></strong>
+      </div>
+    </div>
+
+    <div class="static-back">
+      <a href="index.html" class="btn ghost">← Torna al gioco</a>
+    </div>
+  </main>
+
+  <footer class="game-footer">
+    <div class="footer-content">
+      <p>38-0 Napoli - Progetto Amatoriale Fan-Made (Senza scopo di lucro)</p>
+      <div class="footer-links">
+        <a href="privacy.html">Privacy Policy</a>
+        <span class="footer-separator">|</span>
+        <a href="contatti.html">Contatti</a>
+      </div>
+    </div>
+  </footer>
 
 </body>
 </html>
