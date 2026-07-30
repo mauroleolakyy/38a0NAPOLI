@@ -887,11 +887,26 @@ function renderDbGrid() {
                     const statusBadge = isOwned
                         ? '<div class="card-banner" style="background:#00ff88; color:#00112b;">✓ POSSEDUTA</div>'
                         : '<div class="card-banner" style="background:rgba(255,255,255,0.1); color:var(--testo-mute);">NON POSSEDUTA</div>';
-                    const titleAttr = p.evento ? ` title="${p.evento.replace(/"/g, "&quot;")}"` : "";
+                    
+                    // PREPARA IL RETRO DELLA CARTA
+                    let backContent = p.evento 
+                        ? `<h4 style="margin-bottom:8px; color:var(--celeste-chiaro); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo);">${p.evento}</p>` 
+                        : `<h4 style="margin-bottom:8px; color:var(--testo-mute); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo-dim);">Nessun evento speciale registrato.</p>`;
 
-                    html += `<div class="${cls}" style="${styleAttr}"${titleAttr}>
-                        ${tcgCardInner(p, false, p.ruoli[0])}
-                        ${statusBadge}
+                    // INIEZIONE DELL'HTML 3D
+                    html += `
+                    <div class="card-flip-container" onclick="if(typeof playSound === 'function') playSound('carta'); this.classList.toggle('is-flipped')">
+                        <div class="card-flip-inner">
+                            <!-- FRONTE DELLA CARTA -->
+                            <div class="card-flip-front ${cls}" style="${styleAttr}">
+                                ${tcgCardInner(p, false, p.ruoli[0])}
+                                ${statusBadge}
+                            </div>
+                            <!-- RETRO DELLA CARTA -->
+                            <div class="card-flip-back">
+                                ${backContent}
+                            </div>
+                        </div>
                     </div>`;
                 });
 
@@ -943,18 +958,42 @@ function renderDbGrid() {
 function init() {
   if (document.body.dataset.initDone === "1") return;
   document.body.dataset.initDone = "1";
-
+// --- INIZIO FIX: SINCRONIZZAZIONE AUTOMATICA CARTE SALVATE ---
+  try {
+      let coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
+      let dupes = JSON.parse(localStorage.getItem('napoli380_doppioni') || "[]");
+      
+      // Confronta ogni carta salvata con il DB aggiornato e la rimpiazza con la versione fresca
+      let updatedColl = coll.map(saved => DB.find(dbCard => dbCard.nome === saved.nome && dbCard.stagione === saved.stagione) || saved);
+      let updatedDupes = dupes.map(saved => DB.find(dbCard => dbCard.nome === saved.nome && dbCard.stagione === saved.stagione) || saved);
+      
+      // Ri-salviamo tutto nel browser. 
+      // Grazie al tuo sistema, questo innescherà anche il salvataggio automatico sul Cloud!
+      localStorage.setItem('napoli380_collection', JSON.stringify(updatedColl));
+      localStorage.setItem('napoli380_doppioni', JSON.stringify(updatedDupes));
+  } catch(e) {
+      console.error("Errore sincronizzazione DB:", e);
+  }
+  // --- FINE FIX SINCRONIZZAZIONE ---
   // Listener per le barre di ricerca carte (Database e Collezione)
+// Listener per le barre di ricerca carte (Database e Collezione) CON DEBOUNCING
+  let searchTimeout;
   document.body.addEventListener("input", function(e) {
     if (e.target && e.target.id === "db-search") {
-      state.dbSearch = e.target.value;
-      state.dbPage = 0;
-      renderDbGrid();
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        state.dbSearch = e.target.value;
+        state.dbPage = 0;
+        renderDbGrid();
+      }, 300);
     }
     if (e.target && e.target.id === "collection-search") {
-      state.collectionSearch = e.target.value;
-      state.collectionPage = 0;
-      renderCollection();
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        state.collectionSearch = e.target.value;
+        state.collectionPage = 0;
+        renderCollection();
+      }, 300);
     }
   });
 
@@ -1195,13 +1234,24 @@ function initDailyMissions() {
 }
 
 function updateMissionsBadge() {
-  let data = JSON.parse(localStorage.getItem('napoli380_missions') || "null");
-  const badge = document.getElementById("missions-badge");
-  if (!data || !badge) return;
+  try {
+    let data = JSON.parse(localStorage.getItem('napoli380_missions'));
+    const badge = document.getElementById("missions-badge");
+    if (!badge) return;
 
-  // Mostra il badge rosso se c'è almeno una missione completata e NON riscattata
-  const hasUnclaimed = data.quests.some(q => q.progress >= q.target && !q.claimed);
-  badge.style.display = hasUnclaimed ? "flex" : "none";
+    if (!data || !data.quests || !Array.isArray(data.quests)) {
+      badge.style.display = "none";
+      return;
+    }
+
+    // Controllo rigoroso: deve essere esattamente false
+    const hasUnclaimed = data.quests.some(q => q && q.progress >= q.target && q.claimed === false);
+    badge.style.display = hasUnclaimed ? "flex" : "none";
+  } catch (e) {
+    console.error("Errore badge:", e);
+    const badge = document.getElementById("missions-badge");
+    if (badge) badge.style.display = "none";
+  }
 }
 
 window.renderMissionsMenu = function() {
@@ -1265,7 +1315,9 @@ window.renderMissionsMenu = function() {
 window.claimMission = function(idx) {
   if(typeof playSound === 'function') playSound('click');
   let data = JSON.parse(localStorage.getItem('napoli380_missions'));
-  if (data && data.quests[idx] && !data.quests[idx].claimed) {
+  
+  // Aggiunto controllo rigoroso su claimed === false
+  if (data && data.quests && data.quests[idx] && data.quests[idx].claimed === false) {
     data.quests[idx].claimed = true;
     localStorage.setItem('napoli380_missions', JSON.stringify(data));
     addCredits(data.quests[idx].reward, "Missione Completata");
@@ -1277,21 +1329,29 @@ window.claimMission = function(idx) {
 };
 
 window.updateMissionProgress = function(type, amount = 1) {
-  let data = JSON.parse(localStorage.getItem('napoli380_missions'));
-  if (!data) return;
-  let updated = false;
-  data.quests.forEach(q => {
-    if (q.type === type && !q.claimed && q.progress < q.target) {
-      q.progress = Math.min(q.progress + amount, q.target);
-      updated = true;
+  try {
+    initDailyMissions(); // FORZA IL CONTROLLO PRIMA DI DARE PUNTI
+    
+    let data = JSON.parse(localStorage.getItem('napoli380_missions'));
+    if (!data || !data.quests || !Array.isArray(data.quests)) return;
+    
+    let updated = false;
+    data.quests.forEach(q => {
+      // Controllo rigoroso su claimed === false
+      if (q && q.type === type && q.claimed === false && q.progress < q.target) {
+        q.progress = Math.min(q.progress + amount, q.target);
+        updated = true;
+      }
+    });
+    
+    if (updated) {
+      localStorage.setItem('napoli380_missions', JSON.stringify(data));
+      updateMissionsBadge();
     }
-  });
-  if (updated) {
-    localStorage.setItem('napoli380_missions', JSON.stringify(data));
-    updateMissionsBadge();
+  } catch (e) {
+    console.error("Errore progresso missioni:", e);
   }
 };
-
 // Inizializza subito al caricamento
 initDailyMissions();
 
@@ -1303,6 +1363,7 @@ const modal = document.getElementById("missions-modal");
 if (btnToggle && modal) {
   btnToggle.onclick = () => {
     if(typeof playSound === 'function') playSound('click');
+    initDailyMissions(); // FORZA IL CONTROLLO DELLA MEZZANOTTE
     renderMissionsMenu();
     modal.classList.add("show");
   };
@@ -2658,7 +2719,14 @@ function marketOptions(slotId) {
 }
 function applyMarketReplacement(slotId, choiceIndex, opts, meta) {
   opts = opts || marketOptions(slotId); const np = opts[choiceIndex]; if (!np) return null;
-  const oldP = state.team[slotId]; state.team[slotId] = np; state.usedNames.add(np.nome); delete state.ratingMods[slotId];
+  const oldP = state.team[slotId]; 
+  
+  // FIX: Libera il nome del giocatore uscente per rimetterlo nel pool disponibile!
+  if (oldP) {
+      state.usedNames.delete(oldP.nome);
+  }
+  
+  state.team[slotId] = np; state.usedNames.add(np.nome); delete state.ratingMods[slotId];
   if (state.career) state.career.ages[slotId] = careerInitialAge(np); state.marketDone = true;
   return { oldP, np, event: null };
 }
@@ -3479,23 +3547,25 @@ const BIRTH_YEARS = {
   "Vanja Milinkovic-Savic": 1997,
   "Lorenzo Lucca": 2000,
   "Giovane": 2003,
+  "Alisson Santos": 2002,
 };
 
 const DB = [
   /* ---------- Hall of Fame & Leggende (Rating estremi) ---------- */
-  P("Giovane", "2025/25", ["ATT", "TRQ"], 76, ),
+  P("Alisson Santos", "2025/26", ["AS", "TRQ"], 82),
+  P("Giovane", "2025/26", ["ATT", "TRQ"], 76),
   P("Giovane", "Eroe del Mese", ["ATT", "TRQ"], 92, { tipo: "EROE", evento: "Livello 30 Pass Azzurro" }),
-  P("Diego Armando Maradona", "Centenario", ["TRQ","ATT"], 100),
-  P("Marek Hamsik", "Centenario", ["CC","TRQ"], 100),
-  P("Giovanni Di Lorenzo", "Centenario", ["DC","TD"], 100),
-  P("Lorenzo Insigne", "Centenario", ["AS","TRQ"], 100),
-  P("Khvicha Kvaratskhelia", "Centenario", ["AS","TRQ"], 100),
-  P("Kalidou Koulibaly", "Centenario", ["DC"], 100),
-  P("Diego Armando Maradona", "Hall of Fame", ["TRQ","ATT"], 99),
+  P("Diego Armando Maradona", "Centenario", ["TRQ","ATT"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
+  P("Marek Hamsik", "Centenario", ["CC","TRQ"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
+  P("Giovanni Di Lorenzo", "Centenario", ["DC","TD"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
+  P("Lorenzo Insigne", "Centenario", ["AS","TRQ"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
+  P("Khvicha Kvaratskhelia", "Centenario", ["AS","TRQ"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
+  P("Kalidou Koulibaly", "Centenario", ["DC"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
+  P("Diego Armando Maradona", "Hall of Fame", ["TRQ","ATT"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
   P("Diego Armando Maradona", "1986/87", ["TRQ","ATT"], 97),
-  P("Careca", "Hall of Fame", ["ATT"], 99),
+  P("Careca", "Hall of Fame", ["ATT"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
   P("Careca", "1989/90", ["ATT"], 94),
-  P("Bruno Giordano", "Hall of Fame", ["ATT"], 99),
+  P("Bruno Giordano", "Hall of Fame", ["ATT"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
   P("Bruno Giordano", "1986/87", ["ATT"], 90),
   P("Alemão", "1989/90", ["MED","CC"], 88),
   P("Gianfranco Zola", "1989/90", ["TRQ","ATT"], 86),
@@ -3503,12 +3573,12 @@ const DB = [
   P("Laurent Blanc", "1991/92", ["DC"], 88),
   P("Fabio Cannavaro", "1994/95", ["DC"], 85),
   P("Roberto Ayala", "1996/97", ["DC"], 84),
-  P("Ruud Krol", "Hall of Fame", ["DC","MED"], 99),
-  P("Ciro Ferrara", "Hall of Fame", ["DC","TD"], 99),
+  P("Ruud Krol", "Hall of Fame", ["DC","MED"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
+  P("Ciro Ferrara", "Hall of Fame", ["DC","TD"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
   P("Ciro Ferrara", "1989/90", ["DC","TD"], 89),
-  P("Giuseppe Bruscolotti", "Hall of Fame", ["DC","TD"], 99),
-  P("Antonio Juliano", "Hall of Fame", ["CC","MED"], 99),
-  P("Luciano Castellini", "Hall of Fame", ["POR"], 99),
+  P("Giuseppe Bruscolotti", "Hall of Fame", ["DC","TD"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
+  P("Antonio Juliano", "Hall of Fame", ["CC","MED"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
+  P("Luciano Castellini", "Hall of Fame", ["POR"], 99, { tipo: "Hall of Fame", evento: "Icona del Napoli" }),
   P("Pino Taglialatela", "1996/97", ["POR"], 84),
 
   /* ---------- Anni Bui e Rinascita (1998-2007) ---------- */
@@ -3728,12 +3798,12 @@ const DB = [
 
   /* ---------- CARTE SPECIALI: MOTM, IN FORM (IF) & TEAM OF THE SEASON (TOTS) ---------- */
   /* Motm: prestazione straordinaria in una singola, storica partita */
-  P("Khvicha Kvaratskhelia", "MOTM", ["AS","TRQ"], 96, { tipo: "MOTM", evento: "Doppietta al debutto Champions vs Liverpool, Anfield 2022" }),
+  P("Khvicha Kvaratskhelia", "MOTM", ["AS","TRQ"], 96, { tipo: "MOTM", evento: "Partitona al debutto Champions vs Liverpool, Napoli 2022" }),
   P("Victor Osimhen", "MOTM", ["ATT"], 97, { tipo: "MOTM", evento: "Tripletta al Verona che lancia la corsa scudetto, marzo 2023" }),
   P("Diego Armando Maradona", "MOTM", ["TRQ","ATT"], 99, { tipo: "MOTM", evento: "Gol e assist decisivi nel Napoli-Juventus del 3 novembre 1985" }),
   P("Dries Mertens", "MOTM", ["ATT","AS"], 95, { tipo: "MOTM", evento: "Tripletta al Genk che lo consacra bomber, dicembre 2016" }),
   P("Marek Hamsik", "MOTM", ["CC","TRQ"], 94, { tipo: "MOTM", evento: "Gol del record che supera Maradona, 2 dicembre 2017" }),
-  P("Giovanni Simeone", "MOTM", ["ATT"], 90, { tipo: "MOTM", evento: "Doppietta subentrando al Maradona, campionato 2022/23" }),
+  P("Giovanni Simeone", "MOTM", ["ATT"], 90, { tipo: "MOTM", evento: "Primo gol in Champions al Maradona, Napoli 2022" }),
   P("Romelu Lukaku", "MOTM", ["ATT"], 92, { tipo: "MOTM", evento: "Doppietta al debutto contro il Bologna, agosto 2024" }),
   P("Scott McTominay", "MOTM", ["CC","TRQ"], 93, { tipo: "MOTM", evento: "Doppietta decisiva nel derby scudetto vs Inter, gennaio 2025" }),
 
@@ -4795,7 +4865,8 @@ function triggerWalkoutAnimation(cards) {
     
     // 2. CREA IL DOM PER TUTTE E 3 LE CARTE
     cards.forEach((p, index) => {
-        const isDupe = coll.some(x => x.nome === p.nome && x.stagione === p.stagione);
+        const isDupe = coll.some(x => x.nome === p.nome && x.stagione === p.stagione) || 
+               newCardsToSave.some(x => !x.isDupeFlag && x.nome === p.nome && x.stagione === p.stagione);
         p.isWalkout = p.rating >= 88 || p.stagione === 'Hall of Fame';
         
         if (isDupe) {
@@ -4978,6 +5049,8 @@ function renderCollection() {
     const pageStart = state.collectionPage * pageSize;
     const pageCards = coll.slice(pageStart, pageStart + pageSize);
     
+    let html = ""; // Inizializza la stringa
+    
     pageCards.forEach(p => {
         let cls = "player-card tcg";
         if (p.rating >= 90) cls += " tcg-legend";
@@ -4986,11 +5059,28 @@ function renderCollection() {
         if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
         let styleAttr = tcgGoldStyle(p.rating, p.tipo);
         
+        let backContent = p.evento 
+            ? `<h4 style="margin-bottom:8px; color:var(--celeste-chiaro); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo);">${p.evento}</p>` 
+            : `<h4 style="margin-bottom:8px; color:var(--testo-mute); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo-dim);">Nessun evento speciale registrato.</p>`;
+
         const card = document.createElement("div");
-        card.className = cls;
-        card.style.cssText = styleAttr;
-        if (p.evento) card.title = p.evento;
-        card.innerHTML = tcgCardInner(p, false, p.ruoli[0]);
+        card.className = "card-flip-container";
+        // Al click si gira di 180 gradi e fa suonare la "carta"
+        card.onclick = function() { 
+            if(typeof playSound === 'function') playSound('carta'); 
+            this.classList.toggle('is-flipped'); 
+        };
+        
+        card.innerHTML = `
+            <div class="card-flip-inner">
+                <div class="card-flip-front ${cls}" style="${styleAttr}">
+                    ${tcgCardInner(p, false, p.ruoli[0])}
+                </div>
+                <div class="card-flip-back">
+                    ${backContent}
+                </div>
+            </div>
+        `;
         grid.appendChild(card);
     });
 
@@ -5095,9 +5185,20 @@ function loadFromCloud(uid, showToast = true) {
       const setLoc = (k, v) => originalSetItem.call(localStorage, k, v); // Usa la funzione originale senza triggerare nuovi upload
       
       if (data.credits !== undefined) setLoc('napoli380_credits', data.credits);
-      if (data.collection) setLoc('napoli380_collection', JSON.stringify(data.collection));
-      if (data.achievements) setLoc('napoli380_ach', JSON.stringify(data.achievements));
-      if (data.doppioni) setLoc('napoli380_doppioni', JSON.stringify(data.doppioni));
+          
+          // FIX CLOUD COLLEZIONE: Aggiorna le carte appena scaricate da internet
+          if (data.collection) {
+              let updatedColl = data.collection.map(saved => DB.find(c => c.nome === saved.nome && c.stagione === saved.stagione) || saved);
+              setLoc('napoli380_collection', JSON.stringify(updatedColl));
+          }
+          
+          if (data.achievements) setLoc('napoli380_ach', JSON.stringify(data.achievements));
+          
+          // FIX CLOUD DOPPIONI: Aggiorna anche il magazzino
+          if (data.doppioni) {
+              let updatedDupes = data.doppioni.map(saved => DB.find(c => c.nome === saved.nome && c.stagione === saved.stagione) || saved);
+              setLoc('napoli380_doppioni', JSON.stringify(updatedDupes));
+          }
       if (data.carriera) setLoc('napoli380_player_career', JSON.stringify(data.carriera));
       if (data.stats) setLoc('napoli380_stats', JSON.stringify(data.stats));
       if (data.passXp !== undefined) setLoc('napoli380_pass_xp', data.passXp);
@@ -5406,7 +5507,8 @@ if (typeof auth !== "undefined") {
       if (password.length < 6) { toast("❌ La password deve avere almeno 6 caratteri!"); return; }
 
       const usernameLower = rawUsername.toLowerCase();
-      const fakeEmail = usernameLower + FAKE_DOMAIN;
+// Rimuove tutti gli spazi vuoti solo per creare l'email valida per Firebase
+const fakeEmail = usernameLower.replace(/\s+/g, '') + FAKE_DOMAIN;
       
       const prevText = btnLoginRegister.textContent;
       btnLoginRegister.textContent = "Attendere...";
