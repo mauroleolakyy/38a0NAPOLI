@@ -1316,11 +1316,13 @@ window.claimMission = function(idx) {
   if(typeof playSound === 'function') playSound('click');
   let data = JSON.parse(localStorage.getItem('napoli380_missions'));
   
-  // Aggiunto controllo rigoroso su claimed === false
   if (data && data.quests && data.quests[idx] && data.quests[idx].claimed === false) {
     data.quests[idx].claimed = true;
     localStorage.setItem('napoli380_missions', JSON.stringify(data));
     addCredits(data.quests[idx].reward, "Missione Completata");
+    
+    // FIX: Forza SUBITO il salvataggio in Cloud per evitare che ricaricando la pagina torni 'false'
+    if (typeof syncToCloud === 'function') syncToCloud(true);
     
     if(typeof playSound === 'function') playSound('vittoria');
     renderMissionsMenu();
@@ -1330,14 +1332,11 @@ window.claimMission = function(idx) {
 
 window.updateMissionProgress = function(type, amount = 1) {
   try {
-    initDailyMissions(); // FORZA IL CONTROLLO PRIMA DI DARE PUNTI
-    
     let data = JSON.parse(localStorage.getItem('napoli380_missions'));
     if (!data || !data.quests || !Array.isArray(data.quests)) return;
     
     let updated = false;
     data.quests.forEach(q => {
-      // Controllo rigoroso su claimed === false
       if (q && q.type === type && q.claimed === false && q.progress < q.target) {
         q.progress = Math.min(q.progress + amount, q.target);
         updated = true;
@@ -1347,6 +1346,8 @@ window.updateMissionProgress = function(type, amount = 1) {
     if (updated) {
       localStorage.setItem('napoli380_missions', JSON.stringify(data));
       updateMissionsBadge();
+      // FIX: Sincronizza subito i progressi
+      if (typeof syncToCloud === 'function') syncToCloud(true);
     }
   } catch (e) {
     console.error("Errore progresso missioni:", e);
@@ -6728,31 +6729,35 @@ function checkAndResetPass() {
     if (currentPassId !== PASS_CONFIG.idMese) {
         localStorage.setItem('napoli380_pass_xp', "0");
         localStorage.setItem('napoli380_pass_claimed', "false");
+        localStorage.setItem('napoli380_pass_claimed_levels', "[]"); // FIX: Resetta i livelli intermedi riscattati
         localStorage.setItem('napoli380_pass_id', PASS_CONFIG.idMese);
     }
 }
 
-function addPassXP(amount) {
+// Nota: Assicurati di non avere due "addPassXP" nel codice. Tieni solo questa.
+window.addPassXP = function(amount) {
     checkAndResetPass();
     let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
     const oldLevel = Math.min(PASS_CONFIG.maxLevel, Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1);
+    
     xp += amount;
     localStorage.setItem('napoli380_pass_xp', xp);
+    
     const newLevel = Math.min(PASS_CONFIG.maxLevel, Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1);
     if (newLevel > oldLevel && typeof playSound === 'function') playSound('livello');
     
-    setTimeout(() => { toast(`⭐ +${amount} XP Pass Azzurro!`); }, 1000);
+    setTimeout(() => { if(typeof toast === 'function') toast(`⭐ +${amount} XP Pass Azzurro!`); }, 1000);
     
     if(document.getElementById("pass-modal") && document.getElementById("pass-modal").classList.contains("show")) {
-        updatePassUI();
+        if (typeof updatePassUI === 'function') updatePassUI();
     }
-}
+};
 
 window.updatePassUI = function() {
     checkAndResetPass();
     let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
     let level = Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1;
-    let missingXP = PASS_CONFIG.xpPerLevel - (xp % PASS_CONFIG.xpPerLevel); // <-- Calcolo XP Mancanti
+    let missingXP = PASS_CONFIG.xpPerLevel - (xp % PASS_CONFIG.xpPerLevel);
     
     if (level > PASS_CONFIG.maxLevel) {
         level = PASS_CONFIG.maxLevel;
@@ -6768,7 +6773,6 @@ window.updatePassUI = function() {
     if(xpDisplay) xpDisplay.textContent = xp;
     if(levelDisplay) levelDisplay.textContent = level;
     
-    // Mostra il testo corretto
     if(missingDisplay) {
         if(level >= PASS_CONFIG.maxLevel) {
             missingDisplay.innerHTML = "🎉 <strong style='color:#00ff88;'>Pass Completato!</strong>";
@@ -6783,12 +6787,13 @@ window.updatePassUI = function() {
     }
 
     if(list) {
-        let isClaimed = localStorage.getItem('napoli380_pass_claimed') === "true";
+        let isClaimedFinal = localStorage.getItem('napoli380_pass_claimed') === "true";
+        let claimedLevels = JSON.parse(localStorage.getItem('napoli380_pass_claimed_levels') || "[]");
         let html = "";
 
         for (let i = 1; i <= PASS_CONFIG.maxLevel; i++) {
             let isCurrent = (i === level);
-            let isPassed = (i < level);
+            let isPassed = (i <= level); // Se sei a questo livello o l'hai superato
             let isLocked = (i > level);
             
             let bg = isPassed ? "rgba(0, 255, 136, 0.08)" : (isCurrent ? "rgba(0, 161, 255, 0.15)" : "rgba(255, 255, 255, 0.03)");
@@ -6796,18 +6801,26 @@ window.updatePassUI = function() {
             let rewardText = PASS_CONFIG.getRewardText(i);
 
             let actionHtml = "";
+            
+            // FIX: Generazione dinamica dei pulsanti di riscatto per TUTTI i livelli
             if (i === PASS_CONFIG.maxLevel) {
-                if (isClaimed) {
+                if (isClaimedFinal) {
                     actionHtml = `<span style="color: #00ff88; font-weight: bold; font-size: 0.8rem;">RISCATTATA ✓</span>`;
-                } else if (level >= PASS_CONFIG.maxLevel) {
-                    actionHtml = `<button class="btn primary" style="padding: 6px 12px; min-height: 0; font-size: 0.8rem; background: #00ff88; color: #00112b;" onclick="claimPassReward()">RISCATTA</button>`;
+                } else if (isPassed) {
+                    actionHtml = `<button class="btn primary" style="padding: 6px 12px; min-height: 0; font-size: 0.8rem; background: #00ff88; color: #00112b;" onclick="claimPassReward(${i})">RISCATTA</button>`;
                 } else {
                     actionHtml = `<span style="color: var(--testo-mute); font-size: 0.8rem;">🔒 Bloccato</span>`;
                 }
             } else {
-                if (isPassed) actionHtml = `<span style="color: #00ff88; font-weight: bold; font-size: 0.8rem;">RAGGIUNTO ✓</span>`;
-                else if (isCurrent) actionHtml = `<span style="color: var(--celeste-chiaro); font-weight: bold; font-size: 0.8rem;">IN CORSO...</span>`;
-                else actionHtml = `<span style="color: var(--testo-mute); font-size: 0.8rem;">🔒 Bloccato</span>`;
+                if (isPassed) {
+                    if (claimedLevels.includes(i)) {
+                        actionHtml = `<span style="color: #00ff88; font-weight: bold; font-size: 0.8rem;">RISCATTATA ✓</span>`;
+                    } else {
+                        actionHtml = `<button class="btn primary" style="padding: 6px 12px; min-height: 0; font-size: 0.8rem; background: #00ff88; color: #00112b;" onclick="claimPassReward(${i})">RISCATTA</button>`;
+                    }
+                } else {
+                    actionHtml = `<span style="color: var(--testo-mute); font-size: 0.8rem;">🔒 Bloccato</span>`;
+                }
             }
 
             html += `
@@ -6821,26 +6834,43 @@ window.updatePassUI = function() {
         }
         list.innerHTML = html;
     }
-}
+};
 
-window.claimPassReward = function() {
+window.claimPassReward = function(lvl) {
     if(typeof playSound === 'function') playSound('vittoria');
-    localStorage.setItem('napoli380_pass_claimed', "true");
     
-    // Pesca la carta ESATTAMENTE come l'hai definita nel DB!
-    const premioDalDB = DB.find(p => p.nome === PASS_CONFIG.premioFinale.nome && p.stagione === PASS_CONFIG.premioFinale.stagione);
-    
-    if (premioDalDB) {
-        let coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
-        coll.push(premioDalDB);
-        localStorage.setItem('napoli380_collection', JSON.stringify(coll));
-        
-        // SINCRONIZZA CON FIREBASE
-        if (typeof syncToCloud === 'function') syncToCloud(true);
-        toast(`✨ Hai sbloccato ${premioDalDB.nome}! Controlla la Collezione.`);
+    if (lvl === PASS_CONFIG.maxLevel) {
+        localStorage.setItem('napoli380_pass_claimed', "true");
+        const premioDalDB = DB.find(p => p.nome === PASS_CONFIG.premioFinale.nome && p.stagione === PASS_CONFIG.premioFinale.stagione);
+        if (premioDalDB) {
+            let coll = JSON.parse(localStorage.getItem('napoli380_collection') || "[]");
+            coll.push(premioDalDB);
+            localStorage.setItem('napoli380_collection', JSON.stringify(coll));
+            toast(`✨ Hai sbloccato ${premioDalDB.nome}! Controlla la Collezione.`);
+        }
     } else {
-        toast("Errore: Carta non trovata nel DB!");
+        let claimedLevels = JSON.parse(localStorage.getItem('napoli380_pass_claimed_levels') || "[]");
+        if (!claimedLevels.includes(lvl)) {
+            claimedLevels.push(lvl);
+            localStorage.setItem('napoli380_pass_claimed_levels', JSON.stringify(claimedLevels));
+            
+            // Consegna fisica delle ricompense
+            if (lvl === 15) {
+                // Al livello 15 apre automaticamente il pacchetto garantito!
+                setTimeout(() => {
+                    document.getElementById("pass-modal").classList.remove("show");
+                    openPack('icona'); 
+                }, 600);
+            } else if (lvl % 5 === 0) {
+                addCredits(200, `Premio Pass Livello ${lvl}`);
+            } else {
+                addCredits(50, `Premio Pass Livello ${lvl}`);
+            }
+        }
     }
+    
+    // FIX: Salva i progressi del pass sul Cloud istantaneamente
+    if (typeof syncToCloud === 'function') syncToCloud(true);
     updatePassUI();
 };
 
