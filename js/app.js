@@ -3559,11 +3559,14 @@ const BIRTH_YEARS = {
   "Cristian Bucchi": 1977,
   "Leander Dendoncker": 1995,
   "Axel Tuanzebe": 1997,
+  "Philip Billing": 1996,
 };
 
 const DB = [
   /* ---------- Hall of Fame & Leggende (Rating estremi) ---------- */
   /* ---------- Nuove Aggiunte (Storici e Meteore) ---------- */
+  P("Philip Billing", "2024/25", ["CC", "MED"], 90, { tipo: "MOTM", evento: "Ha segnato la rete del pareggio per l'1-1 contro l'Inter il 1° marzo 2025 allo stadio Maradona." }),
+  P("Philip Billing", "2024/25", ["CC", "MED"], 74),
   P("Leander Dendoncker", "2023/24", ["CC", "MED"], 72),
   P("Axel Tuanzebe", "2020/21", ["DC", "TD"], 69),
   P("Claudio Garella", "1986/87", ["POR"], 85),
