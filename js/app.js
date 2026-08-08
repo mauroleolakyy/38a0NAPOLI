@@ -321,12 +321,18 @@ const DIFFICULTIES = {
    SISTEMA COSTI - SALARY CAP
    ============================================================ */
 function getPlayerCost(rating) {
-  if (rating >= 95) return 80;  // I "Maradona" costano quasi metà budget
-  if (rating >= 90) return 50;  // Campioni
-  if (rating >= 85) return 25;  // Ottimi titolari
-  if (rating >= 80) return 10;  // Giocatori medi
-  if (rating >= 75) return 5;   // Rincalzi
-  return 1;                     // Scarti (Serie B/C)
+  if (rating >= 98) return 80;  // I "Maradona" costano quasi metà budget
+  if (rating >= 95) return 50;  
+  if (rating >= 90) return 35;  
+  if (rating >= 88) return 20;  
+  if (rating >= 86) return 18;   
+  if (rating >= 84) return 15;  
+  if (rating >= 82) return 12;  
+  if (rating >= 80) return 10;  
+  if (rating >= 76) return 5;  
+  if (rating >= 70) return 2;   
+  if (rating <= 50) return 0;   // COSTO ZERO per i ragazzi della Primavera in emergenza
+  return 1;                     
 }
 /* ============================================================
    SISTEMA INTESE STORICHE (CHEMISTRY)
@@ -605,8 +611,10 @@ const ACHIEVEMENTS = [
   { id: "champs_winner", icon: "⭐", nome: "Sul Tetto d'Europa", desc: "Vinci la Champions League con il Napoli.", check: (pts, w, team) => state.champions && state.champions.won },
   { id: "mazzarri_goal", icon: "🌧️", nome: "L'Orologio di Mazzarri", desc: "Porta a termine con successo la missione Zona Mazzarri (arrivare secondi).", check: (pts, w, team) => state.diff && state.diff.goal === "sesto" && state.lastResult && state.lastResult.pos === "2°" },
   { id: "maradona_legend", icon: "👑", nome: "La Mano de Dios", desc: "Schiera Diego Armando Maradona in campo in una run.", check: (pts, w, team) => Object.values(team).some(p => p.nome.includes("Diego Armando Maradona")) },
-  { id: "dream_squad", icon: "💎", nome: "Galattici a Fuorigrotta", desc: "Vinci lo scudetto schierando un undici in cui ogni titolare ha almeno 90 di Overall.", check: (pts, w, team) => pts >= 88 && Object.values(team).length === 11 && Object.values(team).every(p => p.rating >= 90) },
-  { id: "muro_azzurro", icon: "🛡️", nome: "Rullo Compressore", desc: "Chiudi una stagione di campionato totalizzando almeno 90 punti.", check: (pts, w, team) => pts >= 90 }
+  { id: "dream_squad", icon: "💎", nome: "Galattici a Fuorigrotta", desc: "Vinci lo scudetto schierando un undici in cui ogni titolare ha almeno 90 di Overall.", check: (pts, w, team) => state.lastResult && state.lastResult.rank === 1 && Object.keys(team).length === 11 && Object.keys(team).every(id => (typeof effRating === 'function' ? effRating(id) : team[id].rating) >= 90) },
+  { id: "muro_azzurro", icon: "🛡️", nome: "Rullo Compressore", desc: "Chiudi una stagione di campionato totalizzando almeno 90 punti.", check: (pts, w, team) => pts >= 90 },
+{ id: "zeman", icon: "⚔️", nome: "Maestro Boemo", desc: "Vinci lo scudetto giocando tutta la stagione con la tattica 'Zemanlandia'.", check: (pts, w, team) => state.lastResult && state.lastResult.rank === 1 && state.tactic === "zemanlandia" },
+{ id: "low_cost", icon: "💸", nome: "Nozze coi fichi secchi", desc: "Vinci lo scudetto in Salary Cap facendoti avanzare almeno 50 Milioni.", check: (pts, w, team) => state.diff && state.diff.key === "salary" && state.lastResult && state.lastResult.rank === 1 && state.budget >= 50 }
 ];
 
 function checkAndUnlockAchievements(seasonPts, seasonW, team) {
@@ -708,6 +716,82 @@ function renderBacheca() {
         </span>
       </div>`;
   }).join("");
+// --- INIZIO: LA ROSA IMMORTALE (38-0) CON ARCHIVIO STORICO ---
+  let hofList = [];
+  try {
+      hofList = JSON.parse(localStorage.getItem('napoli380_hof_list') || "[]");
+      
+      // Recupero della vecchia squadra (se l'utente aveva già fatto un 38-0 con il vecchio sistema)
+      let oldHof = JSON.parse(localStorage.getItem('napoli380_hof'));
+      if (oldHof && !Array.isArray(oldHof) && Object.keys(oldHof).length > 0) {
+          
+          // CONTROLLO ANTI-DUPLICATI CLOUD
+          let giaImportata = hofList.some(run => run.data === "Sconosciuta");
+          if (!giaImportata) {
+              hofList.unshift({ data: "Sconosciuta", modalita: "Classica", modulo: "?", team: oldHof });
+              localStorage.setItem('napoli380_hof_list', JSON.stringify(hofList));
+          }
+      }
+  } catch(e) {}
+
+  let immortalBox = document.getElementById("immortal-squad-box");
+  if (!immortalBox) {
+      immortalBox = document.createElement("div");
+      immortalBox.id = "immortal-squad-box";
+      container.parentNode.insertBefore(immortalBox, container);
+  }
+
+  if (hofList && hofList.length > 0) {
+      // Ordine logico per disporre i giocatori dal portiere all'attacco
+      const roleOrder = { "POR": 1, "TD": 2, "TS": 3, "DC": 4, "MED": 5, "ED": 6, "ES": 7, "CC": 8, "TRQ": 9, "AD": 10, "AS": 11, "ATT": 12 };
+
+      // Disegna un riquadro apribile (details) per ogni impresa
+      let listHtml = hofList.map((run, index) => {
+          
+          // Estraiamo i giocatori e li ordiniamo per ruolo
+          let playersArray = Object.values(run.team);
+          playersArray.sort((a, b) => {
+              let weightA = roleOrder[a.ruoli[0]] || 99;
+              let weightB = roleOrder[b.ruoli[0]] || 99;
+              return weightA - weightB;
+          });
+
+          let playersHtml = playersArray.map(p => {
+              return `
+              <div style="background: rgba(255, 210, 74, 0.1); border: 1px solid rgba(255, 210, 74, 0.4); padding: 10px; border-radius: 10px; text-align: center; box-shadow: inset 0 0 10px rgba(255,210,74,0.05);">
+                  <span style="display: block; font-family: var(--font-cond); font-size: 0.75rem; font-weight: bold; color: #ffd24a; text-transform: uppercase;">${p.ruoli[0]}</span>
+                  <strong style="display: block; font-family: var(--font-display); font-size: 1.15rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 4px 0;">${p.nome}</strong>
+                  <span style="font-size: 0.75rem; color: #ffd9b3;">${p.stagione}</span>
+              </div>`;
+          }).join("");
+
+          return `
+          <details style="background: linear-gradient(145deg, #1a1200, #0d0900); border: 1px solid #ffd24a; border-radius: 12px; margin-bottom: 12px; overflow: hidden; transition: all 0.3s ease;">
+              <summary style="padding: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; outline: none; list-style: none;">
+                  <div style="text-align: left;">
+                      <strong style="color: #ffd24a; font-family: var(--font-display); font-size: 1.25rem; display: block; text-transform: uppercase; letter-spacing: 0.03em;">Impresa Storica #${index + 1}</strong>
+                      <span style="color: #ffe9ad; font-family: var(--font-cond); font-size: 0.95rem; opacity: 0.85;">Data: ${run.data} · Modulo: ${run.modulo} · Modalità: ${run.modalita}</span>
+                  </div>
+                  <span style="color: #ffd24a; font-size: 1rem; opacity: 0.7;">▼</span>
+              </summary>
+              <div style="padding: 16px; border-top: 1px solid rgba(255, 210, 74, 0.2); background: rgba(0,0,0,0.2);">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
+                      ${playersHtml}
+                  </div>
+              </div>
+          </details>`;
+      }).join("");
+
+      immortalBox.innerHTML = `
+      <p class="subpanel__title" style="color: #ffd24a; text-shadow: 0 0 10px rgba(255,210,74,0.3); margin-top: 30px;"><span style="font-size: 1.2rem;">👑</span> Archivio: Le Rose Immortali (38-0)</p>
+      <div style="margin-bottom: 30px;">
+          <p style="color: var(--testo-dim); font-size: 0.9rem; text-align: center; margin-bottom: 15px; font-family: var(--font-body);">Tocca un'impresa per espanderla e vedere la formazione schierata.</p>
+          ${listHtml}
+      </div>`;
+  } else {
+      immortalBox.innerHTML = "";
+  }
+  // --- FINE: LA ROSA IMMORTALE ---
 }
 
 const FLAVORS = {
@@ -850,109 +934,127 @@ function renderDbGrid() {
     if (hofContent) {
         const coll = getCollection();
         const dbSearchTerm = (state.dbSearch || "").trim().toLowerCase();
+        if (state.dbFilter == null) state.dbFilter = "all";
+        const filterType = state.dbFilter;
+
         const fullDB = DB.slice().sort((a, b) => b.rating - a.rating);
-        const allCards = fullDB.filter(p => !dbSearchTerm || p.nome.toLowerCase().includes(dbSearchTerm) || (p.stagione || "").toLowerCase().includes(dbSearchTerm) || (p.tipo || "").toLowerCase().includes(dbSearchTerm));
+        
+        // Filtro combinato: Testo di ricerca + Categoria selezionata (.db-chip)
+        const allCards = fullDB.filter(p => {
+            const matchText = !dbSearchTerm || p.nome.toLowerCase().includes(dbSearchTerm) || (p.stagione || "").toLowerCase().includes(dbSearchTerm) || (p.tipo || "").toLowerCase().includes(dbSearchTerm);
+            if (!matchText) return false;
+
+            if (filterType === "def") return p.ruoli.some(r => ["DC", "TD", "TS", "POR"].includes(r));
+            if (filterType === "mid") return p.ruoli.some(r => ["CC", "MED", "TRQ"].includes(r));
+            if (filterType === "att") return p.ruoli.some(r => ["ATT", "AS", "AD"].includes(r));
+            if (filterType === "spec") return p.tipo || p.stagione === "Hall of Fame" || p.stagione === "Centenario";
+            return true;
+        });
+
+        // Aggiorna lo stato visivo dei pulsanti filtro nel Database
+        document.querySelectorAll(".db-chip").forEach(chip => {
+            if (chip.getAttribute("data-filter") === filterType) {
+                chip.classList.add("is-active");
+            } else {
+                chip.classList.remove("is-active");
+            }
+        });
 
         // Inizializza la pagina del database se non esiste
         if (state.dbPage == null) state.dbPage = 0;
         const pageSize = 9; // 9 carte per pagina (Griglia 3x3 perfetta!)
         const totalPages = Math.max(1, Math.ceil(allCards.length / pageSize));
 
-            if (state.dbPage >= totalPages) state.dbPage = 0;
+        if (state.dbPage >= totalPages) state.dbPage = 0;
 
-            const renderDbPage = () => {
-                let ownedCount = 0;
-                // Calcola quante carte possiede in totale (su tutto il DB, non sul filtro ricerca)
-                fullDB.forEach(p => {
-                    if (coll.some(x => x.nome === p.nome && x.stagione === p.stagione)) ownedCount++;
-                });
+        const renderDbPage = () => {
+            let ownedCount = 0;
+            fullDB.forEach(p => {
+                if (coll.some(x => x.nome === p.nome && x.stagione === p.stagione)) ownedCount++;
+            });
 
-                const pageStart = state.dbPage * pageSize;
-                const pageCards = allCards.slice(pageStart, pageStart + pageSize);
+            const pageStart = state.dbPage * pageSize;
+            const pageCards = allCards.slice(pageStart, pageStart + pageSize);
 
-                let html = "";
-                if (pageCards.length === 0) {
-                    html = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Nessuna carta trovata per "${dbSearchTerm}".</p>`;
-                }
-                pageCards.forEach(p => {
-                    const isOwned = coll.some(x => x.nome === p.nome && x.stagione === p.stagione);
+            let html = "";
+            if (pageCards.length === 0) {
+                html = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Nessuna carta trovata con questi filtri.</p>`;
+            }
+            pageCards.forEach(p => {
+                const isOwned = coll.some(x => x.nome === p.nome && x.stagione === p.stagione);
 
-                    let cls = "player-card tcg " + (isOwned ? "db-card-owned" : "db-card-unowned");
-                    if (p.rating >= 90) cls += " tcg-legend";
-                    if (p.stagione === "Hall of Fame") cls += " tcg-icon";
-                    if (p.stagione === "Centenario") cls += " tcg-centenario";
-                    if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
-                    let styleAttr = tcgGoldStyle(p.rating, p.tipo);
+                let cls = "player-card tcg " + (isOwned ? "db-card-owned" : "db-card-unowned");
+                if (p.rating >= 90) cls += " tcg-legend";
+                if (p.stagione === "Hall of Fame") cls += " tcg-icon";
+                if (p.stagione === "Centenario") cls += " tcg-centenario";
+                if (p.tipo) cls += " tcg-special-" + p.tipo.toLowerCase();
+                let styleAttr = tcgGoldStyle(p.rating, p.tipo);
 
-                    const statusBadge = isOwned
-                        ? '<div class="card-banner" style="background:#00ff88; color:#00112b;">✓ POSSEDUTA</div>'
-                        : '<div class="card-banner" style="background:rgba(255,255,255,0.1); color:var(--testo-mute);">NON POSSEDUTA</div>';
-                    
-                    // PREPARA IL RETRO DELLA CARTA
-                    let backContent = p.evento 
-                        ? `<h4 style="margin-bottom:8px; color:var(--celeste-chiaro); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo);">${p.evento}</p>` 
-                        : `<h4 style="margin-bottom:8px; color:var(--testo-mute); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo-dim);">Nessun evento speciale registrato.</p>`;
+                const statusBadge = isOwned
+                    ? '<div class="card-banner" style="background:#00ff88; color:#00112b;">✓ POSSEDUTA</div>'
+                    : '<div class="card-banner" style="background:rgba(255,255,255,0.1); color:var(--testo-mute);">NON POSSEDUTA</div>';
+                
+                let backContent = p.evento 
+                    ? `<h4 style="margin-bottom:8px; color:var(--celeste-chiaro); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo);">${p.evento}</p>` 
+                    : `<h4 style="margin-bottom:8px; color:var(--testo-mute); font-family:var(--font-display); font-size:1.2rem; text-transform:uppercase;">Info Carta</h4><p style="font-size:0.85rem; line-height:1.4; color:var(--testo-dim);">Nessun evento speciale registrato.</p>`;
 
-                    // INIEZIONE DELL'HTML 3D
-                    html += `
-                    <div class="card-flip-container" onclick="if(typeof playSound === 'function') playSound('carta'); this.classList.toggle('is-flipped')">
-                        <div class="card-flip-inner">
-                            <!-- FRONTE DELLA CARTA -->
-                            <div class="card-flip-front ${cls}" style="${styleAttr}">
-                                ${tcgCardInner(p, false, p.ruoli[0])}
-                                ${statusBadge}
-                            </div>
-                            <!-- RETRO DELLA CARTA -->
-                            <div class="card-flip-back">
-                                ${backContent}
-                            </div>
+                html += `
+                <div class="card-flip-container" onclick="if(typeof playSound === 'function') playSound('carta'); this.classList.toggle('is-flipped')">
+                    <div class="card-flip-inner">
+                        <div class="card-flip-front ${cls}" style="${styleAttr}">
+                            ${tcgCardInner(p, false, p.ruoli[0])}
+                            ${statusBadge}
                         </div>
-                    </div>`;
-                });
-
-                // Aggiunge i controlli di paginazione in fondo alla griglia
-                let paginationHtml = "";
-                if (totalPages > 1) {
-                    paginationHtml = `
-                        <div style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 25px; margin-bottom: 15px;">
-                            <button type="button" id="db-prev" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">⬅ Precedente</button>
-                            <span style="font-family: var(--font-cond); color: var(--celeste-chiaro); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em;">Pagina ${state.dbPage + 1} di ${totalPages}</span>
-                            <button type="button" id="db-next" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">Successiva ➔</button>
+                        <div class="card-flip-back">
+                            ${backContent}
                         </div>
-                    `;
-                }
+                    </div>
+                </div>`;
+            });
 
-                hofContent.className = "card-db-grid";
-                hofContent.innerHTML = html + paginationHtml;
+            let paginationHtml = "";
+            if (totalPages > 1) {
+                paginationHtml = `
+                    <div style="grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 25px; margin-bottom: 15px;">
+                        <button type="button" id="db-prev" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">⬅ Precedente</button>
+                        <span style="font-family: var(--font-cond); color: var(--celeste-chiaro); font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em;">Pagina ${state.dbPage + 1} di ${totalPages}</span>
+                        <button type="button" id="db-next" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">Successiva ➔</button>
+                    </div>
+                `;
+            }
 
-                if (dbCounter) {
-                    dbCounter.textContent = `${ownedCount} / ${fullDB.length}`;
-                }
+            hofContent.className = "card-db-grid";
+            hofContent.innerHTML = html + paginationHtml;
 
-                // Collegamento dei bottoni pagina precedente / successiva
-                const btnPrev = document.getElementById("db-prev");
-                const btnNext = document.getElementById("db-next");
+            if (dbCounter) {
+                dbCounter.textContent = `${ownedCount} / ${fullDB.length}`;
+            }
 
-                if (btnPrev) {
-                    btnPrev.onclick = () => {
-                        playSound('click');
-                        state.dbPage = (state.dbPage - 1 + totalPages) % totalPages;
-                        renderDbPage();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    };
-                }
-                if (btnNext) {
-                    btnNext.onclick = () => {
-                        playSound('click');
-                        state.dbPage = (state.dbPage + 1) % totalPages;
-                        renderDbPage();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    };
-                }
-            };
+            const btnPrev = document.getElementById("db-prev");
+            const btnNext = document.getElementById("db-next");
 
-            renderDbPage();
-        }
+            if (btnPrev) {
+                btnPrev.onclick = () => {
+                    playSound('click');
+                    state.dbPage = (state.dbPage - 1 + totalPages) % totalPages;
+                    renderDbPage();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+            }
+            if (btnNext) {
+                btnNext.onclick = () => {
+                    playSound('click');
+                    state.dbPage = (state.dbPage + 1) % totalPages;
+                    renderDbPage();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+            }
+        };
+
+        renderDbPage();
+
+     
+    }
 }
 
 function init() {
@@ -975,6 +1077,54 @@ function init() {
       console.error("Errore sincronizzazione DB:", e);
   }
   // --- FINE FIX SINCRONIZZAZIONE ---
+  // Funzione universale per gestire lo scorrimento con il dito (Swipe)
+function setupSwipe(element, onSwipeLeft, onSwipeRight) {
+    if (!element || element._swipeActive) return;
+    element._swipeActive = true;
+    
+    let startX = 0, startY = 0;
+    element.addEventListener("touchstart", e => {
+        startX = e.changedTouches[0].screenX;
+        startY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    
+    element.addEventListener("touchend", e => {
+        let endX = e.changedTouches[0].screenX;
+        let endY = e.changedTouches[0].screenY;
+        let diffX = endX - startX;
+        let diffY = endY - startY;
+        
+        // Se il movimento orizzontale è netto ed è superiore a 50 pixel
+        if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX < 0) {
+                if (typeof onSwipeLeft === 'function') onSwipeLeft(); // Swipe a sinistra -> Pagina successiva
+            } else {
+                if (typeof onSwipeRight === 'function') onSwipeRight(); // Swipe a destra -> Pagina precedente
+            }
+        }
+    }, { passive: true });
+}
+
+// Ascoltatore globale per i clic sui filtri del Database (.db-chip)
+document.body.addEventListener("click", function(e) {
+  const dbChip = e.target.closest(".db-chip");
+  if (dbChip) {
+    if(typeof playSound === 'function') playSound('click');
+    state.dbFilter = dbChip.getAttribute("data-filter");
+    state.dbPage = 0;
+    renderDbGrid();
+  }
+});
+  // Listener per i filtri rapidi della Collezione
+  document.body.addEventListener("click", function(e) {
+    const chip = e.target.closest(".coll-chip");
+    if (chip) {
+      if(typeof playSound === 'function') playSound('click');
+      state.collectionFilter = chip.getAttribute("data-filter");
+      state.collectionPage = 0; // Torna alla prima pagina del filtro selezionato
+      renderCollection();
+    }
+  });
   // Listener per le barre di ricerca carte (Database e Collezione)
 // Listener per le barre di ricerca carte (Database e Collezione) CON DEBOUNCING
   let searchTimeout;
@@ -1412,7 +1562,7 @@ function resetRogueState() {
 function _dRand() { return state._rngDraft ? state._rngDraft.next() : Math.random(); }
 function _dPick(arr) { return state._rngDraft ? state._rngDraft.pick(arr) : rnd(arr); }
 
-function startWith(key, cfg) { state.diff = { key, options: 3, max: 99, ...cfg }; state.rerolls = state.diff.reroll; state.optionsCount = state.diff.options; state.team = {}; state.usedNames = new Set(); state.activeSlot = null; state.options = []; resetRogueState(); updateHud(); renderFormationCards(); showScreen("#screen-modulo"); }
+function startWith(key, cfg) { state.diff = { key, options: 3, max: 99, ...cfg }; state.rerolls = state.diff.reroll + ((typeof hasUpgrade === 'function' && hasUpgrade('spogliatoio') && key !== "dreamteam") ? 1 : 0); state.optionsCount = state.diff.options; state.team = {}; state.usedNames = new Set(); state.activeSlot = null; state.options = []; resetRogueState(); updateHud(); renderFormationCards(); showScreen("#screen-modulo"); }
 
 function startCareer() {
   state.diff = { key: "carriera", label: "Carriera", min: 1, max: 99, reroll: 3, options: 3 }; state.rerolls = state.diff.reroll; state.optionsCount = state.diff.options; state.team = {}; state.usedNames = new Set(); state.activeSlot = null; state.options = []; resetRogueState();
@@ -1874,6 +2024,24 @@ function drawOptions(slot, excludeCurrent = false) {
   state.activeSlot = slot;
   state.dreamTeamPage = 0; // Reset alla prima pagina quando apri uno slot
   state.options = buildOptionPool(slot, exclude);
+  
+  // --- FIX: PARACADUTE SALARY CAP ---
+  // Se stiamo giocando col budget e non puoi permetterti la carta più economica tra quelle uscite...
+  if (state.budget !== undefined) {
+     const minCost = Math.min(...state.options.map(p => getPlayerCost(p.rating)));
+     if (state.budget < minCost) {
+         // ...il gioco inietta una carta di emergenza a costo 0 per salvarti dal blocco!
+         state.options.push({
+             nome: "Ragazzo Primavera",
+             stagione: "Emergenza",
+             ruoli: [slot.accepts[0]], // Prende automaticamente il ruolo che avevi cliccato
+             rating: 50,
+             annoNascita: 2008
+         });
+     }
+  }
+  // ----------------------------------
+
   highlightSlots(); renderOptionsPanel();
 }
 
@@ -2707,8 +2875,24 @@ function marketOptions(slotId) {
   const slot = slots().find(s => s.id === slotId); 
   const sourceDB = (state.diff && state.diff.key === "dreamteam") ? getCollection() : DB;
   const usedForThisSlot = usedNamesForSlot(slot);
+  
   let pool = sourceDB.filter(p => p && p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && !usedForThisSlot.has(p.nome)); 
   
+  // --- INIZIO: FILTRO MERCATO GERIATRICO PER LA CARRIERA ---
+  if (state.career) {
+      const currentSeasonYear = 2024 + (state.career.season || 1); // Anno corrente approssimato della run
+      pool = pool.filter(p => {
+          if (!p.annoNascita) return true;
+          let playerAge = currentSeasonYear - p.annoNascita;
+          return playerAge <= 25; // Propone solo giovani Under 26 per il ricambio generazionale!
+      });
+      // Paracadute di sicurezza: se per qualche motivo il filtro azzera il pool, ripesca dai normali
+      if (pool.length === 0) {
+          pool = sourceDB.filter(p => p && p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && !usedForThisSlot.has(p.nome));
+      }
+  }
+  // --------------------------------------------------------
+
   if (state.diff && state.diff.key === "dreamteam") {
       if (pool.length === 0) {
           return [{ nome: "Mister Scarparo", stagione: "Emergenza", ruoli: [slot.accepts[0]], rating: 50, annoNascita: 2000 }];
@@ -2788,10 +2972,20 @@ function runSeason() {
   const topScorer = lg.topScorer ? lg.topScorer : prizes.scorer;
   if (topScorer && prizes.mvp.goals < topScorer.goals) prizes.mvp.goals = topScorer.goals;
   
-  const perfect = season.w === 38;
+const perfect = season.w === 38;
   
   if (perfect) {
-      localStorage.setItem("napoli380_hof", JSON.stringify(state.team));
+      let hofList = [];
+      try { hofList = JSON.parse(localStorage.getItem("napoli380_hof_list") || "[]"); } catch(e) {}
+      
+      // Aggiunge la nuova impresa alla lista
+      hofList.push({
+          data: new Date().toLocaleDateString('it-IT'),
+          modalita: state.diff.label,
+          modulo: state.formationKey,
+          team: state.team
+      });
+      localStorage.setItem("napoli380_hof_list", JSON.stringify(hofList));
   }
   
   state.lastResult = { 
@@ -2874,7 +3068,10 @@ updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.le
   else if (lg.napoliRank <= 7) { earned = 150; reason = "Qualif. Europea"; }
   else if (lg.napoliRank <= 17) { earned = 50; reason = "Salvezza raggiunta"; }
   else { earned = 10; reason = "Retrocessione..."; }
-  
+  if (typeof hasUpgrade === 'function' && hasUpgrade('sponsor')) {
+    earned += 50;
+    reason += " + Sponsor";
+}
   if (champ && champ.won) {
       earned += 500;
       reason += " + Vittoria Champions!";
@@ -3560,11 +3757,57 @@ const BIRTH_YEARS = {
   "Leander Dendoncker": 1995,
   "Axel Tuanzebe": 1997,
   "Philip Billing": 1996,
+  "Paolo Di Canio": 1968,
+  "Eraldo Pecci": 1955,
+  "Ignacio Pià": 1982,
+  "Ruben Maldonado": 1979,
+  "Edmundo": 1971,
+  "Erwin Hoffer": 1987,
+  "Hassan Yebda": 1984,
+  "Rolando": 1985
 };
 
 const DB = [
+  /* ---------- NUOVE CARTE SPECIALI (Record e Momenti Storici) ---------- */
+  
+  /* Higuain - Record 36 gol */
+  P("Gonzalo Higuain", "TOTS", ["ATT"], 98, { tipo: "TOTS", evento: "Record assoluto di 36 gol in una singola stagione di Serie A (2015/16)" }),
+
+  /* Cavani - Tripletta alla Juve */
+  P("Edinson Cavani", "MOTM", ["ATT"], 96, { tipo: "MOTM", evento: "Tripletta storica di testa contro la Juventus, 9 gennaio 2011" }),
+
+  /* Koulibaly - Il gol a Torino */
+  P("Kalidou Koulibaly", "MOTM", ["DC"], 95, { tipo: "MOTM", evento: "L'inzuccata al 90' allo Juventus Stadium che fece sognare una città (2018)" }),
+
+  /* Lavezzi - La notte col Chelsea */
+  P("Ezequiel Lavezzi", "MOTM", ["ATT", "AS"], 93, { tipo: "MOTM", evento: "Doppietta al Chelsea nella magica notte di Champions League (2012)" }),
+
+  /* Raspadori - Gol scudetto al 93' */
+  P("Giacomo Raspadori", "IF", ["ATT", "TRQ"], 89, { tipo: "IF", evento: "Il tiro al volo al 93' a Torino: il gol che ha cucito lo Scudetto 2023" }),
+
+  /* Paolo Cannavaro - La rinascita */
+  P("Paolo Cannavaro", "EROE", ["DC"], 88, { tipo: "EROE", evento: "Capitano della rinascita: alza la Coppa Italia 2012, il primo trofeo dopo 22 anni" }),
+
+  /* Pino Taglialatela - Batman */
+  P("Pino Taglialatela", "EROE", ["POR"], 89, { tipo: "EROE", evento: "Batman: il re dei rigori parati e simbolo del Napoli negli anni '90" }),
+
+  /* Gokhan Inler - Il leone a Vila-real */
+  P("Gokhan Inler", "IF", ["MED", "CC"], 86, { tipo: "IF", evento: "Gol da fuori area al Villarreal: qualificazione storica agli ottavi (2011)" }),
   /* ---------- Hall of Fame & Leggende (Rating estremi) ---------- */
   /* ---------- Nuove Aggiunte (Storici e Meteore) ---------- */
+  /* ---------- Scudetto '87 e Anni '90 ---------- */
+  P("Eraldo Pecci", "1986/87", ["MED", "CC"], 84),
+  P("Paolo Di Canio", "1993/94", ["AD", "ATT", "TRQ"], 85),
+  P("Edmundo", "1998/99", ["ATT", "TRQ"], 79), /* O' Animal: forte ma ingestibile! */
+
+  /* ---------- Eroi della Rinascita (Serie C / B) ---------- */
+  P("Ignacio Pià", "2005/06", ["ATT", "AS"], 76),
+  P("Ruben Maldonado", "2006/07", ["DC"], 73),
+
+  /* ---------- Cult, Meteore e Prestiti ---------- */
+  P("Erwin Hoffer", "2009/10", ["ATT"], 70), /* "El Jimmy", idolo incompreso */
+  P("Hassan Yebda", "2010/11", ["CC", "MED"], 77),
+  P("Rolando", "2012/13", ["DC"], 75),
   P("Philip Billing", "2024/25", ["CC", "MED"], 90, { tipo: "MOTM", evento: "Ha segnato la rete del pareggio per l'1-1 contro l'Inter il 1° marzo 2025 allo stadio Maradona." }),
   P("Philip Billing", "2024/25", ["CC", "MED"], 74),
   P("Leander Dendoncker", "2023/24", ["CC", "MED"], 72),
@@ -3579,7 +3822,6 @@ const DB = [
   P("Cristian Bucchi", "2006/07", ["ATT"], 74),
   P("Alisson Santos", "2025/26", ["AS", "TRQ"], 82),
   P("Giovane", "2025/26", ["ATT", "TRQ"], 76),
-  P("Giovane", "Eroe del Mese", ["ATT", "TRQ"], 92, { tipo: "EROE", evento: "Livello 30 Pass Azzurro" }),
   P("Diego Armando Maradona", "Centenario", ["TRQ","ATT"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
   P("Marek Hamsik", "Centenario", ["CC","TRQ"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
   P("Giovanni Di Lorenzo", "Centenario", ["DC","TD"], 100, { tipo: "Centenario", evento: "100 anni di azzurro" }),
@@ -4761,7 +5003,9 @@ window.hasUpgrade = function(id) { return getUpgrades().includes(id); };
 const STADIUM_UPGRADES = [
   { id: "curva", nome: "Curva Infuocata", desc: "La pressione del tifo aumenta del +5% la probabilità di ricevere un rigore a favore.", cost: 2000, icon: "🔥" },
   { id: "medico", nome: "Centro Medico Avanzato", desc: "Fisioterapisti top: gli infortuni gravi (Crociato) tolgono -2 OVR invece di -3.", cost: 3500, icon: "🏥" },
-  { id: "scout", nome: "Scout Internazionale", desc: "+2% di probabilità di trovare carte Walkout (OVR 88+) e Leggende nei pacchetti.", cost: 10000, icon: "🌍" }
+  { id: "scout", nome: "Scout Internazionale", desc: "+2% di probabilità di trovare carte Walkout (OVR 88+) e Leggende nei pacchetti.", cost: 10000, icon: "🌍" },
+  { id: "sponsor", nome: "Sponsor Globale", desc: "Accordo milionario: ottieni +50 Crediti extra bonus alla fine di ogni campionato giocato.", cost: 6000, icon: "🤝" },
+{ id: "spogliatoio", nome: "Spogliatoio Unito", desc: "Il gruppo è compatto: inizi tutte le partite (tranne Squadra dei Sogni) con +1 Reroll extra.", cost: 8500, icon: "🛋️" }
 ];
 
 function renderStadium() {
@@ -5041,9 +5285,10 @@ function renderCollection() {
     
     wallet.textContent = getCredits();
     count.textContent = collFull.length;
+    
+    if (state.collectionFilter == null) state.collectionFilter = "all";
     grid.innerHTML = "";
     
-    // Rimuovi eventuali bottoni di paginazione vecchi
     let vecchiBottoni = document.getElementById("collection-pagination");
     if (vecchiBottoni) vecchiBottoni.remove();
     
@@ -5052,15 +5297,34 @@ function renderCollection() {
         return;
     }
     
-    // Ordina la collezione dalle carte più forti a quelle più deboli
     collFull.sort((a, b) => b.rating - a.rating);
 
-    // Filtro di ricerca
+    // Filtri di ricerca testuale e per categoria
     const collSearchTerm = (state.collectionSearch || "").trim().toLowerCase();
-    const coll = collFull.filter(p => !collSearchTerm || p.nome.toLowerCase().includes(collSearchTerm) || (p.stagione || "").toLowerCase().includes(collSearchTerm) || (p.tipo || "").toLowerCase().includes(collSearchTerm));
+    const filterType = state.collectionFilter;
+
+    const coll = collFull.filter(p => {
+        const matchText = !collSearchTerm || p.nome.toLowerCase().includes(collSearchTerm) || (p.stagione || "").toLowerCase().includes(collSearchTerm) || (p.tipo || "").toLowerCase().includes(collSearchTerm);
+        if (!matchText) return false;
+
+        if (filterType === "def") return p.ruoli.some(r => ["DC", "TD", "TS", "POR"].includes(r));
+        if (filterType === "mid") return p.ruoli.some(r => ["CC", "MED", "TRQ"].includes(r));
+        if (filterType === "att") return p.ruoli.some(r => ["ATT", "AS", "AD"].includes(r));
+        if (filterType === "spec") return p.tipo || p.stagione === "Hall of Fame" || p.stagione === "Centenario";
+        return true;
+    });
+
+    // Aggiorna lo stato visivo dei bottoni chip
+    document.querySelectorAll(".coll-chip").forEach(chip => {
+        if (chip.getAttribute("data-filter") === filterType) {
+            chip.classList.add("is-active");
+        } else {
+            chip.classList.remove("is-active");
+        }
+    });
 
     if (coll.length === 0) {
-        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Nessuna carta trovata per "${collSearchTerm}".</p>`;
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--testo-dim); padding: 40px;">Nessuna carta trovata con questi filtri.</p>`;
         return;
     }
     
@@ -5069,13 +5333,10 @@ function renderCollection() {
     const pageSize = 9; 
     const totalPages = Math.max(1, Math.ceil(coll.length / pageSize));
     
-    // Sicurezza nel caso si vendano carte e l'ultima pagina sparisca
     if (state.collectionPage >= totalPages) state.collectionPage = 0;
     
     const pageStart = state.collectionPage * pageSize;
     const pageCards = coll.slice(pageStart, pageStart + pageSize);
-    
-    let html = ""; // Inizializza la stringa
     
     pageCards.forEach(p => {
         let cls = "player-card tcg";
@@ -5091,7 +5352,6 @@ function renderCollection() {
 
         const card = document.createElement("div");
         card.className = "card-flip-container";
-        // Al click si gira di 180 gradi e fa suonare la "carta"
         card.onclick = function() { 
             if(typeof playSound === 'function') playSound('carta'); 
             this.classList.toggle('is-flipped'); 
@@ -5110,7 +5370,6 @@ function renderCollection() {
         grid.appendChild(card);
     });
 
-    // --- COSTRUZIONE BOTTONI PRECEDENTE E SUCCESSIVA ---
     if (totalPages > 1) {
         const navWrap = document.createElement("div");
         navWrap.id = "collection-pagination";
@@ -5122,10 +5381,8 @@ function renderCollection() {
             <button type="button" id="coll-next" class="btn ghost" style="padding: 8px 18px; font-size: 0.85rem;">Successiva ➔</button>
         `;
         
-        // Inserisce i bottoni subito sotto la griglia delle carte
         grid.parentNode.insertBefore(navWrap, grid.nextSibling);
 
-        // Collegamento click
         document.getElementById("coll-prev").onclick = () => {
             playSound('click');
             state.collectionPage = (state.collectionPage - 1 + totalPages) % totalPages;
@@ -5137,6 +5394,7 @@ function renderCollection() {
             state.collectionPage = (state.collectionPage + 1) % totalPages;
             renderCollection();
         };
+        
     }
 }
 // ============================================================
@@ -6070,7 +6328,7 @@ window.renderPlayerDashboard = function() {
       </div>
 
       <div style="display:grid; gap:10px; margin-top:10px;">
-        <button id="btn-play-season" class="btn primary" style="background: linear-gradient(90deg, #00ff88, #00a1ff); color:#00112b; font-weight:900;">⏩ SIMULA STAGIONE INTERA</button>
+        ${c.age < 42 ? `<button id="btn-play-season" class="btn primary" style="background: linear-gradient(90deg, #00ff88, #00a1ff); color:#00112b; font-weight:900;">⏩ SIMULA STAGIONE INTERA</button>` : `<button class="btn ghost" disabled style="color: var(--testo-mute); border-color: var(--testo-mute);">⚠️ LIMITE ETÀ RAGGIUNTO (42 ANNI)</button>`}
         ${retireBtnHTML}
         <button id="btn-reset-player-career" class="btn ghost" style="border-color:#ff5c5c; color:#ff5c5c; font-size:0.8rem; margin-top:10px;">Ricomincia Nuova Carriera</button>
         <button id="btn-player-home" class="btn ghost" style="margin-top:0;">← Menu Principale</button>
@@ -6375,6 +6633,149 @@ const PLAYER_CAREER_EVENTS = [
       resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Bella serata di gruppo, niente di eccezionale per le statistiche.</span>" });
     }
   }
+  , // <-- Ricordati questa virgola per separare l'evento precedente!
+  {
+    title: "Punizione dal Limite", icon: "🎯",
+    desc: "Calcio di punizione dal limite dell'area. La posizione è perfetta, ma Kvaratskhelia ha già il pallone in mano.",
+    btnA: "Prendi la palla e tiri", effA: "Tiri la punizione! (Mini-gioco di precisione veloce)",
+    btnB: "Lasci tirare Kvara", effB: "Scelta umile. Nessun malus, ma niente gloria.",
+    actionA: (c, resolve) => {
+      window.runTimingQTE({
+        icon: "🎯",
+        tag: "PUNIZIONE!",
+        tagColor: "#00ff88",
+        title: `${c.name} va sulla palla!`,
+        desc: "Premi TIRA esattamente al centro per togliere le ragnatele!",
+        zoneWidthPct: 15, // Finestra molto stretta, difficile!
+        speedMs: 2.5,     // Cursore veloce
+        labelWin: "GOL! SOTTO IL SETTE!",
+        labelLose: "Sulla barriera...",
+        onResult: (success) => {
+          if (success) {
+            resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Punizione magistrale sotto l'incrocio! Il Maradona viene giù! (+1 OVR)</span>" });
+          } else {
+            resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Hai preteso di tirare e l'hai sparata in curva. I compagni sbuffano. (-1 OVR)</span>" });
+          }
+        }
+      });
+    },
+    actionB: (c, resolve) => {
+      toast("🤝 Kvara calcia e prende il palo. Va bene così.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai evitato polemiche in campo lasciando il tiro allo specialista.</span>" });
+    }
+  },
+  {
+    title: "San Gregorio Armeno", icon: "🗿",
+    desc: "Un famoso artigiano dei presepi a San Gregorio Armeno ha appena esposto la tua statuina. Tutta Napoli ne parla sui social.",
+    btnA: "Vai a ringraziarlo di persona", effA: "Bagno di folla! Aumenta il morale (+1 OVR).",
+    btnB: "Ignori e pensi al campo", effB: "Niente distrazioni. Allenamento extra che fa bene al mister.",
+    actionA: (c, resolve) => {
+      toast("📸 Centinaia di selfie nei vicoli!");
+      resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Sei sul presepe! L'amore di Napoli ti mette le ali ai piedi. (+1 OVR)</span>" });
+    },
+    actionB: (c, resolve) => {
+      toast("⚽ Solo campo e sudore.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Niente passeggiate. Il mister apprezza la tua professionalità assoluta.</span>" });
+    }
+  },
+  {
+    title: "La Tentazione Culinaria", icon: "🍝",
+    desc: "Passeggi per i Quartieri Spagnoli. Un tifoso ti riconosce e ti offre una frittatina di maccheroni fumante. Sei a dieta ferrea.",
+    btnA: "Non puoi rifiutare! (La mangi)", effA: "Rischio: 50% di farti male allo stomaco (-1 OVR) o 50% di pura estasi (+1 OVR).",
+    btnB: "Ringrazi ma rifiuti", effB: "Dieta salva, forma perfetta. (+0 OVR)",
+    actionA: (c, resolve) => {
+      if (Math.random() > 0.5) {
+        toast("🤤 Frittatina celestiale!");
+        resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Carboidrati della felicità! Mangi la frittatina e voli in campo! (+1 OVR)</span>" });
+      } else {
+        toast("🤢 Pesantezza sullo stomaco...");
+        resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Hai ceduto al fritto prima del match. Corri appesantito in campo. (-1 OVR)</span>" });
+      }
+    },
+    actionB: (c, resolve) => {
+      toast("🥗 Un vero professionista.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai fatto piangere il tifoso, ma la tua massa grassa è al 5%.</span>" });
+    }
+  },
+  {
+    title: "Il Richiamo del Nord", icon: "🐍",
+    desc: "Il tuo telefono squilla da un numero sconosciuto: è un alto dirigente della Juventus. Ti offre il triplo dello stipendio per l'anno prossimo.",
+    btnA: "Ascolti l'offerta (In segreto)", effA: "Guadagni 80 Crediti (bonus nero), ma il senso di colpa ti distrae in allenamento (-1 OVR).",
+    btnB: "Gli chiudi il telefono in faccia", effB: "Rinunci ai soldi, ma la notizia trapela e i tifosi azzurri ti fanno un murales! (+1 OVR).",
+    actionA: (c, resolve) => {
+      addCredits(80, "Contatti Segreti");
+      toast("💰 80 Crediti intascati... a che prezzo?");
+      resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Pensi troppo al mercato. I tifosi hanno dei sospetti e tu perdi la bussola (-1 OVR).</span>" });
+    },
+    actionB: (c, resolve) => {
+      toast("💙 Core Napulitano!");
+      resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Hai rifiutato la Juve! Sei l'idolo indiscusso della città! (+1 OVR)</span>" });
+    }
+  },
+  {
+    title: "Tackle in Allenamento", icon: "😡",
+    desc: "Partitella di metà settimana a Castel Volturno. Un compagno di squadra entra a piedi uniti su di te, rischiando di spaccarti la caviglia.",
+    btnA: "Reagisci e fai rissa", effA: "Rischio frattura spogliatoio. Il mister punisce entrambi (-1 OVR).",
+    btnB: "Ti rialzi e dai il cinque", effB: "Atteggiamento da leader. Compatta il gruppo e raddoppia la grinta (+1 OVR).",
+    actionA: (c, resolve) => {
+      toast("🥊 Scintille a Castel Volturno!");
+      resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Hai perso la testa in allenamento. Il clima di tensione rovina la settimana. (-1 OVR)</span>" });
+    },
+    actionB: (c, resolve) => {
+      toast("🤝 Gesto da grande uomo squadra.");
+      resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Hai calmato gli animi. Sei un vero leader e la squadra gioca per te! (+1 OVR)</span>" });
+    }
+  },
+  {
+    title: "Sacrificio Tattico", icon: "🔄",
+    desc: "Emergenza infortuni: mancano tutti i difensori. Il mister ti prende da parte e ti chiede di giocare in un ruolo non tuo per salvare la partita.",
+    btnA: "Ti metti a disposizione", effA: "Giochi fuori ruolo. Niente gol personali, ma guadagni la fiducia eterna del mister (+1 OVR).",
+    btnB: "Rifiuti, sei un fuoriclasse", effB: "Pensi ai tuoi numeri. Fai gol, ma lo spogliatoio ti guarda male.",
+    actionA: (c, resolve) => {
+      toast("🛡️ Partita di totale sacrificio!");
+      // Niente extraGoals in questo caso, perché ti sei sacrificato in difesa
+      resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>Hai giocato dove c'era bisogno. Non avrai segnato, ma sei il faro della squadra. (+1 OVR)</span>" });
+    },
+    actionB: (c, resolve) => {
+      toast("⭐ Hai pensato al tuo tabellino.");
+      // Mettiamo un gol assicurato ma malus al rating globale
+      resolve({ ovrMod: -1, extraGoals: 1, msg: "<span style='color:#ff5c5c'>Hai fatto i tuoi gol, ma hai lasciato la squadra in 10 in difesa. Troppo egoista (-1 OVR).</span>" });
+    }
+  },
+  {
+    title: "Il Nuovo Sponsor Tecnico", icon: "👟",
+    desc: "Un marchio di abbigliamento sportivo ti offre una valanga di soldi per indossare le loro nuove scarpette. Problema: in prova ti sono parse scomodissime.",
+    btnA: "Firma (Prendi i soldi)", effA: "Ottieni 60 Crediti immediati, ma rischi vesciche enormi in partita (-1 OVR).",
+    btnB: "Rifiuta e tieni le vecchie", effB: "Nessun credito extra, ma i piedi ringraziano (+0 OVR).",
+    actionA: (c, resolve) => {
+      addCredits(60, "Sponsor Scarpini");
+      toast("💰 Hai accettato l'oro... e le vesciche!");
+      resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Gli scarpini nuovi ti segano i piedi. Sbagli controlli banali in campo. (-1 OVR ma +60 Crediti)</span>" });
+    },
+    actionB: (c, resolve) => {
+      toast("👟 Comfort prima di tutto.");
+      resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Non ti sei venduto. Le vecchie scarpette sono perfette. Nessun problema.</span>" });
+    }
+  },
+  {
+    title: "Chiamata dalla Nazionale", icon: "✈️",
+    desc: "Sei convocato in Nazionale per un'amichevole inutile dall'altra parte del mondo, a soli tre giorni dal big match scudetto contro l'Inter.",
+    btnA: "Rispondi alla convocazione", effA: "Fai due voli transatlantici. Ritorni sfinito (-1 OVR) ma diventi famoso.",
+    btnB: "Fingi un infortunio tattico", effB: "Resti a Napoli a riposare (+1 OVR), sperando che nessuno lo scopra.",
+    actionA: (c, resolve) => {
+      toast("🛫 Viaggio infinito...");
+      resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Jet lag tremendo. In campo col Napoli cammini anziché correre. (-1 OVR)</span>" });
+    },
+    actionB: (c, resolve) => {
+      if (Math.random() > 0.3) {
+        toast("🛏️ Riposo miracoloso a Castel Volturno.");
+        resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Hai saltato la Nazionale! Contro l'Inter sei il più fresco di tutti e voli in campo! (+1 OVR)</span>" });
+      } else {
+        toast("🚨 La stampa ti ha scoperto!");
+        resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>I giornalisti ti hanno beccato in centro a Napoli. Polemica nazionale e squalifica. (-1 OVR)</span>" });
+      }
+    }
+  }
 ];
 
 // SIMULAZIONE DELL'INTERA STAGIONE IN UN SOLO CLICK
@@ -6490,8 +6891,9 @@ window.simulateFullPlayerSeason = function() {
     levelUps += eventResult.ovrMod;
     seasonGoals += eventResult.extraGoals;
 
-    // HARD CAP MATEMATICO A 100 OVR
-    if (c.ovr + levelUps > 100) levelUps = 100 - c.ovr;
+    // HARD CAP MATEMATICO A 99 MASSIMO E 60 MINIMO
+    if (c.ovr + levelUps > 99) levelUps = 99 - c.ovr;
+    if (c.ovr + levelUps < 60) levelUps = 60 - c.ovr;
     
     // Aggiorna definitivamente i dati del giocatore
     c.ovr += levelUps;
@@ -6710,18 +7112,65 @@ window.retirePlayer = function() {
 // SISTEMA PASS AZZURRO (CONFIGURABILE OGNI 30 GIORNI)
 // ============================================================
 
-// ⚙️ CAMBIA QUESTI DATI OGNI MESE! ⚙️
+// ⚙️ GENERATORE AUTOMATICO PASS AZZURRO E CARTE EROE ⚙️
+const dataOggi = new Date();
+const meseIndex = dataOggi.getMonth(); // Da 0 (Gennaio) a 11 (Dicembre)
+const annoCorrente = dataOggi.getFullYear();
+const nomiMesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+const nomeMeseCorrente = nomiMesi[meseIndex];
+
+// 1. IL SERBATOIO DEGLI EROI (Aggiungi quanti giocatori vuoi in questa lista)
+const HERO_POOL = [
+    { nome: "Khvicha Kvaratskhelia", ruoli: ["AS", "TRQ"], rating: 95 },
+    { nome: "Edinson Cavani", ruoli: ["ATT"], rating: 95 },
+    { nome: "Marek Hamsik", ruoli: ["CC", "TRQ"], rating: 94 },
+    { nome: "Dries Mertens", ruoli: ["ATT", "AS"], rating: 93 },
+    { nome: "Kalidou Koulibaly", ruoli: ["DC"], rating: 93 },
+    { nome: "Victor Osimhen", ruoli: ["ATT"], rating: 94 },
+    { nome: "Gonzalo Higuain", ruoli: ["ATT"], rating: 94 },
+    { nome: "Matteo Politano", ruoli: ["AD"], rating: 93 },
+    { nome: "Lorenzo Insigne", ruoli: ["AS", "TRQ"], rating: 92 },
+    { nome: "Kim Min-jae", ruoli: ["DC"], rating: 91 },
+    { nome: "Stanislav Lobotka", ruoli: ["MED", "CC"], rating: 90 },
+    { nome: "Diego Armando Maradona", ruoli: ["TRQ", "ATT"], rating: 98 }
+];
+
+// 2. LA MAGIA MATEMATICA: Sceglie un eroe diverso ogni mese in base alla data
+// Moltiplica l'anno per 12 e somma il mese, poi divide per il numero di eroi.
+// Il "resto" della divisione (%) ci darà un indice sempre coerente per tutti i giocatori.
+const magicIndex = (annoCorrente * 12 + meseIndex) % HERO_POOL.length;
+const heroDelMese = HERO_POOL[magicIndex];
+const stagioneDinamica = `Eroe di ${nomeMeseCorrente}`;
+
+// 3. INIEZIONE NEL DATABASE: Il gioco crea la carta dal nulla e la infila nel DB di nascosto
+setTimeout(() => {
+    if (typeof DB !== 'undefined') {
+        const cartaGiaPresente = DB.find(p => p.nome === heroDelMese.nome && p.stagione === stagioneDinamica);
+        if (!cartaGiaPresente) {
+            DB.push({
+                nome: heroDelMese.nome,
+                stagione: stagioneDinamica,
+                ruoli: heroDelMese.ruoli,
+                rating: heroDelMese.rating,
+                tipo: "EROE",
+                evento: `Premio Livello 30 del Pass Azzurro (${nomeMeseCorrente} ${annoCorrente})`
+            });
+        }
+    }
+}, 50);
+
+// 4. LA CONFIGURAZIONE DEL PASS AGGIORNATA
 const PASS_CONFIG = {
-    idMese: "pass_agosto_2026", 
+    idMese: `pass_${meseIndex}_${annoCorrente}`, 
     maxLevel: 30,
     xpPerLevel: 1000,
     premioFinale: {
-        nome: "Giovane",          
-        stagione: "Eroe del Mese" 
+        nome: heroDelMese.nome,          
+        stagione: stagioneDinamica 
     },
     getRewardText: function(level) {
         if (level === this.maxLevel) return "🎁 CARTA: " + this.premioFinale.nome;
-        if (level === 15) return "📦 Pacchetto Icona (OVR 90+)"; // <-- Cambiato a Pacchetto Icona
+        if (level === 15) return "📦 Pacchetto Icona (OVR 90+)";
         if (level % 5 === 0) return "💰 200 Crediti";
         return "💰 50 Crediti";
     }
@@ -6767,6 +7216,35 @@ window.updatePassUI = function() {
         missingXP = 0;
     }
     
+    // --- INIZIO CALCOLO DATE E GIORNI ---
+    const oggi = new Date();
+    // Ottiene l'ultimo giorno del mese in corso
+    const ultimoGiornoMese = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
+    const giorniRimanenti = ultimoGiornoMese.getDate() - oggi.getDate();
+    
+    const nomiMesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+    const nomeMeseCorrente = nomiMesi[oggi.getMonth()];
+
+    const seasonNameEl = document.getElementById("pass-season-name");
+    const daysLeftEl = document.getElementById("pass-days-left");
+
+    if (seasonNameEl) seasonNameEl.textContent = `PASS DI ${nomeMeseCorrente.toUpperCase()}`;
+    
+    if (daysLeftEl) {
+        if (giorniRimanenti === 0) {
+            daysLeftEl.textContent = "SCADE OGGI!";
+            daysLeftEl.style.color = "#ff5c5c";
+            daysLeftEl.style.borderColor = "#ff5c5c";
+            daysLeftEl.style.background = "rgba(255,92,92,0.15)";
+        } else {
+            daysLeftEl.textContent = `SCADE TRA ${giorniRimanenti} GIORN${giorniRimanenti === 1 ? 'O' : 'I'}`;
+            daysLeftEl.style.color = "#ffd24a";
+            daysLeftEl.style.borderColor = "rgba(255,210,74,0.3)";
+            daysLeftEl.style.background = "rgba(255,210,74,0.15)";
+        }
+    }
+    // --- FINE CALCOLO DATE ---
+
     const xpDisplay = document.getElementById("pass-xp-display");
     const levelDisplay = document.getElementById("pass-level-display");
     const missingDisplay = document.getElementById("pass-xp-missing");
@@ -6796,7 +7274,7 @@ window.updatePassUI = function() {
 
         for (let i = 1; i <= PASS_CONFIG.maxLevel; i++) {
             let isCurrent = (i === level);
-            let isPassed = (i <= level); // Se sei a questo livello o l'hai superato
+            let isPassed = (i <= level);
             let isLocked = (i > level);
             
             let bg = isPassed ? "rgba(0, 255, 136, 0.08)" : (isCurrent ? "rgba(0, 161, 255, 0.15)" : "rgba(255, 255, 255, 0.03)");
@@ -6805,7 +7283,6 @@ window.updatePassUI = function() {
 
             let actionHtml = "";
             
-            // FIX: Generazione dinamica dei pulsanti di riscatto per TUTTI i livelli
             if (i === PASS_CONFIG.maxLevel) {
                 if (isClaimedFinal) {
                     actionHtml = `<span style="color: #00ff88; font-weight: bold; font-size: 0.8rem;">RISCATTATA ✓</span>`;
