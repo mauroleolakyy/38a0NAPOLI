@@ -3105,7 +3105,47 @@ body.dreamteam-mode .btn.primary {
 }
 .collection-empty__icon { font-size: 2.4rem; display: block; margin-bottom: 10px; opacity: 0.6; }
 
+/* ============================================================
+   FILTRI RAPIDI (COLLEZIONE & DATABASE CHIPS)
+   ============================================================ */
+.collection-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
 
+.coll-chip,
+.db-chip {
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--testo-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.coll-chip:hover,
+.db-chip:hover {
+  transform: translateY(-1px);
+  color: var(--testo);
+  border-color: rgba(0, 161, 255, 0.4);
+}
+
+.coll-chip.is-active,
+.db-chip.is-active {
+  background: linear-gradient(90deg, var(--azzurro-vivo), var(--celeste));
+  border-color: var(--celeste);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 161, 255, 0.35);
+}
 /* ============================================================
    ANIMAZIONI WALKOUT E PACCHETTI (ANTI-LAG & ANTI-BUG)
    ============================================================ */
