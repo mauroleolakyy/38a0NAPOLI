@@ -109,8 +109,9 @@
     <div class="pm-header" style="justify-content: space-between; margin-bottom: 10px; flex-shrink: 0;">
       <div style="display: flex; align-items: center; gap: 10px;">
         <span class="pm-icon" style="font-size: 1.5rem;">⭐</span>
-        <span class="pm-tag" style="font-size: 0.8rem; color: #00ff88; border-color: #00ff88; background: rgba(0,255,136,0.1);">PASS AZZURRO</span>
-      </div>
+        <span class="pm-tag" id="pass-season-name" style="font-size: 0.8rem; color: #00ff88; border-color: #00ff88; background: rgba(0,255,136,0.1);">PASS AZZURRO</span>
+<span id="pass-days-left" style="font-family: var(--font-cond); font-size: 0.75rem; color: #ffd24a; background: rgba(255,210,74,0.15); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,210,74,0.3); font-weight: bold;">Scade tra X giorni</span>
+</div>
       <button type="button" id="btn-close-pass" style="background: transparent; border: none; color: var(--testo-dim); font-size: 1.2rem; cursor: pointer;">✕</button>
     </div>
     
@@ -328,7 +329,17 @@
   <div class="card-search-wrap">
     <input type="text" id="collection-search" class="card-search-input" placeholder="🔍 Cerca per nome, stagione o rarità (IF, MOTM, TOTS)...">
   </div>
-  <p class="swipe-hint">👉 Scorri con il dito per cambiare pagina</p>
+  
+  <!-- FILTRI RAPIDI (CHIPS) -->
+  <div class="collection-filters">
+    <button type="button" class="coll-chip is-active" data-filter="all">Tutti</button>
+    <button type="button" class="coll-chip" data-filter="def">Difesa</button>
+    <button type="button" class="coll-chip" data-filter="mid">Centrocampo</button>
+    <button type="button" class="coll-chip" data-filter="att">Attacco</button>
+    <button type="button" class="coll-chip" data-filter="spec">Speciali</button>
+  </div>
+
+  
   <div id="collection-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;">
     <!-- Le carte verranno iniettate qui dal JS -->
   </div>
@@ -421,7 +432,16 @@
       <input type="text" id="db-search" class="card-search-input" placeholder="🔍 Cerca per nome, stagione o rarità (IF, MOTM, TOTS)...">
     </div>
 
-    <p class="swipe-hint">👉 Scorri con il dito per cambiare pagina</p>
+    <!-- FILTRI RAPIDI DATABASE -->
+    <div class="collection-filters">
+      <button type="button" class="db-chip is-active" data-filter="all">Tutti</button>
+      <button type="button" class="db-chip" data-filter="def">Difesa</button>
+      <button type="button" class="db-chip" data-filter="mid">Centrocampo</button>
+      <button type="button" class="db-chip" data-filter="att">Attacco</button>
+      <button type="button" class="db-chip" data-filter="spec">Speciali</button>
+    </div>
+
+    
     <div id="hof-content">
       <!-- La griglia delle carte verrà generata qui dinamicamente -->
     </div>
@@ -573,7 +593,7 @@ db.enablePersistence()
 </script>
 
 <!-- Il tuo codice di gioco esistente -->
-  <script src="js/app.js?v=v6"></script>
+  <script src="js/app.js?v=v7"></script>
  <!-- ========================================== -->
     <!-- INIZIO FOOTER -->
     <!-- ========================================== -->
