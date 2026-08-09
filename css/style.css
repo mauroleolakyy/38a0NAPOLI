@@ -139,6 +139,7 @@ body {
   font-family: var(--font-body); color: var(--testo); background: var(--bg-0);
   background-image: var(--bg-stage); background-attachment: fixed; min-height: 100vh;
   display: flex; flex-direction: column; overflow-x: hidden; line-height: 1.5;
+  touch-action: manipulation;
 }
 main { flex: 1; width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 var(--sp-5) calc(var(--sp-8) + var(--safe-b)); }
 img { max-width: 100%; display: block; }
