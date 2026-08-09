@@ -1286,7 +1286,7 @@ if (name === "hof") { renderDbGrid(); }
   updateWalletUI();
 
  // Aggiungi il listener per il bottone di reindirizzamento alla collezione dal negozio
-  const btnCollezioneNegozio = document.querySelector('[data-panel="shop"] .btn.ghost');
+  const btnCollezioneNegozio = document.querySelector('[data-panel="shop"] .shop-collection-btn');
   if(btnCollezioneNegozio) {
       // Rimuove l'avviso provvisorio della Fase 1
       btnCollezioneNegozio.removeAttribute("onclick");
@@ -1313,7 +1313,7 @@ if (name === "hof") { renderDbGrid(); }
      btn.onclick = function() {
          playSound('click');
          const packType = this.getAttribute("data-pack");
-         const PACK_COSTS = { scugnizzo: 100, azzurro: 300, d10s: 1000, centurion: 2000, icona: 5000 };
+         const PACK_COSTS = { tifoso: 50, scugnizzo: 100, azzurro: 300, d10s: 1000, centurion: 2000, icona: 5000, scudetto: 8000 };
          const cost = PACK_COSTS[packType] ?? 800;
          
          if (getCredits() >= cost) {
@@ -3139,12 +3139,14 @@ function marketOptions(slotId) {
   
   // --- INIZIO: FILTRO MERCATO GERIATRICO PER LA CARRIERA ---
   if (state.career) {
-      const currentSeasonYear = 2024 + (state.career.season || 1); // Anno corrente approssimato della run
       pool = pool.filter(p => {
-          if (!p.annoNascita) return true;
-          let playerAge = currentSeasonYear - p.annoNascita;
-          return playerAge <= 25; // Propone solo giovani Under 26 per il ricambio generazionale!
+          // Calcoliamo l'età storica: quanti anni aveva nella stagione di QUESTA carta?
+          const ageCard = careerInitialAge(p); 
+          if (!ageCard) return true; // Le carte "Hall of Fame" o "Centenario" valgono sempre
+          
+          return ageCard <= 26; // Propone solo giocatori (e versioni storiche) Under 27!
       });
+      
       // Paracadute di sicurezza: se per qualche motivo il filtro azzera il pool, ripesca dai normali
       if (pool.length === 0) {
           pool = sourceDB.filter(p => p && p.ruoli && p.ruoli.some(r => slot.accepts.includes(r)) && !usedForThisSlot.has(p.nome));
@@ -5329,7 +5331,15 @@ function openPack(type) {
     // BONUS SCOUT (+2% drop rate)
     const walkoutBoost = (typeof hasUpgrade === "function" && hasUpgrade('scout')) ? 0.02 : 0;
     // Probabilità basate sul tipo di pacchetto
-    if (type === 'scugnizzo') {
+    if (type === 'tifoso') {
+        // Pacchetto TIFOSO: il più economico, pensato per iniziare la collezione
+        for(let i=0; i<3; i++) {
+            let roll = Math.random();
+            if(roll < (0.01 + walkoutBoost)) cards.push(randItem(getByRating(88, 99)));      // 1% Walkout
+            else if(roll < 0.08) cards.push(randItem(getByRating(80, 87))); // 7% Oro
+            else cards.push(randItem(getByRating(1, 79)));                  // 92% Base
+        }
+    } else if (type === 'scugnizzo') {
         for(let i=0; i<3; i++) {
             let roll = Math.random();
             if(roll < (0.02 + walkoutBoost)) cards.push(randItem(getByRating(88, 99)));      // 2% Walkout
@@ -5371,6 +5381,18 @@ function openPack(type) {
             if(roll < (0.45 + walkoutBoost)) cards.push(randItem(getByRating(88, 99))); // 45% Walkout
             else cards.push(randItem(getByRating(80, 87)));                             // 55% Oro
         }
+    } else if (type === 'scudetto') {
+        // Pacchetto SCUDETTO: il pacchetto definitivo del negozio.
+        // Garantisce SEMPRE una Leggenda (Hall of Fame/Centenario) E una
+        // carta speciale (IF/MOTM/TOTS), con altissima probabilità che
+        // anche la terza carta sia un Walkout OVR 88+.
+        const iconPoolS = DB.filter(p => p.stagione === "Hall of Fame" || p.stagione === "Centenario");
+        cards.push(randItem(iconPoolS.length ? iconPoolS : getByRating(92, 99)));
+        const specialPoolS = DB.filter(p => p.tipo && p.tipo !== "EROE");
+        cards.push(randItem(specialPoolS.length ? specialPoolS : getByRating(88, 99)));
+        const rollS = Math.random();
+        if (rollS < (0.70 + walkoutBoost)) cards.push(randItem(getByRating(88, 99))); // 70% Walkout
+        else cards.push(randItem(getByRating(85, 87)));
     }
     // --- INIZIO HOOK MISSIONI PACCHETTI ---
     window.updateMissionProgress('pack', 1);
