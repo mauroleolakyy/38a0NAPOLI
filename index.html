@@ -440,6 +440,13 @@
   
   <p class="subpanel__title" style="margin-top: 14px;">Il Tuo Palmarès</p>
   <div id="palmares-stats" class="cl-grid" style="margin-bottom: 24px;"></div>
+
+  <button type="button" id="btn-immortal-archive" class="archive-toggle" hidden aria-expanded="false">
+    <span class="archive-toggle__icon">👑</span>
+    <span class="archive-toggle__body"><strong>Archivio Rose Immortali</strong><small>Apri le formazioni storiche del 38-0</small></span>
+    <span class="archive-toggle__arrow" aria-hidden="true">›</span>
+  </button>
+  <div id="immortal-squad-box" class="immortal-archive" hidden></div>
   
   <p class="subpanel__title">Bacheca Trofei</p>
   <div id="achievements-list" class="sm-modes"></div>
@@ -564,7 +571,7 @@
     </section>
 
     <section id="screen-break" class="screen"><div class="lower-third"><h2 class="section-title">Sosta di metà stagione</h2></div><div id="break-body"></div></section>
-    <section id="screen-replay" class="screen"><div class="replay-top"><div class="lower-third"><h2 class="section-title" id="replay-heading">La stagione</h2></div><button id="btn-skip-replay" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div class="replay-controls"><label class="replay-control"><span>Modalità</span><select id="replay-mode"><option value="auto">Auto</option><option value="manual">Uno per volta</option></select></label><label class="replay-control"><span>Velocità</span><select id="replay-speed"><option value="260">Veloce</option><option value="480" selected>Normale</option><option value="700">Lenta</option><option value="950">Molto lenta</option></select></label><button id="btn-step-replay" class="btn ghost" type="button" disabled>Avanti</button></div><div id="replay-list" class="replay-list" aria-live="polite"></div></section>
+    <section id="screen-replay" class="screen"><div class="replay-stadium" aria-hidden="true"><div class="replay-stadium__lights"></div><div class="replay-stadium__stands"></div><div class="replay-stadium__pitch"></div></div><div class="replay-shell"><div class="replay-top"><div class="lower-third"><span class="replay-kicker">LIVE · STAGIONE IN CORSO</span><h2 class="section-title" id="replay-heading">La stagione</h2></div><button id="btn-skip-replay" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div class="replay-scoreboard"><div><span class="replay-scoreboard__label">COMPETIZIONE</span><strong>Serie A · Napoli</strong></div><div class="replay-scoreboard__live"><i></i> SIMULAZIONE LIVE</div><div><span class="replay-scoreboard__label">MATCHDAY</span><strong id="replay-matchday-display">01 — 38</strong></div></div><div class="replay-controls"><label class="replay-control"><span>Modalità</span><select id="replay-mode"><option value="auto">Auto</option><option value="manual">Uno per volta</option></select></label><label class="replay-control"><span>Velocità</span><select id="replay-speed"><option value="260">Veloce</option><option value="480" selected>Normale</option><option value="700">Lenta</option><option value="950">Molto lenta</option></select></label><button id="btn-step-replay" class="btn ghost" type="button" disabled>Avanti</button></div><div id="replay-list" class="replay-list" aria-live="polite"></div></div></section>
     <section id="screen-champions" class="screen"><div class="replay-top"><div class="lower-third"><h2 class="section-title" id="cl-heading">Champions League</h2></div><button id="btn-skip-cl" class="btn ghost replay-skip" type="button">Salta ⏭</button></div><div id="cl-stage" class="cl-stage" aria-live="polite"></div></section>
     
     <section id="screen-result" class="screen">
@@ -584,23 +591,29 @@
     <section id="screen-career-final" class="screen"><div class="lower-third"><h2 class="section-title">Fine carriera</h2></div><div id="career-final-body"></div><div id="career-formation-compare"></div><div class="career-savebar" id="career-savebar"></div><div class="result-actions"><button id="btn-career-home" class="btn primary">← Menu principale</button></div></section>
   <!-- SCHERMATA CREAZIONE / HUB GIOCATORE -->
 <section id="screen-player-career" class="screen">
-  <div class="lower-third">
-    <h2 class="section-title" id="player-career-title">Carriera Giocatore</h2>
-  </div>
-  <p class="section-sub" id="player-career-sub">Crea il tuo profilo e vesti la maglia del Napoli.</p>
-  
-  <div id="player-career-body" style="max-width: 600px; margin: 0 auto;">
-    <!-- Il JS inietterà qui il modulo di creazione o la dashboard del calciatore -->
+  <div class="player-career-world" aria-hidden="true"><div class="player-career-world__lights"></div><div class="player-career-world__stands"></div><div class="player-career-world__pitch"></div></div>
+  <div class="player-career-shell">
+    <div class="lower-third">
+      <span class="player-career-kicker">IL MIO GIOCATORE · NAPOLI</span>
+      <h2 class="section-title" id="player-career-title">Carriera Giocatore</h2>
+    </div>
+    <p class="section-sub" id="player-career-sub">Crea il tuo profilo e vesti la maglia del Napoli.</p>
+    <div class="player-career-statusbar"><span><i></i> CENTRO PERFORMANCE</span><strong id="player-career-season-badge">STAGIONE 01</strong><span>FUORICLASSE IN COSTRUZIONE</span></div>
+    <div id="player-career-body" style="max-width: 600px; margin: 0 auto;">
+      <!-- Il JS inietterà qui il modulo di creazione o la dashboard del calciatore -->
+    </div>
   </div>
 </section>
 
 <!-- SCHERMATA SIMULAZIONE MATCH GIOCATORE -->
 <section id="screen-player-match" class="screen">
-  <div class="lower-third">
-    <h2 class="section-title">Resoconto Partita</h2>
-  </div>
-  <div id="player-match-body" style="max-width: 600px; margin: 0 auto; text-align: center;">
-    <!-- Dettagli prestazione e voti -->
+  <div class="career-arena" aria-hidden="true"><div class="career-arena__lights"></div><div class="career-arena__stands"></div><div class="career-arena__pitch"></div></div>
+  <div class="career-match-shell">
+    <div class="lower-third"><span class="career-match-kicker">PLAYER CAREER · MATCH CENTER</span><h2 class="section-title">Resoconto Partita</h2></div>
+    <div class="career-match-hud"><span><i></i> STAGIONE LIVE</span><strong>NAPOLI · REPORT</strong><span>POST-MATCH</span></div>
+    <div id="player-match-body" style="max-width: 600px; margin: 0 auto; text-align: center;">
+      <!-- Dettagli prestazione e voti -->
+    </div>
   </div>
 </section>
   </main>
@@ -682,7 +695,7 @@ db.enablePersistence()
 </script>
 
 <!-- Il tuo codice di gioco esistente -->
-  <script src="js/app.js?v=v8"></script>
+  <script src="js/app.js?v=v9"></script>
  <!-- ========================================== -->
     <!-- INIZIO FOOTER -->
     <!-- ========================================== -->
