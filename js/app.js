@@ -5735,6 +5735,7 @@ function performCloudSave() {
     streak: localStorage.getItem('napoli380_streak') || "0",
     lastLogin: localStorage.getItem('napoli380_lastLogin') || "",
     passClaimed: localStorage.getItem('napoli380_pass_claimed') || "false",
+    passClaimedLevels: JSON.parse(localStorage.getItem('napoli380_pass_claimed_levels') || "[]"),
     passId: localStorage.getItem('napoli380_pass_id') || "",
     hof: JSON.parse(localStorage.getItem('napoli380_hof') || "null"),
     lastSync: firebase.firestore.FieldValue.serverTimestamp()
@@ -5796,6 +5797,7 @@ function loadFromCloud(uid, showToast = true) {
       if (data.streak !== undefined) setLoc('napoli380_streak', data.streak);
       if (data.lastLogin !== undefined) setLoc('napoli380_lastLogin', data.lastLogin);
       if (data.passClaimed !== undefined) setLoc('napoli380_pass_claimed', data.passClaimed);
+      if (data.passClaimedLevels !== undefined) setLoc('napoli380_pass_claimed_levels', JSON.stringify(data.passClaimedLevels));
       if (data.passId !== undefined) setLoc('napoli380_pass_id', data.passId);
       if (data.hof) setLoc('napoli380_hof', JSON.stringify(data.hof));
       if (typeof initDailyMissions === 'function') initDailyMissions();
@@ -5839,6 +5841,7 @@ localStorage.setItem = function(key, value) {
     'napoli380_streak',
     'napoli380_lastLogin',
     'napoli380_pass_claimed',
+    'napoli380_pass_claimed_levels',
     'napoli380_pass_id',
     'napoli380_hof'
   ];
@@ -7540,6 +7543,22 @@ function checkAndResetPass() {
     }
 }
 
+function updatePassBadge() {
+  const badge = document.getElementById("pass-badge");
+  if (!badge) return;
+
+  const xp = parseInt(localStorage.getItem("napoli380_pass_xp") || "0", 10);
+  const level = Math.min(PASS_CONFIG.maxLevel, Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1);
+  const claimedLevels = JSON.parse(localStorage.getItem("napoli380_pass_claimed_levels") || "[]");
+  const finalClaimed = localStorage.getItem("napoli380_pass_claimed") === "true";
+  const hasReward = Array.from({ length: PASS_CONFIG.maxLevel }, (_, index) => index + 1).some(lvl => {
+    const isClaimed = lvl === PASS_CONFIG.maxLevel ? finalClaimed : claimedLevels.includes(lvl);
+    return lvl <= level && !isClaimed;
+  });
+
+  badge.hidden = !hasReward;
+}
+
 // Nota: Assicurati di non avere due "addPassXP" nel codice. Tieni solo questa.
 window.addPassXP = function(amount) {
     checkAndResetPass();
@@ -7551,6 +7570,7 @@ window.addPassXP = function(amount) {
     
     const newLevel = Math.min(PASS_CONFIG.maxLevel, Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1);
     if (newLevel > oldLevel && typeof playSound === 'function') playSound('livello');
+    updatePassBadge();
     
     setTimeout(() => { if(typeof toast === 'function') toast(`⭐ +${amount} XP Pass Azzurro!`); }, 1000);
     
@@ -7561,6 +7581,7 @@ window.addPassXP = function(amount) {
 
 window.updatePassUI = function() {
     checkAndResetPass();
+  updatePassBadge();
     let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
     let level = Math.floor(xp / PASS_CONFIG.xpPerLevel) + 1;
     let missingXP = PASS_CONFIG.xpPerLevel - (xp % PASS_CONFIG.xpPerLevel);
