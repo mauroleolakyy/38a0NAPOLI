@@ -5528,3 +5528,689 @@ body.dreamteam-mode .slot.filled.slot-icon .slot-age {
   #pack-cards { gap: 10px !important; }
   .pack-item-container { height: 125px !important; min-height: 125px !important; }
 }
+/* ============================================================
+   UPGRADE ESTETICO · NEGOZIO E COLLEZIONE
+   (blocco finale, autoritativo)
+   ============================================================ */
+
+/* --- Header "hero" comune per Negozio e Collezione --- */
+.shop-hero, .collection-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0 22px 0;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(0,161,255,0.16) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(0,17,43,0.9), rgba(0,10,26,0.7));
+  border: 1px solid rgba(0,161,255,0.22);
+  flex-wrap: wrap;
+}
+.shop-hero__text, .collection-hero__text { display: flex; flex-direction: column; gap: 4px; }
+.shop-hero__sub, .collection-hero__sub {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--testo-dim);
+  font-family: var(--font-body);
+}
+.shop-hero .subpanel__title, .collection-hero .subpanel__title { margin: 0 !important; }
+
+/* --- Wallet più "vivo": bagliore pulsante leggero --- */
+.wallet-display {
+  animation: walletPulse 2.6s ease-in-out infinite;
+  white-space: nowrap;
+}
+@keyframes walletPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(0,161,255,0.3); }
+  50%      { box-shadow: 0 0 20px rgba(0,161,255,0.55); }
+}
+
+/* --- Sfondo del pannello Negozio: leggera texture da "stadio di notte" --- */
+.subpanel[data-panel="shop"] {
+  position: relative;
+}
+.subpanel[data-panel="shop"]::before {
+  content: "";
+  position: absolute;
+  top: 0; left: -5%; right: -5%; height: 260px;
+  background: radial-gradient(ellipse 60% 100% at 50% 0%, rgba(0,161,255,0.12) 0%, transparent 75%);
+  pointer-events: none;
+  z-index: 0;
+}
+.subpanel[data-panel="shop"] > * { position: relative; z-index: 1; }
+
+/* --- Griglia pacchetti: card più grandi, respiro migliore --- */
+.shop-grid {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.pack-card {
+  min-height: 250px;
+  padding: 30px 16px 20px;
+  backdrop-filter: blur(3px);
+  transition: transform .3s cubic-bezier(0.2,0.8,0.2,1), box-shadow .3s ease, border-color .3s ease;
+}
+.pack-card:hover {
+  transform: translateY(-8px) scale(1.03) rotateX(2deg);
+}
+.pack-card__icon {
+  font-size: 2.1rem;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5));
+}
+.pack-card__badge {
+  top: 14px; right: -32px;
+  font-size: 0.6rem;
+  z-index: 2;
+}
+
+/* Nuovo pacchetto economico: TIFOSO */
+.pack-card.tifoso-pack {
+  border-color: rgba(255,255,255,0.35);
+  background: linear-gradient(160deg, rgba(0,17,43,0.95), rgba(255,255,255,0.06));
+}
+.pack-card.tifoso-pack::before { background: rgba(255,255,255,0.5); }
+.pack-card.tifoso-pack:hover { box-shadow: 0 8px 24px rgba(255,255,255,0.15); }
+
+/* Nuovo pacchetto premium: SCUDETTO — il più raro e ambito */
+.pack-card.scudetto-pack {
+  border-color: #00ff88;
+  background:
+    linear-gradient(160deg, rgba(0,17,43,0.95), rgba(0,255,136,0.14) 55%, rgba(255,210,74,0.12));
+  box-shadow: 0 0 24px rgba(0,255,136,0.28);
+  position: relative;
+}
+.pack-card.scudetto-pack::before {
+  background: linear-gradient(90deg, #00ff88, #ffd24a);
+}
+.pack-card.scudetto-pack:hover {
+  box-shadow: 0 10px 40px rgba(0,255,136,0.5), inset 0 0 18px rgba(255,210,74,0.25);
+}
+.pack-card.scudetto-pack .pack-price.scudetto {
+  background: linear-gradient(90deg, #00ff88, #ffd24a);
+  color: #00112b;
+  border: none;
+  font-weight: 900;
+  box-shadow: 0 0 12px rgba(0,255,136,0.4);
+}
+/* Piccola stella animata sullo sfondo del pacchetto più prestigioso */
+.pack-card.scudetto-pack::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.25) 0%, transparent 45%);
+  animation: scudettoShimmer 2.4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes scudettoShimmer {
+  from { opacity: .35; }
+  to   { opacity: .85; }
+}
+
+/* --- Collezione: chips e barra di ricerca più curate --- */
+.collection-filters {
+  gap: 8px;
+  padding-bottom: 4px;
+}
+.coll-chip {
+  transition: transform .2s ease, background .2s ease, color .2s ease, border-color .2s ease;
+}
+.coll-chip.is-active {
+  box-shadow: 0 0 12px rgba(0,161,255,0.4);
+}
+.card-search-wrap { margin-bottom: 14px; }
+.card-search-input {
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.card-search-input:focus {
+  box-shadow: 0 0 0 3px rgba(0,161,255,0.18);
+}
+
+#collection-grid {
+  animation: collectionFadeIn .35s ease both;
+}
+@keyframes collectionFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .shop-hero, .collection-hero { flex-direction: column; align-items: flex-start; }
+  .wallet-display { align-self: flex-end; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wallet-display, .pack-card.scudetto-pack::after, #collection-grid {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   NEGOZIO · NUOVA DISPOSIZIONE "RASTRELLIERA" DI PACCHETTI
+   Sostituisce completamente la vecchia griglia piatta con una
+   fila di "buste" 3D in stile pacchetto da collezione: altezza
+   crescente per rarità, tilt all'hover, foil e bagliore dedicati
+   a ogni fascia. Blocco finale, autoritativo.
+   ============================================================ */
+
+.shop-rack {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 10px 6px 26px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.shop-rack::-webkit-scrollbar { height: 6px; }
+.shop-rack::-webkit-scrollbar-thumb { background: rgba(0,161,255,0.35); border-radius: 999px; }
+.shop-rack::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+
+.shop-rack-hint {
+  text-align: center;
+  font-size: .74rem;
+  color: var(--testo-mute);
+  margin: 0 0 6px;
+}
+
+/* --- Reset totale dei vecchi stili .pack-card per questo contesto --- */
+.shop-rack .pack-card {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 132px;
+  width: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 16px 10px 44px;
+  border-radius: 20px 20px 10px 10px;
+  cursor: pointer;
+  scroll-snap-align: center;
+  text-align: center;
+  overflow: visible;
+  border: 1px solid rgba(255,255,255,0.14);
+  background:
+    repeating-linear-gradient(125deg, rgba(255,255,255,0.05) 0 8px, transparent 8px 16px),
+    linear-gradient(180deg, rgba(255,255,255,0.08), transparent 30%),
+    linear-gradient(200deg, rgba(0,17,43,0.98), rgba(0,8,20,0.98));
+  box-shadow: 0 14px 26px -14px rgba(0,0,0,0.75), inset 0 0 0 1px rgba(255,255,255,0.03);
+  transition: transform .35s cubic-bezier(0.2,0.8,0.2,1), box-shadow .35s ease, border-color .3s ease;
+  transform-origin: bottom center;
+}
+/* ombra a terra, come una busta appoggiata sullo scaffale */
+.shop-rack .pack-card::after {
+  content: "";
+  position: absolute;
+  left: 12%; right: 12%; bottom: -10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 75%);
+  transition: opacity .35s ease, transform .35s ease;
+}
+.shop-rack .pack-card:hover {
+  transform: translateY(-16px) scale(1.05) rotateX(-4deg);
+  z-index: 3;
+}
+.shop-rack .pack-card:hover::after { transform: scale(1.25); opacity: .6; }
+.shop-rack .pack-card:active { transform: translateY(-8px) scale(1.01); }
+
+/* Staircase di altezze per fascia di rarità: più è raro, più è alto */
+.shop-rack .pack-card.tier-1 { height: 208px; }
+.shop-rack .pack-card.tier-2 { height: 226px; }
+.shop-rack .pack-card.tier-3 { height: 246px; border-color: rgba(0,161,255,0.45); }
+.shop-rack .pack-card.tier-4 { height: 266px; border-color: rgba(255,210,74,0.5); }
+.shop-rack .pack-card.tier-5 { height: 286px; border-color: rgba(255,255,255,0.5); }
+.shop-rack .pack-card.tier-6 { height: 308px; border-color: rgba(212,175,55,0.6); }
+.shop-rack .pack-card.tier-7 { height: 332px; border-color: rgba(0,255,136,0.65); }
+
+/* Bagliore ambientale dietro l'icona, colorato per fascia */
+.sleeve-glow {
+  position: absolute;
+  top: 34%; left: 50%;
+  width: 120px; height: 120px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  filter: blur(18px);
+  opacity: .55;
+  pointer-events: none;
+  z-index: 0;
+}
+.tier-1 .sleeve-glow { background: radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%); }
+.tier-2 .sleeve-glow { background: radial-gradient(circle, rgba(159,176,192,0.45), transparent 70%); }
+.tier-3 .sleeve-glow { background: radial-gradient(circle, rgba(0,161,255,0.55), transparent 70%); }
+.tier-4 .sleeve-glow { background: radial-gradient(circle, rgba(255,210,74,0.55), transparent 70%); }
+.tier-5 .sleeve-glow { background: radial-gradient(circle, rgba(255,255,255,0.55), transparent 70%); }
+.tier-6 .sleeve-glow { background: radial-gradient(circle, rgba(212,175,55,0.6), transparent 70%); }
+.tier-7 .sleeve-glow {
+  background: radial-gradient(circle, rgba(0,255,136,0.7), transparent 70%);
+  animation: sleeveGlowPulse 1.8s ease-in-out infinite alternate;
+}
+@keyframes sleeveGlowPulse {
+  from { opacity: .45; }
+  to   { opacity: .9; }
+}
+
+.sleeve-rarity {
+  position: relative; z-index: 1;
+  font-family: var(--font-cond);
+  font-weight: 800;
+  font-size: .58rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: .9;
+}
+.tier-1 .sleeve-rarity { color: #dfe7ee; }
+.tier-2 .sleeve-rarity { color: var(--rar-comune); }
+.tier-3 .sleeve-rarity { color: var(--celeste-chiaro); }
+.tier-4 .sleeve-rarity { color: var(--rar-elite); }
+.tier-5 .sleeve-rarity { color: #ffffff; }
+.tier-6 .sleeve-rarity { color: #d4af37; }
+.tier-7 .sleeve-rarity { color: #00ff88; }
+
+.sleeve-icon {
+  position: relative; z-index: 1;
+  font-size: 2.3rem;
+  margin: 4px 0 2px;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.55));
+}
+.tier-7 .sleeve-icon { font-size: 2.6rem; }
+
+.sleeve-name {
+  position: relative; z-index: 1;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--testo);
+  line-height: 1.1;
+}
+
+.sleeve-tag {
+  position: relative; z-index: 1;
+  font-family: var(--font-body);
+  font-size: .66rem;
+  line-height: 1.3;
+  color: var(--testo-dim);
+  padding: 0 2px;
+}
+
+.sleeve-price {
+  position: absolute;
+  left: 50%; bottom: -14px;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  min-width: 78px;
+  padding: 7px 10px 6px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: #fff;
+  background: linear-gradient(180deg, var(--azzurro-vivo), var(--azzurro) 65%, var(--azzurro-scuro));
+  box-shadow: 0 6px 16px -4px rgba(0,0,0,0.6), 0 0 0 3px rgba(0,10,26,0.9);
+}
+.sleeve-price small {
+  font-family: var(--font-cond);
+  font-size: .52rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: .8;
+  margin-top: 1px;
+}
+.tier-1 .sleeve-price { background: linear-gradient(180deg, #7c8894, #4d5761); }
+.tier-2 .sleeve-price { background: linear-gradient(180deg, #6f8296, #45525e); }
+.tier-4 .sleeve-price { background: linear-gradient(90deg, #ffd24a, #ff9e2c); color: #00112b; }
+.tier-5 .sleeve-price { background: linear-gradient(90deg, #ffffff, #cfe6ff); color: #002147; }
+.tier-6 .sleeve-price { background: linear-gradient(90deg, #d4af37, #f4e5b0); color: #1a1a1a; }
+.tier-7 .sleeve-price {
+  background: linear-gradient(90deg, #00ff88, #ffd24a);
+  color: #00112b;
+  font-weight: 900;
+  box-shadow: 0 6px 20px -2px rgba(0,255,136,0.55), 0 0 0 3px rgba(0,10,26,0.9);
+}
+
+/* Cartellino "consigliato" / "il migliore" come flag in cima alla busta */
+.sleeve-ribbon {
+  position: absolute;
+  top: -12px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  white-space: nowrap;
+  font-family: var(--font-cond);
+  font-weight: 800;
+  font-size: .56rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #00112b;
+  background: var(--celeste-chiaro);
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+.sleeve-ribbon--elite {
+  background: linear-gradient(90deg, #00ff88, #ffd24a);
+}
+
+/* Foil shine che attraversa la busta, più marcato per le fasce alte */
+.shop-rack .pack-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.16) 50%, transparent 65%);
+  transform: translateX(-140%);
+  z-index: 1;
+  pointer-events: none;
+}
+.shop-rack .pack-card:hover::before {
+  animation: sleeveShineSweep .9s ease forwards;
+}
+@keyframes sleeveShineSweep {
+  from { transform: translateX(-140%); }
+  to   { transform: translateX(140%); }
+}
+
+.shop-rack .pack-card.tier-7::before,
+.shop-rack .pack-card.tier-6::before {
+  animation: sleeveShineIdle 3.2s ease-in-out infinite;
+}
+@keyframes sleeveShineIdle {
+  0%, 70%, 100% { transform: translateX(-140%); }
+  85% { transform: translateX(140%); }
+}
+
+@media (max-width: 640px) {
+  .shop-rack { justify-content: flex-start; }
+  .shop-rack .pack-card { flex: 0 0 118px; width: 118px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sleeve-glow, .shop-rack .pack-card::before {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   BOTTONI AZIONE (Collezione / Scambia / Magazzino)
+   Stesso linguaggio visivo delle "buste" pacchetto qui sopra:
+   texture a righe, glow colorato, foil shine allo sweep.
+   ============================================================ */
+.shop-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+}
+.shop-actions__row {
+  display: flex;
+  gap: 12px;
+}
+
+.action-sleeve {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: center;
+  overflow: hidden;
+  /* FIX ESTETICO: Stesso sfondo e bordo dell'intestazione Negozio */
+  border: 1px solid rgba(0, 161, 255, 0.22);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(0, 161, 255, 0.16) 0%, transparent 60%),
+    linear-gradient(135deg, rgba(0, 17, 43, 0.9), rgba(0, 10, 26, 0.7));
+  box-shadow: 0 14px 26px -14px rgba(0,0,0,0.75), inset 0 0 0 1px rgba(255,255,255,0.03);
+  transition: transform .3s cubic-bezier(0.2,0.8,0.2,1), box-shadow .3s ease, border-color .3s ease;
+}
+.action-sleeve::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.16) 50%, transparent 65%);
+  transform: translateX(-140%);
+  z-index: 1;
+  pointer-events: none;
+}
+.action-sleeve:hover::before { animation: sleeveShineSweep .9s ease forwards; }
+.action-sleeve:hover {
+  transform: translateY(-4px) scale(1.02);
+  z-index: 2;
+}
+.action-sleeve:active { transform: translateY(-1px) scale(0.99); }
+
+.action-sleeve__glow {
+  position: absolute;
+  top: 50%; left: 18%;
+  width: 70px; height: 70px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  filter: blur(16px);
+  opacity: .55;
+  pointer-events: none;
+  z-index: 0;
+}
+.action-sleeve--wide .action-sleeve__glow { left: 8%; }
+
+.action-sleeve__icon {
+  position: relative; z-index: 1;
+  font-size: 1.7rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.55));
+  flex-shrink: 0;
+}
+
+.action-sleeve__label {
+  position: relative; z-index: 1;
+  font-family: var(--font-display);
+  font-size: .82rem;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: var(--testo);
+  line-height: 1.15;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-sleeve__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: .78rem;
+  color: #00112b;
+  background: var(--celeste-chiaro);
+}
+
+/* Varianti colore, coerenti con le fasce di rarità dei pacchetti */
+.action-sleeve--gold {
+  border-color: rgba(255,210,74,0.5);
+}
+.action-sleeve--gold .action-sleeve__glow {
+  background: radial-gradient(circle, rgba(255,210,74,0.55), transparent 70%);
+}
+.action-sleeve--gold:hover {
+  box-shadow: 0 8px 30px -6px rgba(255,158,44,0.55), inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.action-sleeve--celeste {
+  border-color: rgba(0,161,255,0.45);
+}
+.action-sleeve--celeste .action-sleeve__glow {
+  background: radial-gradient(circle, rgba(0,161,255,0.55), transparent 70%);
+}
+.action-sleeve--celeste:hover {
+  box-shadow: 0 8px 30px -6px rgba(0,161,255,0.45), inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.action-sleeve--ghost {
+  border-color: rgba(102,198,255,0.35);
+}
+.action-sleeve--ghost .action-sleeve__glow {
+  background: radial-gradient(circle, rgba(102,198,255,0.45), transparent 70%);
+}
+.action-sleeve--ghost:hover {
+  box-shadow: 0 8px 26px -6px rgba(102,198,255,0.4), inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+.action-sleeve--ghost .action-sleeve__label { color: var(--celeste-chiaro); }
+
+.action-sleeve--wide {
+  width: 100%;
+  min-height: 56px;
+}
+
+@media (max-width: 480px) {
+  .action-sleeve { min-height: 58px; padding: 10px 8px; }
+  .action-sleeve__icon { font-size: 1.4rem; }
+  .action-sleeve__label { font-size: .74rem; }
+}
+/* ============================================================
+   UPGRADE ESTETICO PANNELLO SQUADRA DEI SOGNI
+   ============================================================ */
+.dt-hero {
+  text-align: center;
+  margin: 10px 0 25px;
+  animation: pmPop 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
+}
+.dt-hero__icon {
+  font-size: 3.5rem;
+  line-height: 1;
+  margin-bottom: 5px;
+  filter: drop-shadow(0 0 15px rgba(255, 210, 74, 0.6));
+}
+.dt-hero__title {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  text-transform: uppercase;
+  color: #ffd24a;
+  letter-spacing: 0.05em;
+  margin-bottom: 5px;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+.dt-hero__sub {
+  font-family: var(--font-body);
+  color: var(--testo-dim);
+  font-size: 0.95rem;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.dt-rules-card {
+  background: linear-gradient(160deg, rgba(0, 17, 43, 0.85), rgba(0, 11, 26, 0.95));
+  border: 1px solid rgba(255, 210, 74, 0.35);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(255, 210, 74, 0.08);
+  animation: pmPop 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) 0.1s backwards;
+}
+
+.dt-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dt-features li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 16px;
+  border-radius: 14px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.dt-features li:hover {
+  transform: translateX(4px);
+  background: rgba(255, 210, 74, 0.08);
+  border-color: rgba(255, 210, 74, 0.3);
+}
+
+.dt-feat-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 48px !important;
+  height: 48px !important;
+  font-size: 1.8rem !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: rgba(255, 210, 74, 0.15);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 210, 74, 0.4);
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.dt-features strong {
+  display: block;
+  color: #fff;
+  font-family: var(--font-cond);
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.dt-features span {
+  color: var(--testo-dim);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  display: block;
+}
+
+.dt-play-btn {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1.15rem !important;
+  background: linear-gradient(90deg, #ffd24a, #ff9e2c) !important;
+  color: #00112b !important;
+  border: none !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 20px rgba(255, 210, 74, 0.3) !important;
+  animation: dtPulse 1.8s infinite alternate;
+}
+
+@keyframes dtPulse {
+  0% { box-shadow: 0 0 10px rgba(255, 210, 74, 0.3); transform: scale(1); }
+  100% { box-shadow: 0 0 25px rgba(255, 210, 74, 0.6); transform: scale(1.02); }
+}
+
+/* Assicurati di aggiornare anche il blocco Mobile! */
+@media (max-width: 600px) {
+  .dt-rules-card { padding: 18px; }
+  .dt-hero__title { font-size: 2.1rem; }
+  .dt-features li { padding: 12px; gap: 10px; }
+  .dt-feat-icon { 
+    width: 42px !important; 
+    height: 42px !important; 
+    font-size: 1.5rem !important; 
+  }
+}
