@@ -677,12 +677,13 @@ function renderBacheca() {
     }
 
     let winRate = stats.matches > 0 ? Math.round((stats.wins / stats.matches) * 100) : 0;
-    let avgPts = stats.runs > 0 ? Math.round(stats.pts / stats.runs) : 0;
+    let pointsRate = stats.matches > 0 ? Math.round((stats.pts / (stats.matches * 3)) * 100) : 0;
     
     palmaresBox.innerHTML = `
         <div class="cl-block" style="text-align: center;"><span class="cl-label">Scudetti Vinti</span><strong style="color:var(--celeste);">${stats.scudetti}</strong></div>
         <div class="cl-block" style="text-align: center;"><span class="cl-label">Champions Vinte</span><strong style="color:var(--rar-elite);">${stats.champions}</strong></div>
         <div class="cl-block" style="text-align: center;"><span class="cl-label">% Vittorie</span><strong>${winRate}%</strong></div>
+        <div class="cl-block" style="text-align: center;"><span class="cl-label">% Punti</span><strong style="color:var(--rogue-luce);">${pointsRate}%</strong></div>
         
         
         <!-- Blocco Largo per il Capocannoniere -->
@@ -734,14 +735,31 @@ function renderBacheca() {
       }
   } catch(e) {}
 
-  let immortalBox = document.getElementById("immortal-squad-box");
+    const immortalToggle = document.getElementById("btn-immortal-archive");
+    let immortalBox = document.getElementById("immortal-squad-box");
   if (!immortalBox) {
       immortalBox = document.createElement("div");
       immortalBox.id = "immortal-squad-box";
+      immortalBox.className = "immortal-archive";
+      immortalBox.hidden = true;
       container.parentNode.insertBefore(immortalBox, container);
   }
+    if (immortalToggle && !immortalToggle.dataset.bound) {
+      immortalToggle.dataset.bound = "true";
+      immortalToggle.onclick = () => {
+        const isOpen = !immortalBox.hidden;
+        immortalBox.hidden = isOpen;
+        immortalToggle.setAttribute("aria-expanded", String(!isOpen));
+        immortalToggle.classList.toggle("is-open", !isOpen);
+      };
+    }
 
   if (hofList && hofList.length > 0) {
+      if (immortalToggle) {
+        immortalToggle.hidden = false;
+        immortalToggle.querySelector(".archive-toggle__body strong").textContent = `Archivio Rose Immortali (${hofList.length})`;
+      }
+      immortalBox.hidden = true;
       // Ordine logico per disporre i giocatori dal portiere all'attacco
       const roleOrder = { "POR": 1, "TD": 2, "TS": 3, "DC": 4, "MED": 5, "ED": 6, "ES": 7, "CC": 8, "TRQ": 9, "AD": 10, "AS": 11, "ATT": 12 };
 
@@ -755,8 +773,52 @@ function renderBacheca() {
               let weightB = roleOrder[b.ruoli[0]] || 99;
               return weightA - weightB;
           });
+            const rosterPlayers = playersArray.slice();
 
-          let playersHtml = playersArray.map(p => {
+            const formationSlots = FORMATIONS[run.modulo] || FORMATIONS["4-3-3"];
+            const assignment = Array(formationSlots.length).fill(null);
+            const usedPlayers = new Set();
+            const orderedSlots = formationSlots.map((slot, index) => ({
+              slot,
+              index,
+              candidates: rosterPlayers.filter(player => player.ruoli.some(role => slot.accepts.includes(role)))
+            })).sort((a, b) => a.candidates.length - b.candidates.length);
+
+            function fillLineup(position) {
+              if (position >= orderedSlots.length) return true;
+              const current = orderedSlots[position];
+              const candidates = rosterPlayers
+                .map((player, playerIndex) => ({ player, playerIndex }))
+                .filter(({ playerIndex, player }) => !usedPlayers.has(playerIndex) && player.ruoli.some(role => current.slot.accepts.includes(role)))
+                .sort((a, b) => {
+                  const aOptions = orderedSlots.filter(item => !assignment[item.index] && rosterPlayers.some((player, index) => index === a.playerIndex && player.ruoli.some(role => item.slot.accepts.includes(role)))).length;
+                  const bOptions = orderedSlots.filter(item => !assignment[item.index] && rosterPlayers.some((player, index) => index === b.playerIndex && player.ruoli.some(role => item.slot.accepts.includes(role)))).length;
+                  return aOptions - bOptions;
+                });
+
+              for (const candidate of candidates) {
+                usedPlayers.add(candidate.playerIndex);
+                assignment[current.index] = candidate.player;
+                if (fillLineup(position + 1)) return true;
+                assignment[current.index] = null;
+                usedPlayers.delete(candidate.playerIndex);
+              }
+              return false;
+            }
+
+            fillLineup(0);
+            const fallbackPlayers = rosterPlayers.filter((_, playerIndex) => !usedPlayers.has(playerIndex));
+            assignment.forEach((player, index) => {
+              if (!player && fallbackPlayers.length) assignment[index] = fallbackPlayers.shift();
+            });
+            const lineup = formationSlots.map((slot, index) => ({ slot, player: assignment[index] }));
+            const pitchPlayers = lineup.map(({ slot, player }) => {
+              if (!player) return `<div class="immortal-player is-empty" style="left:${slot.x}%; top:${slot.y}%"><span>${slot.label}</span></div>`;
+              const shortName = player.nome.split(" ").slice(-1)[0];
+              return `<div class="immortal-player" style="left:${slot.x}%; top:${slot.y}%"><strong>${player.rating || "-"}</strong><span>${shortName}</span><small>${slot.label}</small></div>`;
+            }).join("");
+
+          let playersHtml = rosterPlayers.map(p => {
               return `
               <div style="background: rgba(255, 210, 74, 0.1); border: 1px solid rgba(255, 210, 74, 0.4); padding: 10px; border-radius: 10px; text-align: center; box-shadow: inset 0 0 10px rgba(255,210,74,0.05);">
                   <span style="display: block; font-family: var(--font-cond); font-size: 0.75rem; font-weight: bold; color: #ffd24a; text-transform: uppercase;">${p.ruoli[0]}</span>
@@ -765,31 +827,29 @@ function renderBacheca() {
               </div>`;
           }).join("");
 
-          return `
-          <details style="background: linear-gradient(145deg, #1a1200, #0d0900); border: 1px solid #ffd24a; border-radius: 12px; margin-bottom: 12px; overflow: hidden; transition: all 0.3s ease;">
-              <summary style="padding: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; outline: none; list-style: none;">
-                  <div style="text-align: left;">
-                      <strong style="color: #ffd24a; font-family: var(--font-display); font-size: 1.25rem; display: block; text-transform: uppercase; letter-spacing: 0.03em;">Impresa Storica #${index + 1}</strong>
-                      <span style="color: #ffe9ad; font-family: var(--font-cond); font-size: 0.95rem; opacity: 0.85;">Data: ${run.data} · Modulo: ${run.modulo} · Modalità: ${run.modalita}</span>
-                  </div>
-                  <span style="color: #ffd24a; font-size: 1rem; opacity: 0.7;">▼</span>
+            return `
+            <details class="immortal-run">
+              <summary class="immortal-run__summary">
+                <span class="immortal-run__number">${String(index + 1).padStart(2, "0")}</span>
+                <span class="immortal-run__heading"><strong>Impresa Storica</strong><small>${run.data} · ${run.modulo} · ${run.modalita}</small></span>
+                <span class="immortal-run__arrow" aria-hidden="true">›</span>
               </summary>
-              <div style="padding: 16px; border-top: 1px solid rgba(255, 210, 74, 0.2); background: rgba(0,0,0,0.2);">
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-                      ${playersHtml}
-                  </div>
+              <div class="immortal-run__body">
+                <div class="immortal-pitch"><div class="pitch-lines"></div>${pitchPlayers}</div>
+                <div class="immortal-roster">${playersHtml}</div>
               </div>
-          </details>`;
+            </details>`;
       }).join("");
 
       immortalBox.innerHTML = `
-      <p class="subpanel__title" style="color: #ffd24a; text-shadow: 0 0 10px rgba(255,210,74,0.3); margin-top: 30px;"><span style="font-size: 1.2rem;">👑</span> Archivio: Le Rose Immortali (38-0)</p>
-      <div style="margin-bottom: 30px;">
-          <p style="color: var(--testo-dim); font-size: 0.9rem; text-align: center; margin-bottom: 15px; font-family: var(--font-body);">Tocca un'impresa per espanderla e vedere la formazione schierata.</p>
+        <div class="immortal-archive__intro">
+          <p>Tocca un'impresa per espanderla e vedere la formazione schierata.</p>
           ${listHtml}
       </div>`;
   } else {
+      if (immortalToggle) immortalToggle.hidden = true;
       immortalBox.innerHTML = "";
+      immortalBox.hidden = true;
   }
   // --- FINE: LA ROSA IMMORTALE ---
 }
@@ -2393,6 +2453,7 @@ function markFilledSlot(slot, p) {
   if (p.stagione === "Hall of Fame") node.classList.add("slot-icon"); else node.classList.remove("slot-icon");
   if (p.stagione === "Centenario") node.classList.add("slot-centenario"); else node.classList.remove("slot-centenario");
   if (p.tipo === "EROE") node.classList.add("slot-eroe"); else node.classList.remove("slot-eroe");
+  ["IF", "MOTM", "TOTS"].forEach(tipo => node.classList.toggle("slot-special-" + tipo.toLowerCase(), p.tipo === tipo));
   
   const eff = effRating(slot.id); 
   // ATTIVO SOLO SE NON È UNA ICONA (Hall of Fame)
@@ -3463,6 +3524,8 @@ function playMatchReplay(matches, done, opts = {}) {
     }
     const m = matches[i++]; if (m.res === "W") pts += 3; else if (m.res === "D") pts += 1;
     if (mdEl) { mdEl.textContent = `GIORNATA ${m.md}/38`; mdEl.hidden = false; }
+    const replayMatchday = document.getElementById("replay-matchday-display");
+    if (replayMatchday) replayMatchday.textContent = `${String(m.md).padStart(2, "0")} — 38`;
     
     // ----------------------------------------------------
     // 1. CREIAMO SUBITO L'HTML DELLA RIGA (Fix ReferenceError)
@@ -6454,25 +6517,25 @@ window.renderPlayerCreationForm = function() {
 
   body.innerHTML = `
     <div class="custom-form" style="max-width: 500px;">
-      
+      <div class="builder-intro"><span class="builder-intro__tag">NUOVO CONTRATTO</span><strong>Costruisci il tuo alter ego</strong><span>Ogni scelta diventa parte della tua storia al Maradona.</span></div>
       <div class="jersey-preview-container">
         <div class="jersey-preview">
+          <span class="jersey-collar" aria-hidden="true"></span>
           <div class="jersey-name" id="preview-name">ESPOSITO</div>
           <div class="jersey-num" id="preview-num">10</div>
         </div>
       </div>
 
-      <div class="cfg-row" style="grid-template-columns: 1fr auto;">
+      <div class="builder-field builder-field--identity"><label class="builder-label" for="pc-name">Nome sulla maglia</label><div class="cfg-row" style="grid-template-columns: 1fr auto;">
         <input type="text" id="pc-name" class="auth-input" style="width:100%; text-align:center; font-size:1.1rem; padding:10px;" placeholder="Tuo Nome (es. Esposito)" maxlength="12">
-        
         <div class="custom-number-wrap">
           <button type="button" class="custom-number-btn" id="btn-num-minus">-</button>
           <input type="number" id="pc-number" class="auth-input no-spinners" value="10" min="1" max="99" readonly>
           <button type="button" class="custom-number-btn" id="btn-num-plus">+</button>
         </div>
-      </div>
+      </div><span class="builder-field__hint">Numero di maglia · da 1 a 99</span></div>
       
-      <p class="options-hint" style="text-align:center; margin-top: 15px;">SELEZIONA IL TUO RUOLO IN CAMPO</p>
+      <div class="builder-section-heading"><span>02</span><div><strong>Scegli la tua posizione</strong><small>Il ruolo definisce il tuo percorso e le tue statistiche.</small></div></div>
       
       <div class="pitch" style="width: 100%; max-width: 320px; margin: 0 auto; aspect-ratio: 3/4; overflow: visible !important;">
         <div class="pitch-lines"></div>
@@ -6482,16 +6545,16 @@ window.renderPlayerCreationForm = function() {
       <input type="hidden" id="pc-role" value="">
 
       <!-- FIX ETA': Bottoni Personalizzati al posto dell'input di sistema -->
-      <div class="cfg-row" style="margin-top: 25px;">
+      <div class="builder-field builder-field--age"><div class="cfg-row" style="margin-top: 25px;">
         <label class="cfg-label">Età Iniziale</label>
         <div class="custom-number-wrap" style="width: 100%;">
           <button type="button" class="custom-number-btn" id="btn-age-minus" style="flex:1;">-</button>
           <input type="number" id="pc-age" class="auth-input no-spinners" value="18" min="16" max="21" style="width:100px;" readonly>
           <button type="button" class="custom-number-btn" id="btn-age-plus" style="flex:1;">+</button>
         </div>
-      </div>
+      </div><span class="builder-field__hint">Più giovane: più tempo per diventare una leggenda.</span></div>
 
-      <button id="btn-create-player" class="btn primary" disabled style="margin-top:15px; width:100%;">SELEZIONA UN RUOLO PER INIZIARE</button>
+      <div class="builder-signoff"><span>PRONTO A FIRMARE?</span><small>Il tuo potenziale verrà rivelato durante la carriera.</small></div><button id="btn-create-player" class="btn primary builder-submit" disabled style="margin-top:15px; width:100%;">SELEZIONA UN RUOLO PER INIZIARE</button>
       <button id="btn-back-home" class="btn ghost" style="margin-top:10px; width:100%;">← TORNA AL MENU</button>
     </div>
   `;
@@ -6583,6 +6646,9 @@ window.renderPlayerDashboard = function() {
   const body = document.getElementById("player-career-body");
   const sub = document.getElementById("player-career-sub");
   const c = window.playerCareerState;
+
+  const seasonBadge = document.getElementById("player-career-season-badge");
+  if (seasonBadge) seasonBadge.textContent = `STAGIONE ${String(c.season).padStart(2, "0")}`;
 
   if (sub) sub.textContent = `Pre-Stagione ${c.season} · Pronti per il Campionato`;
 
