@@ -6591,9 +6591,12 @@ const PLAYER_CAREER_EVENTS = [
       toast("💰 Hai firmato! ADL è felice.");
       resolve({ ovrMod: 0, extraGoals: 0, msg: "<span style='color:var(--testo-dim)'>Hai ceduto i diritti d'immagine. Ti sei arricchito (100 Crediti)!</span>" });
     },
-    actionB: (c, resolve) => {
+   actionB: (c, resolve) => {
+      // FIX: La penale si paga sempre, azzerando il conto se non si hanno abbastanza soldi
       const currentCreds = getCredits();
-      if(currentCreds >= 40) addCredits(-40, "Avvocati e procuratori");
+      const penale = Math.min(currentCreds, 40); 
+      if(penale > 0) addCredits(-penale, "Avvocati e procuratori");
+      
       toast("⚖️ Braccio di ferro con la società!");
       resolve({ ovrMod: 1, extraGoals: 0, msg: "<span style='color:#00ff88'>I tifosi stanno dalla tua parte contro la società! (+1 OVR)</span>" });
     }
@@ -7043,14 +7046,19 @@ window.simulateFullPlayerSeason = function() {
     }, 200); 
   };
 
-  // 5. ASSEGNAZIONE EVENTI E CALLBACK
-  document.getElementById("adl-btn-a").onclick = () => { 
+ // 5. ASSEGNAZIONE EVENTI E CALLBACK (FIX ANTISPAM)
+  const btnA = document.getElementById("adl-btn-a");
+  const btnB = document.getElementById("adl-btn-b");
+  
+  btnA.onclick = () => { 
+    btnA.onclick = null; btnB.onclick = null; // Spegne i bottoni all'istante!
     modal.classList.remove("show");
     if(typeof playSound === 'function') playSound('click');
     ev.actionA(c, resolveSeason); 
   };
   
-  document.getElementById("adl-btn-b").onclick = () => { 
+  btnB.onclick = () => { 
+    btnA.onclick = null; btnB.onclick = null; // Spegne i bottoni all'istante!
     modal.classList.remove("show");
     if(typeof playSound === 'function') playSound('click');
     ev.actionB(c, resolveSeason); 
@@ -7063,6 +7071,10 @@ window.simulateFullPlayerSeason = function() {
 window.retirePlayer = function() {
   if(typeof playSound === 'function') playSound('fischio');
   const c = window.playerCareerState;
+
+  // FIX: Cancella il salvataggio ORA, rendendo il ritiro irreversibile
+  localStorage.removeItem('napoli380_player_career');
+  window.playerCareerState = null;
   
   showScreen("#screen-player-match"); // Ricicliamo la schermata dei match per il riepilogo
   const matchBody = document.getElementById("player-match-body");
@@ -7105,15 +7117,12 @@ window.retirePlayer = function() {
         <div class="player-trophy-box"><strong>${c.ballonDor || 0}</strong><span>🥇 Pallone d'Oro</span></div>
       </div>
 
-      <button id="btn-end-career-home" class="btn primary" style="width:100%; margin-top:15px;">Torna al Menu Principale</button>
+ <button id="btn-end-career-home" class="btn primary" style="width:100%; margin-top:15px;">Torna al Menu Principale</button>
     </div>
   `;
 
   document.getElementById("btn-end-career-home").onclick = () => {
     if(typeof playSound === 'function') playSound('click');
-    // Pulizia del salvataggio così la prossima volta ricomincia da zero
-    localStorage.removeItem('napoli380_player_career');
-    window.playerCareerState = null;
     showScreen("#screen-home");
   };
 };
