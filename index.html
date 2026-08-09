@@ -225,46 +225,102 @@
 <!-- PANNELLO NEGOZIO -->
 <div class="subpanel" data-panel="shop" hidden style="display: none;">
   <button type="button" class="sm-back" data-back>← Menu principale</button>
-  
-  <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 20px 0;">
-    <p class="subpanel__title" style="margin:0;">Negozio Pacchetti</p>
+
+  <div class="shop-hero">
+    <div class="shop-hero__text">
+      <p class="subpanel__title" style="margin:0;">Negozio Pacchetti</p>
+      <p class="shop-hero__sub">Apri pacchetti, completa la collezione, insegui la Leggenda.</p>
+    </div>
     <div class="wallet-display">💰 <span id="wallet-credits">0</span> Crediti</div>
   </div>
-  
-  <div class="shop-grid">
-    <button class="pack-card" data-pack="scugnizzo">
-      <h3 style="color: var(--rar-comune);">SCUGNIZZO</h3>
-      <p>3 Carte Giocatore<br>Alta probabilità di carte base.</p>
-      <div class="pack-price">100 Crediti</div>
+
+  <div class="shop-rack">
+    <button class="pack-card pack-sleeve tier-1" data-pack="tifoso">
+      <span class="sleeve-rarity">COMUNE</span>
+      <span class="sleeve-glow"></span>
+      <span class="sleeve-icon">👕</span>
+      <span class="sleeve-name">Tifoso</span>
+      <span class="sleeve-tag">3 carte · si parte da qui</span>
+      <span class="sleeve-price">50<small>crediti</small></span>
     </button>
-    <button class="pack-card azzurro-pack" data-pack="azzurro">
-      <h3 style="color: var(--celeste);">AZZURRO</h3>
-      <p>3 Carte Giocatore<br>Almeno un OVR 80+ garantito.</p>
-      <div class="pack-price primary">300 Crediti</div>
+
+    <button class="pack-card pack-sleeve tier-2" data-pack="scugnizzo">
+      <span class="sleeve-rarity">STANDARD</span>
+      <span class="sleeve-glow"></span>
+      <span class="sleeve-icon">⚽</span>
+      <span class="sleeve-name">Scugnizzo</span>
+      <span class="sleeve-tag">3 carte · perlopiù carte base</span>
+      <span class="sleeve-price">100<small>crediti</small></span>
     </button>
-    <button class="pack-card d10s-pack" data-pack="d10s">
-      <h3 style="color: var(--rar-elite);">D10S</h3>
-      <p>3 Carte Giocatore<br>Altissima probabilità OVR 90+.</p>
-      <div class="pack-price elite">1000 Crediti</div>
+
+    <button class="pack-card pack-sleeve tier-3" data-pack="azzurro">
+      <span class="sleeve-ribbon">CONSIGLIATO</span>
+      <span class="sleeve-rarity">RARO</span>
+      <span class="sleeve-glow"></span>
+      <span class="sleeve-icon">🔵</span>
+      <span class="sleeve-name">Azzurro</span>
+      <span class="sleeve-tag">1 carta OVR 80+ garantita</span>
+      <span class="sleeve-price">300<small>crediti</small></span>
     </button>
-    <button class="pack-card centurion-pack" data-pack="centurion">
-      <h3 style="color: #fff;">CENTENARIO</h3>
-      <p>3 Carte Giocatore<br>Carta speciale IF/MOTM/TOTS garantita.</p>
-      <div class="pack-price centurion">2000 Crediti</div>
+
+    <button class="pack-card pack-sleeve tier-4" data-pack="d10s">
+      <span class="sleeve-rarity">ELITE</span>
+      <span class="sleeve-glow"></span>
+      <span class="sleeve-icon">🔟</span>
+      <span class="sleeve-name">D10S</span>
+      <span class="sleeve-tag">Altissima probabilità OVR 90+</span>
+      <span class="sleeve-price">1.000<small>crediti</small></span>
     </button>
-    <button class="pack-card icona-pack" data-pack="icona">
-      <h3 style="color: #d4af37;">ICONA</h3>
-      <p>3 Carte Giocatore<br>Leggenda Hall of Fame o Centenario garantita.</p>
-      <div class="pack-price icona">5000 Crediti</div>
+
+    <button class="pack-card pack-sleeve tier-5" data-pack="centurion">
+      <span class="sleeve-rarity">SPECIALE</span>
+      <span class="sleeve-glow"></span>
+      <span class="sleeve-icon">💎</span>
+      <span class="sleeve-name">Centenario</span>
+      <span class="sleeve-tag">Carta IF / MOTM / TOTS garantita</span>
+      <span class="sleeve-price">2.000<small>crediti</small></span>
+    </button>
+
+    <button class="pack-card pack-sleeve tier-6" data-pack="icona">
+      <span class="sleeve-rarity">LEGGENDARIO</span>
+      <span class="sleeve-glow"></span>
+      <span class="sleeve-icon">👑</span>
+      <span class="sleeve-name">Icona</span>
+      <span class="sleeve-tag">Leggenda Hall of Fame / Centenario</span>
+      <span class="sleeve-price">5.000<small>crediti</small></span>
+    </button>
+
+    <button class="pack-card pack-sleeve tier-7" data-pack="scudetto">
+      <span class="sleeve-ribbon sleeve-ribbon--elite">IL MIGLIORE</span>
+      <span class="sleeve-rarity">SUPREMO</span>
+      <span class="sleeve-glow"></span>
+      <span class="sleeve-icon">🏆</span>
+      <span class="sleeve-name">Scudetto</span>
+      <span class="sleeve-tag">Leggenda + carta speciale garantite</span>
+      <span class="sleeve-price">8.000<small>crediti</small></span>
     </button>
   </div>
 
-  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-    <div style="display: flex; gap: 12px;">
-      <button type="button" class="btn primary" style="flex: 1; background: linear-gradient(90deg, #ffd24a, #ff9e2c); color: #00112b;" onclick="renderSBCHub()">🔄 Scambia Doppioni</button>
-      <button type="button" class="btn ghost shop-collection-btn" style="flex: 1; margin-top: 0;">Collezione 📚</button>
+  <p class="shop-rack-hint">👉 Scorri per vedere tutti i pacchetti, dal più economico al più raro.</p>
+
+  <div class="shop-actions">
+    <div class="shop-actions__row">
+      <button type="button" class="action-sleeve action-sleeve--gold" onclick="renderSBCHub()">
+        <span class="action-sleeve__glow"></span>
+        <span class="action-sleeve__icon">🔄</span>
+        <span class="action-sleeve__label">Scambia<br>Doppioni</span>
+      </button>
+      <button type="button" class="action-sleeve action-sleeve--celeste shop-collection-btn">
+        <span class="action-sleeve__glow"></span>
+        <span class="action-sleeve__icon">📚</span>
+        <span class="action-sleeve__label">Collezione</span>
+      </button>
     </div>
-    <button type="button" class="btn ghost" style="width: 100%; border-color: var(--celeste-chiaro); color: var(--celeste-chiaro);" onclick="renderDuplicates()">📦 Vedi Magazzino Doppioni (<span id="dupes-badge-count">0</span>)</button>
+    <button type="button" class="action-sleeve action-sleeve--wide action-sleeve--ghost" onclick="renderDuplicates()">
+      <span class="action-sleeve__glow"></span>
+      <span class="action-sleeve__icon">📦</span>
+      <span class="action-sleeve__label">Vedi Magazzino Doppioni <span class="action-sleeve__badge" id="dupes-badge-count">0</span></span>
+    </button>
   </div>
 </div>
 
@@ -308,24 +364,56 @@
     <!-- Le carte doppione verranno iniettate qui dal JS -->
   </div>
 </div>
-<!-- PANNELLO SQUADRA DEI SOGNI -->
+<!-- PANNELLO SQUADRA DEI SOGNI (UPGRADE VISIVO) -->
 <div class="subpanel" data-panel="dreamteam" hidden style="display: none;">
   <button type="button" class="sm-back" data-back>← Menu principale</button>
-  <p class="subpanel__title">Squadra dei Sogni</p>
-  <div class="sm-rules" style="text-align: center; padding: 20px;">
-    <h3 style="color: #ffd24a; margin-bottom: 10px;">Costruisci la tua leggenda</h3>
-    <p>In questa modalità giocherai usando <strong>esclusivamente</strong> i giocatori che hai trovato nei pacchetti.</p>
-    <button id="btn-start-dreamteam" class="btn primary" style="width: 100%; margin-top: 20px;">Scegli il modulo e Gioca!</button>
+
+  <div class="dt-hero">
+    <div class="dt-hero__icon">⭐</div>
+    <h2 class="dt-hero__title">Squadra dei Sogni</h2>
+    <p class="dt-hero__sub">Costruisci la tua leggenda usando solo le carte della tua collezione.</p>
+  </div>
+
+  <div class="dt-rules-card">
+    <ul class="dt-features">
+      <li>
+        <span class="dt-feat-icon">📚</span>
+        <div>
+          <strong>Usa i tuoi spacchettamenti</strong>
+          <span>Scendi in campo esclusivamente con i giocatori che hai trovato nel Negozio. Niente database completo.</span>
+        </div>
+      </li>
+      <li>
+        <span class="dt-feat-icon">👑</span>
+        <div>
+          <strong>Scegli il tuo Capitano</strong>
+          <span>Quando l'undici è completo, tocca un giocatore in campo per dargli la fascia e un bonus di +3 OVR.</span>
+        </div>
+      </li>
+      <li>
+        <span class="dt-feat-icon">🏆</span>
+        <div>
+          <strong>Sfida Impossibile</strong>
+          <span>Non ci sono Reroll in questa modalità. Imposta la tattica giusta, fai i cambi mirati e punta allo Scudetto!</span>
+        </div>
+      </li>
+    </ul>
+    
+    <button id="btn-start-dreamteam" class="btn primary dt-play-btn">
+      SCEGLI IL MODULO E GIOCA ➔
+    </button>
   </div>
 </div>
 <!-- PANNELLO COLLEZIONE (Sotto il pannello dreamteam) -->
 <div class="subpanel" data-panel="collection" hidden style="display: none;">
   <button type="button" class="sm-back" data-back>← Menu principale</button>
-  <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 20px 0;">
-    <p class="subpanel__title" style="margin:0;">La Tua Collezione</p>
+  <div class="collection-hero">
+    <div class="collection-hero__text">
+      <p class="subpanel__title" style="margin:0;">La Tua Collezione</p>
+      <p class="collection-hero__sub">Carte possedute: <strong id="collection-count" style="color:var(--celeste);">0</strong></p>
+    </div>
     <div class="wallet-display">💰 <span id="collection-wallet">0</span></div>
   </div>
-  <p class="options-hint" style="text-align: center; margin-bottom: 15px;">Carte possedute: <strong id="collection-count" style="color:var(--celeste);">0</strong></p>
   <div class="card-search-wrap">
     <input type="text" id="collection-search" class="card-search-input" placeholder="🔍 Cerca per nome, stagione o rarità (IF, MOTM, TOTS)...">
   </div>
