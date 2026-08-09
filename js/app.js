@@ -3818,14 +3818,15 @@ function playMatchReplay(matches, done, opts = {}) {
       return;
     }
 
-    if (state.rogue && state.scheduledEvents && state.scheduledEvents[m.md]) {
+   if (state.rogue && state.scheduledEvents && state.scheduledEvents[m.md]) {
         const ev = state.scheduledEvents[m.md];
         const slotId = randomSlot(); 
         
         let d = ev.apply ? ev.apply(slotId) : null;
         if (ev.kind === "spread") d = -1; 
         
-        const text = ev.text(slotId);
+        // FIX: Ora passiamo anche 'd' (il punteggio) alla funzione del testo!
+        const text = ev.text(slotId, d);
         let formattedText = text;
         if (formattedText.includes('+')) formattedText = formattedText.replace(/(\+\d+)/g, '<strong style="color: var(--rar-noncomune);">$1</strong>');
         else if (formattedText.includes('-')) formattedText = formattedText.replace(/(-\d+)/g, '<strong style="color: #ff5c5c;">$1</strong>');
