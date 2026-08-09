@@ -6336,10 +6336,15 @@ window.renderPlayerDashboard = function() {
     </div>
   `;
 
-  document.getElementById("btn-play-season").onclick = window.simulateFullPlayerSeason;
+  // FIX: Controlli di sicurezza per impedire crash quando il bottone scompare a 42 anni
+  const btnPlaySeason = document.getElementById("btn-play-season");
+  if (btnPlaySeason) {
+      btnPlaySeason.onclick = window.simulateFullPlayerSeason;
+  }
   
-  if (document.getElementById("btn-retire-player")) {
-    document.getElementById("btn-retire-player").onclick = window.retirePlayer;
+  const btnRetire = document.getElementById("btn-retire-player");
+  if (btnRetire) {
+      btnRetire.onclick = window.retirePlayer;
   }
 
   document.getElementById("btn-reset-player-career").onclick = () => {
@@ -6781,9 +6786,14 @@ const PLAYER_CAREER_EVENTS = [
 // SIMULAZIONE DELL'INTERA STAGIONE IN UN SOLO CLICK
 window.simulateFullPlayerSeason = function() {
   if(typeof playSound === 'function') playSound('fischio');
+  
+  // FIX: Disabilita il bottone all'istante! Impedisce i doppi click che sdoppiano le stagioni
+  const btnPlay = document.getElementById("btn-play-season");
+  if (btnPlay) btnPlay.disabled = true;
+
   const c = window.playerCareerState;
   
-  let seasonMatches = 30 + Math.floor(Math.random() * 9); 
+  let seasonMatches = 30 + Math.floor(Math.random() * 9);
   if (c.age >= 32) seasonMatches -= Math.floor(Math.random() * 5); 
   
   let seasonGoals = 0, seasonAssists = 0;
