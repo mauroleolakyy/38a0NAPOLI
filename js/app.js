@@ -4182,6 +4182,7 @@ const DB = [
   P("Erwin Hoffer", "2009/10", ["ATT"], 70), /* "El Jimmy", idolo incompreso */
   P("Hassan Yebda", "2010/11", ["CC", "MED"], 77),
   P("Rolando", "2012/13", ["DC"], 75),
+  P("Marko Rog", "IF", ["CC"], 87, { tipo: "IF", evento: "Partita sontuosa da titolare nella vittoria 2-1 contro la Roma all'Olimpico " }),
   P("Philip Billing", "2024/25", ["CC", "MED"], 90, { tipo: "MOTM", evento: "Ha segnato la rete del pareggio per l'1-1 contro l'Inter il 1° marzo 2025 allo stadio Maradona." }),
   P("Philip Billing", "2024/25", ["CC", "MED"], 74),
   P("Leander Dendoncker", "2023/24", ["CC", "MED"], 72),
