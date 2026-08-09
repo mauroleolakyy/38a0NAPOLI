@@ -5640,12 +5640,30 @@ function triggerWalkoutAnimation(cards) {
         playSound('click');
     }, 3500);
 
-    // T=4300ms: appare il menù per raccogliere e andare via
+// T=4300ms: appare il menù per raccogliere e andare via
     setTimeout(() => {
-        summary.style.display = "block";
+        // 1. Forziamo la centratura matematica dell'intero blocco
+        summary.style.display = "flex";
+        summary.style.flexDirection = "column";
+        summary.style.alignItems = "center";
+        summary.style.justifyContent = "center";
+        
+        // 2. AUMENTIAMO DRASTICAMENTE LO SPAZIO SUPERIORE CON !IMPORTANT
+        summary.style.setProperty("margin-top", "120px", "important"); 
+        
         summary.style.animation = "packSummaryRise .4s cubic-bezier(0.2,0.8,0.2,1)";
-        if (earnedFromDupes > 0) {
-            
+        
+        // 3. Assicuriamo che il testo prenda tutto lo spazio e si centri
+        dupesText.style.textAlign = "center";
+        dupesText.style.width = "100%";
+        
+        let dupeCount = newCardsToSave.filter(c => c.isDupeFlag).length;
+        
+        if (dupeCount > 0) {
+            let parola = dupeCount === 1 ? "doppione" : "doppioni";
+            // Aumentato anche il margine interno tra la scritta principale e la parentesi
+            dupesText.innerHTML = `<span style="display:block; margin-bottom: 8px;">Trovati ${dupeCount} ${parola}</span><span style="font-size: 0.85rem; color: var(--testo-dim); font-weight: 400;">(Inviati al Magazzino)</span>`;
+            dupesText.style.color = "#ff5c5c"; 
         } else {
             dupesText.innerHTML = `Tutte carte nuove!`;
             dupesText.style.color = "var(--celeste-chiaro)";
