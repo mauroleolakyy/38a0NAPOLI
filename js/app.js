@@ -1759,7 +1759,22 @@ function renderCareerEventsReport(report) {
   }).join(""); 
   box.innerHTML = `<p class="market-hint">Imprevisti della chiusura stagione.</p><ul class="career-growth-list">${rows}</ul>`; 
 }
-function startCareerSwap() { const growthReport = applyCareerAging(); const retireReport = checkCareerRetirements(); state.career.swapsLeft = 3; const eventsReport = retireReport.concat(applyCareerEvents(retireReport.map(r => r.slotId))); const area = $("#career-swap-area"); area.innerHTML = `<div class="career-swap-intro"><p class="market-hint">Qui puoi cambiare i titolari e mettere in campo una rosa più adatta alla nuova stagione.</p></div><div id="career-events-report"></div><div id="career-growth-report"></div><div id="career-swap-pitch"></div>`; renderCareerEventsReport(eventsReport); renderCareerGrowthReport(growthReport); renderCareerSwapPitch(); showScreen("#screen-career-swap"); }
+function startCareerSwap() { 
+  const growthReport = applyCareerAging(); 
+  const retireReport = checkCareerRetirements(); 
+  state.career.swapsLeft = 3; 
+  
+  // AGGIUNTA 1: Inizializziamo la memoria temporanea delle scelte
+  state.career.swapCache = {}; 
+  
+  const eventsReport = retireReport.concat(applyCareerEvents(retireReport.map(r => r.slotId))); 
+  const area = $("#career-swap-area"); 
+  area.innerHTML = `<div class="career-swap-intro"><p class="market-hint">Qui puoi cambiare i titolari e mettere in campo una rosa più adatta alla nuova stagione.</p></div><div id="career-events-report"></div><div id="career-growth-report"></div><div id="career-swap-pitch"></div>`; 
+  renderCareerEventsReport(eventsReport); 
+  renderCareerGrowthReport(growthReport); 
+  renderCareerSwapPitch(); 
+  showScreen("#screen-career-swap"); 
+}
 function applyCareerAging() { 
   const report = []; 
   slots().forEach(s => { 
@@ -1795,7 +1810,36 @@ function applyCareerAging() {
 }
 function renderCareerGrowthReport(report) { const box = $("#career-growth-report"); if (!box) return; if (!report.length) { box.innerHTML = `<p class="market-hint">Rose stabile: nessun cambiamento di crescita.</p>`; return; } const rows = report.map(r => { const slot = slots().find(s => s.id === r.slotId); const cls = r.delta > 0 ? "cgr-up" : "cgr-down"; const sign = r.delta > 0 ? "+" : ""; return `<li class="${cls}"><span class="cgr-role">${slot ? slot.label : r.slotId}</span><span class="cgr-name">${r.nome}</span><span class="cgr-age">${r.age} anni</span><span class="cgr-delta">${sign}${r.delta}</span></li>`; }).join(""); box.innerHTML = `<p class="market-hint">Crescita della rosa:</p><ul class="career-growth-list">${rows}</ul>`; }
 function renderCareerSwapPitch() { const container = $("#career-swap-pitch"); const left = state.career.swapsLeft; renderMarketPitch(container, { left, hint: left > 0 ? `Scegli un titolare e sostituiscilo. Hai ancora <strong>${left}</strong> cambi disponibili.` : `Tutti i cambi sono stati usati.`, onOpen: slotId => offerCareerReplacement(slotId), continueBtn: { label: `Vai alla stagione ${state.career.season + 1} →`, onClick: () => advanceCareerSeason() }, }); }
-function offerCareerReplacement(slotId) { const opts = marketOptions(slotId); const pickArea = document.querySelector("#career-swap-pitch .market-pick-area"); renderReplacementCards(pickArea, slotId, opts, (idx) => { state.career.swapsLeft--; applyMarketReplacement(slotId, idx, opts, { phase: "swap" }); renderCareerSwapPitch(); }, () => renderCareerSwapPitch()); }
+function offerCareerReplacement(slotId) { 
+  // AGGIUNTA 2: Se non abbiamo ancora generato opzioni per questo slot, lo facciamo e ce lo segniamo
+  if (!state.career.swapCache[slotId]) {
+      state.career.swapCache[slotId] = marketOptions(slotId);
+  }
+  // Ripeschiamo le opzioni salvate
+  const opts = state.career.swapCache[slotId]; 
+  
+  const pickArea = document.querySelector("#career-swap-pitch .market-pick-area"); 
+  
+  // AGGIUNTA 3: Blocchiamo i click sugli altri giocatori in campo mentre le carte sono aperte
+  document.querySelectorAll("#career-swap-pitch .market-pitch .slot").forEach(el => {
+      el.style.pointerEvents = "none";
+  });
+  
+  renderReplacementCards(pickArea, slotId, opts, 
+    (idx) => { 
+      state.career.swapsLeft--; 
+      applyMarketReplacement(slotId, idx, opts, { phase: "swap" }); 
+      // Se compri il giocatore, svuota la memoria per quello specifico ruolo
+      delete state.career.swapCache[slotId];
+      renderCareerSwapPitch(); 
+    }, 
+    () => { 
+      // Premendo Annulla, renderCareerSwapPitch ridisegna il campo sbloccando i click,
+      // ma al click successivo i giocatori proposti saranno gli stessi salvati nella cache!
+      renderCareerSwapPitch(); 
+    }
+  ); 
+}
 function advanceCareerSeason() { state.career.season++; state.career.swapsLeft = 0; state.marketDone = false; startSeasonWithBreak(); }
 
 function startRogue() {
