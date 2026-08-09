@@ -2634,11 +2634,238 @@ const PEN_DIR_LABELS = {
   "bot-right": "↘ Basso Destra"
 };
 function resetPenDirButtons() {
+  // Pulisce le animazioni di flash della carta
+  document.querySelectorAll(".pm-card").forEach(c => c.classList.remove("flash-goal", "flash-save", "shake-save"));
+  
+  // Ripristina TUTTI e 6 i bottoni
   document.querySelectorAll(".pen-dir").forEach(b => {
     b.classList.remove("disabled", "pen-gol", "pen-parata");
     b.innerHTML = PEN_DIR_LABELS[b.getAttribute("data-dir")] || b.innerHTML;
+    
+    // FIX CRITICO: Rimuove l'invisibilità e ridà i poteri al click!
+    b.style.opacity = ""; 
+    b.style.pointerEvents = "";
+    b.style.transition = "";
   });
+  
+  // Ripristina il resto del popup
+  const grid = document.querySelector(".pen-goal-grid");
+  if (grid) { grid.style.opacity = ""; grid.style.transform = ""; grid.style.pointerEvents = ""; grid.style.transition = ""; }
+  const descEl = document.getElementById("pen-desc");
+  if (descEl) { descEl.style.opacity = ""; descEl.style.transition = ""; }
+  const tagEl = document.getElementById("pen-tag");
+  if (tagEl) { tagEl.style.opacity = ""; tagEl.style.transition = ""; }
+  const titleEl = document.getElementById("pen-title");
+  if (titleEl) { titleEl.style.transition = ""; titleEl.style.transform = ""; }
 }
+
+// ============================================================
+// REGIA UNIFICATA DI RISOLUZIONE RIGORE / QTE (anti-scatto)
+// Prima c'erano 2 animazioni scollegate che si accavallavano
+// (il bottone che "esplodeva" con pen-gol/pen-parata MENTRE il
+// pallone 3D volava in porta), dando l'impressione che il popup
+// si riaprisse due volte. Ora la sequenza è una regia unica e
+// fluida in 3 fasi, sempre sincronizzata sulla stessa timeline:
+//   1) l'intera griglia di bottoni sfuma via insieme (nessun
+//      "burst" isolato sul singolo bottone)
+//   2) l'animazione 3D pallone/portiere parte SUBITO, senza attese
+//   3) a impatto avvenuto, il testo di esito compare con un fade
+//      pulito, sincronizzato col flash/shake della porta
+// ============================================================
+function resolvePenaltySequence(clickedBtn, opts) {
+  const {
+    success,
+    aiDir,
+    resultText,
+    isSaveMode = false,
+    onClose,
+    holdMs = 2400,
+    successSound = "gol",
+    failSound = "delusione"
+  } = opts;
+
+  const titleEl = document.getElementById("pen-title");
+  const tagEl = document.getElementById("pen-tag");
+
+  // FASE 1: Nascondiamo SOLO i bottoni NON cliccati.
+  // Il bottone cliccato resta perfettamente visibile, colorato e con l'emoji!
+  document.querySelectorAll(".pen-dir").forEach(b => {
+    if (b !== clickedBtn) {
+      b.style.transition = "opacity 0.3s ease";
+      b.style.opacity = "0";
+      b.style.pointerEvents = "none";
+    }
+  });
+
+  // FASE 2: Animazione 3D pallone/portiere
+  if (isSaveMode) {
+    if (typeof window.playPenaltySaveFX === "function") window.playPenaltySaveFX(clickedBtn, aiDir, success);
+  } else {
+    if (typeof window.playPenaltyBallFX === "function") window.playPenaltyBallFX(clickedBtn, aiDir, success);
+  }
+
+  // FASE 3: Testo esito con sfumatura morbida senza salti
+  setTimeout(() => {
+    if (tagEl) {
+      tagEl.style.transition = "opacity .2s ease";
+      tagEl.style.opacity = "0";
+    }
+    titleEl.style.transition = "opacity .22s ease";
+    titleEl.style.opacity = "0";
+    
+    setTimeout(() => {
+      titleEl.textContent = resultText;
+      titleEl.style.color = success ? "#00ff88" : "#ff5c5c";
+      titleEl.style.opacity = "1";
+      if (typeof playSound === "function") playSound(success ? successSound : failSound);
+    }, 190);
+  }, 680);
+
+  // FASE 4: Chiusura. (ASSOLUTAMENTE NESSUN RESET QUI, il popup muore congelato com'è)
+  setTimeout(() => {
+    if (typeof onClose === "function") onClose();
+  }, holdMs);
+}
+
+// ============================================================
+// EFFETTI 3D "VIDEOGIOCO": pallone + portiere animati con la
+// Web Animations API, più particelle ed effetti sullo schermo.
+// Puramente visivo e a prova di errore: se qualcosa manca nel DOM
+// esce silenziosamente senza mai interrompere la logica di gioco.
+// ============================================================
+const PEN_ZONE_POS = {
+  "top-left":   { x: 17, y: 27 },
+  "top-center": { x: 50, y: 22 },
+  "top-right":  { x: 83, y: 27 },
+  "bot-left":   { x: 17, y: 76 },
+  "bot-center": { x: 50, y: 80 },
+  "bot-right":  { x: 83, y: 76 }
+};
+
+function spawnPenParticles(container, xPct, yPct) {
+  if (!container) return;
+  const colors = ["#00ff88", "#00a1ff", "#ffe066", "#ffffff"];
+  for (let i = 0; i < 16; i++) {
+    const p = document.createElement("div");
+    p.className = "pen-particle";
+    p.style.left = xPct + "%";
+    p.style.top = yPct + "%";
+    p.style.background = colors[i % colors.length];
+    container.appendChild(p);
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 36 + Math.random() * 64;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 18;
+    try {
+      const anim = p.animate([
+        { transform: "translate(-50%,-50%) scale(1) rotate(0deg)", opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2) rotate(${(Math.random() * 360) | 0}deg)`, opacity: 0 }
+      ], { duration: 650 + Math.random() * 300, easing: "cubic-bezier(.2,.8,.3,1)" });
+      anim.onfinish = () => p.remove();
+    } catch (e) { p.remove(); }
+  }
+}
+
+// Motore condiviso: anima pallone + portiere dati la direzione reale
+// del tiro (shotDir), la direzione del tuffo del portiere (keeperDir)
+// e se il risultato finale è GOL (isGoal true) oppure no.
+function runPenaltyImpactAnim(shotDir, keeperDir, isGoal, isFavorable) {
+  try {
+    const goal3d = document.getElementById("pen-goal-3d");
+    if (!goal3d) return;
+    const ball = document.getElementById("pen-ball");
+    const keeper = document.getElementById("pen-keeper");
+    if (!ball || !keeper) return;
+    const net = goal3d.querySelector(".pen-net");
+    const card = goal3d.closest(".pm-card");
+
+    const targetPos = PEN_ZONE_POS[shotDir] || PEN_ZONE_POS["bot-center"];
+    const keeperPos = PEN_ZONE_POS[keeperDir] || PEN_ZONE_POS["top-center"];
+
+    // Reset stato iniziale
+    ball.style.opacity = "1";
+    ball.style.left = "50%";
+    ball.style.top = "114%";
+    ball.style.transform = "translate(-50%,-50%) scale(0.6) rotate(0deg)";
+    keeper.style.opacity = "1";
+    keeper.style.left = "50%";
+    keeper.style.top = "50%";
+    keeper.style.transform = "translate(-50%,-50%) rotate(0deg)";
+    if (net) net.classList.remove("ripple");
+    if (card) card.classList.remove("flash-goal", "flash-save", "shake-save");
+
+    const midX = 50 + (targetPos.x - 50) * 0.55;
+    const ballKeyframes = [
+      { left: "50%", top: "114%", transform: "translate(-50%,-50%) scale(0.6) rotate(0deg)", offset: 0 },
+      { left: midX + "%", top: "68%", transform: "translate(-50%,-50%) scale(0.95) rotate(260deg)", offset: 0.55 },
+      { left: targetPos.x + "%", top: targetPos.y + "%", transform: "translate(-50%,-50%) scale(1.18) rotate(600deg)", offset: 1 }
+    ];
+    const keeperRot = keeperPos.x < 46 ? -55 : keeperPos.x > 54 ? 55 : (keeperPos.y < 40 ? -18 : 0);
+    const keeperKeyframes = [
+      { left: "50%", top: "50%", transform: "translate(-50%,-50%) rotate(0deg)", offset: 0 },
+      { left: keeperPos.x + "%", top: keeperPos.y + "%", transform: `translate(-50%,-50%) rotate(${keeperRot}deg)`, offset: 1 }
+    ];
+
+    let ballAnim = null;
+    try {
+      ballAnim = ball.animate(ballKeyframes, { duration: 620, easing: "cubic-bezier(.28,.62,.23,.99)", fill: "forwards" });
+      keeper.animate(keeperKeyframes, { duration: 520, delay: 60, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
+    } catch (e) {
+      ball.style.left = targetPos.x + "%"; ball.style.top = targetPos.y + "%";
+      keeper.style.left = keeperPos.x + "%"; keeper.style.top = keeperPos.y + "%";
+    }
+
+    const onImpact = () => {
+      // 1. FISICA DELLA RETE (Dipende se il pallone entra o no)
+      if (isGoal) {
+        if (net) { void net.offsetWidth; net.classList.add("ripple"); }
+        spawnPenParticles(goal3d, targetPos.x, targetPos.y);
+      } else {
+        try {
+          ball.animate([
+            { transform: "translate(-50%,-50%) scale(1.18) rotate(600deg)" },
+            { transform: "translate(-50%,-50%) scale(0.85) translateY(8%) rotate(660deg)" }
+          ], { duration: 260, easing: "ease-out", fill: "forwards" });
+        } catch (e) {}
+      }
+      
+      // 2. COLORI E VIBRAZIONE (Dipendono se l'esito è favorevole per il Napoli o no!)
+      if (card) {
+        if (isFavorable) {
+          card.classList.add("flash-goal"); // Bordo Verde Eroe
+        } else {
+          card.classList.add("shake-save", "flash-save"); // Bordo Rosso Sconfitta e Vibrazione
+        }
+      }
+    };
+
+    if (ballAnim && ballAnim.onfinish !== undefined) {
+      ballAnim.onfinish = onImpact;
+    } else {
+      setTimeout(onImpact, 620);
+    }
+
+    setTimeout(() => {
+      if (ball) ball.style.opacity = "0";
+      if (keeper) keeper.style.opacity = "0";
+    }, 1550);
+  } catch (e) {}
+}
+
+window.playPenaltyBallFX = function(clickedBtn, aiDir, success) {
+  if (!clickedBtn) return;
+  const shotDir = clickedBtn.getAttribute("data-dir");
+  const keeperDir = success ? (aiDir || "top-center") : shotDir;
+  // Per chi calcia: La palla che entra in rete (Gol) è un successo.
+  runPenaltyImpactAnim(shotDir, keeperDir, success, success);
+};
+
+window.playPenaltySaveFX = function(clickedBtn, shotDir, saved) {
+  if (!clickedBtn) return;
+  const keeperDir = clickedBtn.getAttribute("data-dir");
+  // Per il portiere: La palla che NON entra in rete (!saved) è fisica, ma la PARATA (saved) è il vero successo emotivo!
+  runPenaltyImpactAnim(shotDir || keeperDir, keeperDir, !saved, saved);
+};
 
 // --- MOTORE "BARRA DI TEMPISMO" (Contropiede e simili) ---
 // cfg: { icon, tag, tagColor, title, desc, zoneWidthPct, speedMs, maxTimeMs,
@@ -2657,11 +2884,16 @@ window.runTimingQTE = function(cfg) {
   const cursor = document.getElementById("qte-cursor");
   const target = document.getElementById("qte-target");
   const tapBtn = document.getElementById("qte-tap-btn");
+  // FIX: Pulisce le animazioni residue sulla carta prima di aprirla
+  const card = modal.querySelector(".pm-card");
+  if (card) card.classList.remove("flash-goal", "flash-save", "shake-save");
 
-  cursor.classList.remove("qte-hit", "qte-miss");
+  cursor.classList.remove("qte-hit", "qte-miss", "in-zone");
   cursor.style.left = "0%";
+  target.classList.remove("zone-armed");
   tapBtn.disabled = false;
   tapBtn.textContent = "⚡ TIRA! ⚡";
+  tapBtn.style.transform = "";
 
   // Posiziona la zona bersaglio (verde) in un punto casuale della barra
   const zoneWidth = cfg.zoneWidthPct || 20;
@@ -2683,8 +2915,20 @@ window.runTimingQTE = function(cfg) {
     if (raf) cancelAnimationFrame(raf);
     tapBtn.disabled = true;
     cursor.classList.add(success ? "qte-hit" : "qte-miss");
-    document.getElementById("qte-title").textContent = success ? (cfg.labelWin || "PERFETTO!") : (cfg.labelLose || "TROPPO TARDI!");
+    const titleEl = document.getElementById("qte-title");
+    titleEl.style.opacity = "0";
+    setTimeout(() => {
+        titleEl.textContent = success ? (cfg.labelWin || "PERFETTO!") : (cfg.labelLose || "TROPPO TARDI!");
+        titleEl.style.opacity = "1";
+    }, 150);
     if (typeof playSound === 'function') playSound(success ? 'gol' : 'delusione');
+    try {
+      const card = modal.querySelector(".pm-card");
+      if (card) {
+        card.classList.add(success ? "flash-goal" : "shake-save"); // FIX: Rimosso timer buggato
+        if (success && typeof spawnPenParticles === 'function') spawnPenParticles(card, 50, 45);
+      }
+    } catch (e) {}
     setTimeout(() => {
       modal.classList.remove("show");
       if (cfg.onResult) cfg.onResult(success);
@@ -2697,6 +2941,9 @@ window.runTimingQTE = function(cfg) {
     if (pos >= 100) { pos = 100; dir = -1; }
     else if (pos <= 0) { pos = 0; dir = 1; }
     cursor.style.left = pos + "%";
+    const inZoneNow = pos >= zoneStart && pos <= (zoneStart + zoneWidth);
+    cursor.classList.toggle("in-zone", inZoneNow);
+    target.classList.toggle("zone-armed", inZoneNow);
     if (t - startTime >= maxTime) { finish(false); return; }
     raf = requestAnimationFrame(tick);
   };
@@ -2725,6 +2972,7 @@ window.runHeaderQTE = function(cfg) {
   document.getElementById("pen-title").textContent = cfg.titleText || "Indirizza il colpo di testa";
   document.getElementById("pen-desc").textContent = cfg.descText || "Scegli l'angolo dello stacco!";
 
+resetPenDirButtons();
   penModal.classList.add("show");
   if (typeof playSound === 'function') playSound('fischio');
 
@@ -2755,28 +3003,39 @@ window.runHeaderQTE = function(cfg) {
         if (playerDir !== aiDir) {
           success = Math.random() < 0.22; // respinta di fortuna
         } else {
-          success = Math.random() < (ovrGap > 0 ? 0.85 : 0.70);
+          success = true; // Lato cross intuito: 100% uscita o respinta sicura!
         }
       }
 
+      let goalText = "GOL DI TESTA! Palla all'incrocio!";
+      if (playerDir === "top-center" || playerDir === "bot-center") goalText = "GOL DI TESTA! Centrale ma violentissimo, rete!";
+      else if (playerDir.includes("bot")) goalText = "GOL DI TESTA! Schiacciata micidiale all'angolino!";
+
+      const resultText = success
+        ? (cfg.forNapoli ? goalText : "USCITA PERFETTA! Blocca il colpo di testa!")
+        : (cfg.forNapoli ? "STACCO ALTO! Palla sopra la traversa..." : "GOL DI TESTA SUBITO! Non arriviamo sul pallone.");
+
+      // Applica emoji istantanea
       if (success) {
         this.classList.add("pen-gol");
         this.innerHTML = cfg.forNapoli ? "⚽ GOL!" : "🧤 RESPINTA!";
-        if (typeof playSound === 'function') playSound(cfg.forNapoli ? 'gol' : 'parata');
       } else {
         this.classList.add("pen-parata");
         this.innerHTML = cfg.forNapoli ? "🧤 PARATO" : "⚽ GOL!";
-        if (typeof playSound === 'function') playSound('delusione');
       }
-      document.getElementById("pen-title").textContent = success
-        ? (cfg.forNapoli ? "GOL DI TESTA! Palla all'incrocio!" : "USCITA PERFETTA! Blocca il colpo di testa!")
-        : (cfg.forNapoli ? "STACCO ALTO! Palla sopra la traversa..." : "GOL DI TESTA SUBITO! Non arriviamo sul pallone.");
 
-      setTimeout(() => {
-        penModal.classList.remove("show");
-        resetPenDirButtons();
-        if (cfg.onResult) cfg.onResult(success);
-      }, 3000);
+      resolvePenaltySequence(this, {
+        success,
+        aiDir,
+        resultText,
+        successSound: cfg.forNapoli ? "gol" : "parata",
+        failSound: "delusione",
+        holdMs: 2400,
+        onClose: () => {
+          penModal.classList.remove("show");
+          if (cfg.onResult) cfg.onResult(success);
+        }
+      });
     });
   });
 };
@@ -3272,6 +3531,7 @@ function playMatchReplay(matches, done, opts = {}) {
         if (finished) return; 
         
         if (typeof playSound === 'function') playSound('fischio');
+        resetPenDirButtons();
         penModal.classList.add("show");
 
         let answered = false; 
@@ -3313,47 +3573,51 @@ function playMatchReplay(matches, done, opts = {}) {
                 const parataMiracolo = Math.random() < 0.20;
                 success = parataMiracolo; 
                 msg = success ? `PARATA CLAMOROSA! ${gkName} respinge d'istinto nonostante fosse in controtempo!` : `GOL SU RIGORE! ${gkName} si è buttato dalla parte sbagliata.`;
-              } else {
-                const chance = myGkOvr > oppOvr ? 0.90 : 0.75; 
-                success = Math.random() < chance; 
-                msg = success ? `PARATA EROICA di ${gkName}! Neutralizza il rigore alla grande!` : `GOL! ${gkName} intuisce ma il tiro era troppo angolato.`;
+             } else {
+                // L'utente ha intuito il lato: PARATA ASSICURATA AL 100%
+                success = true; 
+                msg = `PARATA EROICA di ${gkName}! Neutralizza il rigore alla grande!`;
               }
               if(!success) { m.ga += 1; pts -= (m.gf < m.ga ? 1 : 0); m.res = m.gf > m.ga ? "W" : m.gf === m.ga ? "D" : "L"; } 
             }
-
-            document.getElementById("pen-title").textContent = msg;
-            
+ 
+            // FIX: Colora il bottone e mette l'emoji all'istante
             if (success) {
               this.classList.add("pen-gol");
               this.innerHTML = isForNapoli ? "⚽ GOL!" : "🧤 PARATA!";
-              if (typeof playSound === 'function') playSound(isForNapoli ? 'gol' : 'parata');
             } else {
               this.classList.add("pen-parata");
               this.innerHTML = isForNapoli ? "🧤 PARATO" : "⚽ GOL!";
-              if (typeof playSound === 'function') playSound('delusione');
             }
-            
-            setTimeout(() => {
-              penModal.classList.remove("show");
-              
-              row.querySelector(".rr-score").textContent = `${m.gf}-${m.ga}`;
-              row.classList.remove("rr-w", "rr-d", "rr-l");
-              row.classList.add(m.res === "W" ? "rr-w" : m.res === "D" ? "rr-d" : "rr-l");
-              const resLetterEl = row.querySelector(".rr-res");
-              if (resLetterEl) resLetterEl.textContent = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
+            resolvePenaltySequence(this, {
+              success,
+              aiDir,
+              resultText: msg,
+              isSaveMode: !isForNapoli,
+              successSound: isForNapoli ? "gol" : "parata",
+              failSound: "delusione",
+              holdMs: 2600,
+              onClose: () => {
+                penModal.classList.remove("show");
 
-              const newScorersHtml = renderScorersHtml(m);
-              const existingScorersEl = row.querySelector(".rr-scorers");
-              if (newScorersHtml) {
-                if (existingScorersEl) existingScorersEl.outerHTML = newScorersHtml;
-                else row.insertAdjacentHTML("beforeend", newScorersHtml);
-              } else if (existingScorersEl) {
-                existingScorersEl.remove();
+                row.querySelector(".rr-score").textContent = `${m.gf}-${m.ga}`;
+                row.classList.remove("rr-w", "rr-d", "rr-l");
+                row.classList.add(m.res === "W" ? "rr-w" : m.res === "D" ? "rr-d" : "rr-l");
+                const resLetterEl = row.querySelector(".rr-res");
+                if (resLetterEl) resLetterEl.textContent = m.res === "W" ? "V" : m.res === "D" ? "P" : "S";
+
+                const newScorersHtml = renderScorersHtml(m);
+                const existingScorersEl = row.querySelector(".rr-scorers");
+                if (newScorersHtml) {
+                  if (existingScorersEl) existingScorersEl.outerHTML = newScorersHtml;
+                  else row.insertAdjacentHTML("beforeend", newScorersHtml);
+                } else if (existingScorersEl) {
+                  existingScorersEl.remove();
+                }
+
+                finishStep();
               }
-              
-              resetPenDirButtons();
-              finishStep(); 
-            }, 3000);
+            });
           });
         });
       }, 500); 
@@ -5150,9 +5414,11 @@ function triggerWalkoutAnimation(cards) {
         const wrap = document.createElement("div");
         wrap.className = "pack-item-container";
         
-        // SETUP INIZIALE: Nascoste. 
+        // SETUP INIZIALE: nascoste e leggermente ruotate in 3D,
+        // pronte per un ingresso "a tuffo" fluido stile FIFA.
         wrap.style.opacity = "0";
         wrap.style.display = "none"; // Non occupano spazio all'inizio
+        wrap.style.transform = "translateY(28px) scale(0.82) rotateX(18deg)";
         
         let cls = "player-card tcg pack-card-front";
         if (p.rating >= 90) cls += " tcg-legend";
@@ -5167,10 +5433,11 @@ function triggerWalkoutAnimation(cards) {
         
         wrap.innerHTML = `
             <div class="pack-card-inner">
-                <div class="pack-card-back"></div>
+                <div class="pack-card-back"><div class="pack-card-shine"></div></div>
                 <div class="${cls}" style="${styleAttr}">
                     ${tcgCardInner(p, false, p.ruoli[0])}
                     ${bannerHtml}
+                    <div class="pack-card-sweep"></div>
                 </div>
             </div>
         `;
@@ -5191,53 +5458,68 @@ function triggerWalkoutAnimation(cards) {
     overlay.classList.add("show");
 
     // ==========================================
-    // 3. REGIA AUTOMATICA, FLUIDA E SENZA LAG
+    // 3. REGIA AUTOMATICA, FLUIDA E 3D — stile FIFA/FUT
+    // Ogni fase usa lo stesso easing "cinematico" (cubic-bezier
+    // morbido in entrata/uscita) così i movimenti si susseguono
+    // senza scatti percepibili tra una fase e l'altra.
     // ==========================================
-    
-    // T=300ms: Appare la prima carta (grande, di dorso)
-    setTimeout(() => {
-        cards[0].node.style.display = "block";
-        void cards[0].node.offsetWidth; // Forza il browser ad applicare il display block prima della transizione
-        cards[0].node.style.opacity = "1";
-        cards[0].node.style.transform = "scale(1.15)";
-        playSound('carta');
-    }, 300);
+    const EASE_IN = "cubic-bezier(0.16, 0.9, 0.28, 1)";
 
-    // T=1800ms: La prima carta si gira da sola
+    // T=250ms: la prima carta si "tuffa" in scena, grande e in prospettiva
     setTimeout(() => {
-        cards[0].node.classList.add("flipped");
+        const node = cards[0].node;
+        node.style.display = "block";
+        void node.offsetWidth; // Forza il reflow prima della transizione
+        node.style.transition = `opacity .55s ${EASE_IN}, transform .6s ${EASE_IN}`;
+        node.style.opacity = "1";
+        node.style.transform = "translateY(0) scale(1.15) rotateX(0deg)";
+        playSound('carta');
+    }, 250);
+
+    // T=1700ms: la prima carta si gira da sola con un leggero "peso" fisico
+    setTimeout(() => {
+        const node = cards[0].node;
+        node.style.transition = `opacity .55s ${EASE_IN}, transform .75s cubic-bezier(0.34, 1.15, 0.32, 1)`;
+        node.style.transform = "translateY(0) scale(1.2) rotateX(0deg)";
+        node.classList.add("flipped");
         playSound('carta');
         
         if (cards[0].isWalkout) {
             setTimeout(() => playSound('stadio'), 200);
             cards[0].node.querySelector('.pack-card-front').classList.add('walkout-glow');
         }
-    }, 1800);
+    }, 1700);
 
-    // T=3800ms: La prima carta si rimpicciolisce, e a fianco "poppano" le altre due (già girate)
+    // T=3500ms: la prima carta rientra al proprio posto e, in un unico
+    // movimento fluido, le altre due "scivolano" in scena già girate
     setTimeout(() => {
-        cards[0].node.style.transform = "scale(1)"; // Torna normale
+        const node0 = cards[0].node;
+        node0.style.transition = `transform .5s ${EASE_IN}`;
+        node0.style.transform = "translateY(0) scale(1) rotateX(0deg)";
         
-        cards[1].node.style.display = "block";
-        cards[2].node.style.display = "block";
-        
-        void cards[1].node.offsetWidth; // Reflow visivo
-        
-        cards[1].node.style.opacity = "1";
-        cards[2].node.style.opacity = "1";
+        [cards[1], cards[2]].forEach((c, i) => {
+            const node = c.node;
+            node.style.display = "block";
+            node.style.transform = "translateY(28px) scale(0.82) rotateX(18deg)";
+            void node.offsetWidth; // Reflow visivo
+            node.style.transition = `opacity .5s ${EASE_IN} ${i * 90}ms, transform .55s ${EASE_IN} ${i * 90}ms`;
+            node.style.opacity = "1";
+            node.style.transform = "translateY(0) scale(1) rotateX(0deg)";
+        });
         playSound('click');
-    }, 3800);
+    }, 3500);
 
-    // T=4600ms: Appare il menù per raccogliere e andare via
+    // T=4300ms: appare il menù per raccogliere e andare via
     setTimeout(() => {
         summary.style.display = "block";
+        summary.style.animation = "packSummaryRise .4s cubic-bezier(0.2,0.8,0.2,1)";
         if (earnedFromDupes > 0) {
             
         } else {
             dupesText.innerHTML = `Tutte carte nuove!`;
             dupesText.style.color = "var(--celeste-chiaro)";
         }
-    }, 4600);
+    }, 4300);
 
     // Salva e chiudi
     btnClose.onclick = () => {
@@ -6388,6 +6670,7 @@ const PLAYER_CAREER_EVENTS = [
       document.getElementById("pen-title").textContent = "Tira il rigore contro la Juventus";
       document.getElementById("pen-desc").textContent = `Sei sul dischetto, ${c.name}. Scegli l'angolo!`;
 
+      resetPenDirButtons();
       penModal.classList.add("show");
 
       let answered = false;
@@ -6406,35 +6689,48 @@ const PLAYER_CAREER_EVENTS = [
           const dirs = ["top-left", "top-center", "top-right", "bot-left", "bot-center", "bot-right"];
           const aiDir = dirs[Math.floor(Math.random() * dirs.length)];
 
-          let success = false;
+         let success = false;
           if (playerDir !== aiDir) {
             success = Math.random() < 0.85; // 85% di segnare se spiazzi il portiere
           } else {
-            success = Math.random() < 0.20; // 20% di segnare anche se indovina
+            success = false; // FIX: Se il portiere indovina l'angolo, PARA SEMPRE!
           }
 
+          // FIX VISIVO TESTI: Il cronista dice esattamente dove hai tirato
+          let goalMsg = "GOL! Portiere spiazzato!";
+          if (playerDir === "top-center" || playerDir === "bot-center") {
+             goalMsg = "GOL CENTRALE! Che freddezza dal dischetto!";
+          } else if (playerDir.includes("top")) {
+             goalMsg = "GOL SOTTO L'INCROCIO! Lo stadio esplode!";
+          } else {
+             goalMsg = "GOL ALL'ANGOLINO BASSO! Imparabile!";
+          }
+
+          // Applica l'emoji e il colore del bottone all'istante
           if (success) {
             this.classList.add("pen-gol");
             this.innerHTML = "⚽ GOL!";
-            document.getElementById("pen-title").textContent = "GOL SOTTO L'INCROCIO! Lo stadio esplode!";
-            if(typeof playSound === 'function') playSound('vittoria');
           } else {
             this.classList.add("pen-parata");
             this.innerHTML = "🧤 PARATO";
-            document.getElementById("pen-title").textContent = "PARATO! Il portiere ti ipnotizza...";
           }
 
-          // 3. ASPETTA L'ANIMAZIONE E RISOLVE L'EVENTO
-          setTimeout(() => {
-            penModal.classList.remove("show");
-            resetPenDirButtons();
-
-            if (success) {
-              resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Rigore decisivo segnato sotto l'incrocio: Eroe assoluto! (+1 OVR)</span>" });
-            } else {
-              resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Rigore sbagliato contro la Juve: la stampa ti distrugge. (-1 OVR)</span>" });
+          resolvePenaltySequence(this, {
+            success,
+            aiDir,
+            resultText: success ? goalMsg : "PARATO! Il portiere ti ipnotizza...",
+            successSound: "vittoria",
+            failSound: "delusione",
+            holdMs: 2600,
+            onClose: () => {
+              penModal.classList.remove("show");
+              if (success) {
+                resolve({ ovrMod: 1, extraGoals: 1, msg: "<span style='color:#00ff88'>Rigore decisivo segnato sotto l'incrocio: Eroe assoluto! (+1 OVR)</span>" });
+              } else {
+                resolve({ ovrMod: -1, extraGoals: 0, msg: "<span style='color:#ff5c5c'>Rigore sbagliato contro la Juve: la stampa ti distrugge. (-1 OVR)</span>" });
+              }
             }
-          }, 3000);
+          });
         });
       });
     },
@@ -6796,48 +7092,62 @@ window.simulateFullPlayerSeason = function() {
 
   const c = window.playerCareerState;
   
-  let seasonMatches = 30 + Math.floor(Math.random() * 9);
+ let seasonMatches = 30 + Math.floor(Math.random() * 9);
   if (c.age >= 32) seasonMatches -= Math.floor(Math.random() * 5); 
   
   let seasonGoals = 0, seasonAssists = 0;
-  let ratingSum = 0;
 
-  const ovrPower = Math.pow(c.ovr / 100, 3.5); 
+  // 1. Calcolo Statistiche Realistiche (Modello Serie A)
+  let playRatio = seasonMatches / 38; // Quante partite hai giocato rispetto al massimo
+  let ovrFactor = Math.max(0, Math.min(1, (c.ovr - 60) / 39)); // Da 0 (OVR 60) a 1 (OVR 99)
+  let seasonForm = 0.85 + (Math.random() * 0.30); // Forma stagionale: da 0.85 (sfortuna) a 1.15 (annata d'oro)
 
-  // 1. Calcolo Statistiche Base
-  for (let md = 1; md <= seasonMatches; md++) {
-    let rating = 5.5 + (Math.random() * 2) + (ovrPower * 2.5);
-    if (rating > 10) rating = 10;
-    ratingSum += rating;
+  let baseG = 0, baseA = 0;
 
-    let scoredG = 0, scoredA = 0;
-    
-    if (c.role === "POR") {
-      let chanceCleanSheet = 0.15 + (ovrPower * 0.40);
-      if (Math.random() < chanceCleanSheet) { scoredA = 1; scoredG = 0; } 
-      else { scoredG = 1 + Math.floor(Math.random() * 2); }
-    } else if (["ATT"].includes(c.role)) {
-      if (Math.random() < ovrPower * 1.1) scoredG = Math.random() < 0.15 ? 2 : 1;
-      if (Math.random() < ovrPower * 0.4) scoredA = 1;
-    } else if (["AS", "AD"].includes(c.role)) {
-      if (Math.random() < ovrPower * 0.8) scoredG = 1;
-      if (Math.random() < ovrPower * 0.7) scoredA = 1;
-    } else if (["TRQ"].includes(c.role)) {
-      if (Math.random() < ovrPower * 0.6) scoredG = 1;
-      if (Math.random() < ovrPower * 0.9) scoredA = 1;
-    } else if (["CC", "MED"].includes(c.role)) {
-      if (Math.random() < ovrPower * 0.25) scoredG = 1;
-      if (Math.random() < ovrPower * 0.5) scoredA = 1;
-    } else if (["TD", "TS", "DC"].includes(c.role)) {
-      if (Math.random() < ovrPower * 0.08) scoredG = 1;
-      if (Math.random() < ovrPower * 0.15) scoredA = 1;
-    }
-
-    seasonGoals += scoredG;
-    seasonAssists += scoredA;
+  if (c.role === "POR") {
+      // Per il portiere: Goals = Gol subiti, Assists = Reti Inviolate (Clean Sheets)
+      baseA = 8 + (ovrFactor * 14);  // Un top portiere fa fino a 22 clean sheets
+      baseG = 35 - (ovrFactor * 18); // Un top portiere subisce massimo 17-20 gol
+  } else if (c.role === "ATT") {
+      baseG = 5 + (ovrFactor * 26);  // Un top attaccante fa in media 31 gol
+      baseA = 2 + (ovrFactor * 8);   // Max ~10 assist
+  } else if (["AS", "AD"].includes(c.role)) {
+      baseG = 3 + (ovrFactor * 16);  // Le ali top fanno ~19 gol
+      baseA = 4 + (ovrFactor * 12);  // e ~16 assist
+  } else if (c.role === "TRQ") {
+      baseG = 3 + (ovrFactor * 12);  // Max ~15 gol
+      baseA = 5 + (ovrFactor * 15);  // Max ~20 assist (Re degli assist)
+  } else if (["CC", "MED"].includes(c.role)) {
+      baseG = 1 + (ovrFactor * 7);   // Max ~8 gol
+      baseA = 2 + (ovrFactor * 9);   // Max ~11 assist
+  } else if (["DC", "TD", "TS"].includes(c.role)) {
+      baseG = 0 + (ovrFactor * 4);   // Max ~4 gol (sui calci d'angolo)
+      baseA = 1 + (ovrFactor * 6);   // Max ~7 assist (cross dei terzini)
   }
 
-  let avgRating = seasonMatches > 0 ? (ratingSum / seasonMatches) : 0;
+  // Applichiamo i modificatori di forma e presenze
+  if (c.role !== "POR") {
+      seasonGoals = Math.round(baseG * playRatio * seasonForm);
+      seasonAssists = Math.round(baseA * playRatio * seasonForm);
+
+      // 👑 IL RECORD STORICO: HIGUAIN & IMMOBILE (36 Gol)
+      // Se sei un Attaccante fenomenale (OVR 95+), hai giocato tanto e hai l'annata magica...
+      if (c.role === "ATT" && c.ovr >= 95 && seasonForm > 1.10 && playRatio > 0.9) {
+          // Puoi toccare quota 34, 35, 36 o persino 37 per battere il record!
+          seasonGoals = 34 + Math.floor(Math.random() * 4); 
+      }
+      
+      // Hard Cap di sicurezza (Impossibile fare più di 40 gol in 38 partite senza barare)
+      if (seasonGoals > 40) seasonGoals = 40; 
+  } else {
+      seasonAssists = Math.round(baseA * playRatio * seasonForm); // Reti inviolate
+      seasonGoals = Math.round(baseG * playRatio * (2 - seasonForm)); // Gol subiti (forma alta = subisce meno)
+  }
+
+  // Calcolo Voto Medio (bilanciato per permettere di vincere il Pallone d'Oro con 8.5+)
+  let avgRating = 6.0 + (ovrFactor * 2.2) + ((seasonForm - 1) * 2.5);
+  if (avgRating > 9.5) avgRating = 9.5;
+  if (avgRating < 5.0) avgRating = 5.0;
   
   // 2. Crescita (Level Ups) Pre-Evento
   let oldOvr = c.ovr;
@@ -7073,8 +7383,11 @@ window.retirePlayer = function() {
   const c = window.playerCareerState;
 
   // FIX: Cancella il salvataggio ORA, rendendo il ritiro irreversibile
+  // FIX: Cancella il salvataggio ORA, rendendo il ritiro irreversibile
   localStorage.removeItem('napoli380_player_career');
   window.playerCareerState = null;
+  // Sincronizza istantaneamente la cancellazione sul Cloud per uccidere il salvataggio fantasma
+  if (typeof syncToCloud === 'function') syncToCloud(true);
   
   showScreen("#screen-player-match"); // Ricicliamo la schermata dei match per il riepilogo
   const matchBody = document.getElementById("player-match-body");
