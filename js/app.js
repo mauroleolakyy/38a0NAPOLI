@@ -5999,7 +5999,7 @@ localStorage.setItem = function(key, value) {
     'napoli380_pass_claimed',
     'napoli380_pass_claimed_levels',
     'napoli380_pass_id',
-    'napoli380_hof'
+    'napoli380_hof',
     'napoli380_hof_list'
   ];
 
