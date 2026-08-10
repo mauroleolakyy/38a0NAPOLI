@@ -7446,7 +7446,7 @@ window.simulateFullPlayerSeason = function() {
         updateLeaderboard("player_career", "Carriera Giocatore", seasonGoals, seasonAssists);
     }
     // --------------------------------------------------------
-    // CAP CREDITI: MAX 100 A STAGIONE
+        // CAP CREDITI: MAX 100 A STAGIONE
     let rawCredits = 20 + (seasonMatches * 1) + (seasonGoals * 2) + (seasonAssists * 1) + (wonMVP ? 20 : 0) + (wonBallonDor ? 30 : 0);
     let earnedCredits = Math.min(Math.round(rawCredits), 100); 
     
@@ -7458,6 +7458,10 @@ window.simulateFullPlayerSeason = function() {
     window.updateMissionProgress('career', 1);
     window.updateMissionProgress('goal', seasonGoals);
     // --- FINE HOOK MISSIONI CARRIERA ---
+
+    // FIX: Sincronizzazione immediata sul Cloud per la Carriera Giocatore!
+    if (typeof syncToCloud === 'function') syncToCloud(true);
+
 
     // ==========================================
     // 4. MOSTRA LA SCHERMATA FINALE
