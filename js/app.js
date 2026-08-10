@@ -6,20 +6,42 @@
 // Suoni generati al volo con la Web Audio API: niente file mp3 da caricare,
 // durate brevi e controllate, timbri ridisegnati da zero.
 let _actx = null;
+
 function getAudioCtx() {
-  if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)();
-  if (_actx.state === "suspended") _actx.resume().catch(() => {});
+  if (!_actx) {
+    _actx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // FIX 1: Risveglio forzato se il telefono interrompe l'audio per una notifica/chiamata
+    _actx.onstatechange = () => {
+      if (_actx.state === "interrupted" || _actx.state === "suspended") {
+        _actx.resume().catch(() => {});
+      }
+    };
+  }
+  
+  if (_actx.state === "suspended" || _actx.state === "interrupted") {
+    _actx.resume().catch(() => {});
+  }
   return _actx;
 }
 
-// Buffer di rumore bianco, usato come base per whoosh/boati
+// FIX 2: Memoria Cache per i rumori. Evita il memory leak e il crash dell'audio!
+const _noiseCache = {};
+
 function makeNoiseBuffer(ctx, duration) {
+  // Se abbiamo già calcolato un rumore di questa durata, lo ricicliamo senza pesare sulla RAM
+  if (_noiseCache[duration]) return _noiseCache[duration];
+
   const size = Math.max(1, Math.floor(ctx.sampleRate * duration));
   const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+  
+  // Salviamo il suono in memoria per il prossimo utilizzo
+  _noiseCache[duration] = buffer;
   return buffer;
 }
+
 
 // --- Click UI: tocco secco e breve (~90ms) ---
 function sfxClick() {
@@ -3443,14 +3465,18 @@ updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.le
       reason += " + Vittoria Champions!";
   }
 
-  // Aggiunge i soldi silenziosamente
-  let creds = getCredits();
-  localStorage.setItem('napoli380_credits', creds + earned);
-  if(typeof updateWalletUI === 'function') updateWalletUI();
-  // AGGIUNTA XP PASS AZZURRO (150 punti a campionato finito)
-  addPassXP(150);
+          // Aggiunge i soldi silenziosamente
+        let creds = getCredits();
+        localStorage.setItem('napoli380_credits', creds + earned);
+        if(typeof updateWalletUI === 'function') updateWalletUI();
+        // AGGIUNTA XP PASS AZZURRO (150 punti a campionato finito)
+        addPassXP(150);
 
-  // CREAZIONE PANNELLI GRAFICI
+        // FIX: Forza il salvataggio sul Cloud immediato per evitare perdite al ricaricamento!
+        if (typeof syncToCloud === 'function') syncToCloud(true);
+
+        // CREAZIONE PANNELLI GRAFICI
+
   const coachLine = state.coach ? `<div class="rec-coach">Allenatore: <strong>${state.coach.nome}</strong></div>` : "";
   const quadrants = [];
   
@@ -5863,10 +5889,12 @@ function performCloudSave() {
     lastLogin: localStorage.getItem('napoli380_lastLogin') || "",
     passClaimed: localStorage.getItem('napoli380_pass_claimed') || "false",
     passClaimedLevels: JSON.parse(localStorage.getItem('napoli380_pass_claimed_levels') || "[]"),
-    passId: localStorage.getItem('napoli380_pass_id') || "",
-    hof: JSON.parse(localStorage.getItem('napoli380_hof') || "null"),
-    lastSync: firebase.firestore.FieldValue.serverTimestamp()
-  };
+                passId: localStorage.getItem('napoli380_pass_id') || "",
+            hof: JSON.parse(localStorage.getItem('napoli380_hof') || "null"),
+            hof_list: JSON.parse(localStorage.getItem('napoli380_hof_list') || "[]"), // AGGIUNTA QUESTA RIGA
+            lastSync: firebase.firestore.FieldValue.serverTimestamp()
+          };
+
 
   db.collection("users").doc(auth.currentUser.uid).set(payload, { merge: true })
   .then(() => {
@@ -5925,9 +5953,10 @@ function loadFromCloud(uid, showToast = true) {
       if (data.lastLogin !== undefined) setLoc('napoli380_lastLogin', data.lastLogin);
       if (data.passClaimed !== undefined) setLoc('napoli380_pass_claimed', data.passClaimed);
       if (data.passClaimedLevels !== undefined) setLoc('napoli380_pass_claimed_levels', JSON.stringify(data.passClaimedLevels));
-      if (data.passId !== undefined) setLoc('napoli380_pass_id', data.passId);
-      if (data.hof) setLoc('napoli380_hof', JSON.stringify(data.hof));
-      if (typeof initDailyMissions === 'function') initDailyMissions();
+                    if (data.passId !== undefined) setLoc('napoli380_pass_id', data.passId);
+              if (data.hof) setLoc('napoli380_hof', JSON.stringify(data.hof));
+              if (data.hof_list) setLoc('napoli380_hof_list', JSON.stringify(data.hof_list)); // AGGIUNTA QUESTA RIGA
+              if (typeof initDailyMissions === 'function') initDailyMissions();
       // Aggiorna visivamente tutte le UI in tempo reale
       if(typeof updateWalletUI === 'function') updateWalletUI();
       if(typeof updateDupesBadge === 'function') updateDupesBadge();
@@ -5971,6 +6000,7 @@ localStorage.setItem = function(key, value) {
     'napoli380_pass_claimed_levels',
     'napoli380_pass_id',
     'napoli380_hof'
+    'napoli380_hof_list'
   ];
 
   if (syncKeys.includes(key)) {
