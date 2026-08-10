@@ -640,7 +640,12 @@ const ACHIEVEMENTS = [
 ];
 
 function checkAndUnlockAchievements(seasonPts, seasonW, team) {
-  let unlocked = JSON.parse(localStorage.getItem("napoli380_ach") || "[]");
+  let unlocked = [];
+  try {
+      unlocked = JSON.parse(localStorage.getItem("napoli380_ach") || "[]");
+  } catch(e) {
+      unlocked = []; // Se il file è corrotto, riparte da zero senza far crashare il gioco
+  }
   let newlyUnlocked = false;
 
   ACHIEVEMENTS.forEach(ach => {
@@ -653,6 +658,7 @@ function checkAndUnlockAchievements(seasonPts, seasonW, team) {
 
   if (newlyUnlocked) localStorage.setItem("napoli380_ach", JSON.stringify(unlocked));
 }
+
 window.addPassXP = function(amount) {
   if (typeof checkAndResetPass === 'function') checkAndResetPass();
   let xp = parseInt(localStorage.getItem('napoli380_pass_xp') || "0");
@@ -1752,8 +1758,20 @@ function renderReplacementCards(container, slotId, opts, onPick, onCancel) {
     if (state.hiddenRating) cls += " tcg-hidden"; else styleAttr = tcgGoldStyle(p.rating, p.tipo); 
     return `<div class="${cls}" style="${styleAttr}" data-i="${i}">${tcgCardInner(p, state.hiddenRating, slot.accepts[0])}</div>`; 
   }).join("")}</div><button type="button" class="btn ghost market-cancel-btn">Annulla</button>`;
-  container.querySelectorAll(".player-card").forEach(card => { card.onclick = () => onPick(+card.dataset.i); }); container.querySelector(".market-cancel-btn").onclick = onCancel;
+  
+  // FIX: Spegne i click sulle carte dopo la prima scelta per evitare doppi avvii della stagione
+  container.querySelectorAll(".player-card").forEach(card => { 
+      card.onclick = () => {
+          container.style.pointerEvents = "none";
+          onPick(+card.dataset.i); 
+      }; 
+  }); 
+  container.querySelector(".market-cancel-btn").onclick = () => {
+      container.style.pointerEvents = "none";
+      onCancel();
+  };
 }
+
 
 const CAREER_EVENTS = [
   { id: "ce_godmode", nome: "God Mode", kind: "pos", apply: id => addMod(id, 3) },
@@ -3417,8 +3435,14 @@ updateLeaderboard(state.diff.key, state.diff.label, season.pts, champ ? champ.le
   palmares.runs++;
   localStorage.setItem('napoli380_stats', JSON.stringify(palmares));
 
-  // NOVITÀ: Salvataggio Gol per il Capocannoniere All-Time
-  let allTimeScorers = JSON.parse(localStorage.getItem('napoli380_allTimeScorers') || '{}');
+    // NOVITÀ: Salvataggio Gol per il Capocannoniere All-Time (Versione Sicura)
+  let allTimeScorers = {};
+  try {
+      allTimeScorers = JSON.parse(localStorage.getItem('napoli380_allTimeScorers') || '{}');
+  } catch(e) {
+      allTimeScorers = {}; // Rete di sicurezza anti-crash
+  }
+  
   if (lg && lg.scorers) {
       lg.scorers.forEach(s => {
           // Aggiunge i gol di questa stagione al totale storico del giocatore
