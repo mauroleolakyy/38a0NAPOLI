@@ -5438,11 +5438,15 @@ function renderStadium() {
           const id = this.getAttribute("data-id");
           const cost = parseInt(this.getAttribute("data-cost"));
           
-          if (getCredits() >= cost) {
+                    if (getCredits() >= cost) {
               addCredits(-cost, `Miglioramento Stadio`);
               const owned = getUpgrades();
               owned.push(id);
               localStorage.setItem('napoli380_upgrades', JSON.stringify(owned));
+              
+              // FIX: Blindiamo l'acquisto del potenziamento nel Cloud!
+              if (typeof syncToCloud === 'function') syncToCloud(true);
+              
               toast("🏟️ Potenziamento sbloccato permanentemente!");
               renderStadium();
           } else {
