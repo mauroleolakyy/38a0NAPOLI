@@ -4188,12 +4188,16 @@ const BIRTH_YEARS = {
   "Edmundo": 1971,
   "Erwin Hoffer": 1987,
   "Hassan Yebda": 1984,
-  "Rolando": 1985
+  "Rolando": 1985,
+  "Costantino Favasuli": 2004,
+  "Benoît Badiashile": 2001
 };
 
 const DB = [
   /* ---------- NUOVE CARTE SPECIALI (Record e Momenti Storici) ---------- */
-  
+    P("Benoît Badiashile", "2026/27", ["DC"], 77), 
+    P("Costantino Favasuli", "2026/27", ["TD", "ED"], 72), 
+
   /* Higuain - Record 36 gol */
   P("Gonzalo Higuain", "TOTS", ["ATT"], 98, { tipo: "TOTS", evento: "Record assoluto di 36 gol in una singola stagione di Serie A (2015/16)" }),
 
